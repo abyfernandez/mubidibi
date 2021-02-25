@@ -1,4 +1,4 @@
-package com.example.mubidibi
+package com.mubidibi
 
 import io.flutter.embedding.android.FlutterActivity
 

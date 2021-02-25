@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "590880382618",
+    "firebase_url": "https://mubidibi-ded8c.firebaseio.com",
+    "project_id": "mubidibi-ded8c",
+    "storage_bucket": "mubidibi-ded8c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:590880382618:android:c3d4910c86c70cb7c20923",
+        "android_client_info": {
+          "package_name": "com.mubidibi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "590880382618-4stu5bjq5291m7792igfaepcvgotvp78.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mubidibi",
+            "certificate_hash": "0722f62f28846e5ccb384e358ff0c21578352016"
+          }
+        },
+        {
+          "client_id": "590880382618-0orjshbglqpaq67hvquhqhh9iegl1prt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDphCiXr757MsUOE8cqqBP3tCoDX3oITY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "590880382618-0orjshbglqpaq67hvquhqhh9iegl1prt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
