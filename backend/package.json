@@ -1,0 +1,26 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx nodemon"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "fastify": "^3.12.0",
+    "fastify-auth": "^1.0.1",
+    "fastify-cors": "^5.2.0",
+    "fastify-jwt": "^2.3.0",
+    "fastify-postgres": "^3.5.0",
+    "fastify-session": "^5.2.1",
+    "pg": "^8.5.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}

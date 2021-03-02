@@ -1,38 +1,51 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Movie {
-  final String uid;
+  final String movieId;
   final String title;
   final String synopsis;
-  final double rating;
-  final String releaseDate;
+  final List<Map<String, dynamic>> genre;
+  // final num rating;
+  final DateTime releaseDate;
+  final Timestamp addedAt;
   // final DocumentReference authorRef;
   // final double runningTime;
 
   Movie({
-    this.uid,
+    this.movieId,
     this.title,
     this.synopsis,
-    this.rating,
+    this.genre,
     this.releaseDate,
+    this.addedAt,
+    // this.rating,
+    // this.releaseDate,
     // this.authorRef,
     // this.runningTime,
   });
 
   Movie.fromData(Map<String, dynamic> data)
-      : uid = data['uid'],
+      : movieId = data['movie_id'],
         title = data['title'],
         synopsis = data['synopsis'],
-        rating = data['rating'],
-        releaseDate = data['release_date'];
+        genre = data['genre'],
+        releaseDate = data['release_date'],
+        addedAt = data['added_at'];
+  // rating = data['rating'],
+  // releaseDate = data['release_date'];
   // authorRef = data['author_ref'];
   // runningTime = data['running_time'];
 
   Map<String, dynamic> toJson() {
     return {
-      'uid': uid,
+      'movie_id': movieId,
       'title': title,
       'synopsis': synopsis,
-      'rating': rating,
+      'genre': genre,
       'release_date': releaseDate,
+      'added_at': addedAt
+      // 'rating': rating,
+      // 'release_date': releaseDate,
       // 'authorRef': authorRef,
       // 'runningTime': runningTime,
     };

@@ -62,7 +62,7 @@ class LoginViewModel extends BaseModel {
         // TO DO: sync user profile here
         await _navigationService.navigateTo(HomeViewRoute);
       } else {
-        await _authenticationService.signOutGoogle();
+        await _authenticationService.signOut();
         await _navigationService.navigateTo(LoginViewRoute);
         // TO DO: create login error route  and replace the above line of code
       }

@@ -59,7 +59,7 @@ class _InputFieldState extends State<InputField> {
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(10.0),
+            borderRadius: BorderRadius.circular(40.0),
             boxShadow: [
               BoxShadow(
                 color: Colors.black12,
@@ -107,6 +107,7 @@ class _InputFieldState extends State<InputField> {
                             ? Icons.email
                             : Icons.lock,
                         color: Colors.blue,
+                        size: 20,
                       ),
                       hintStyle: TextStyle(
                         color: Colors.grey[600],
@@ -122,10 +123,13 @@ class _InputFieldState extends State<InputField> {
                     ? Container(
                         width: fieldHeight,
                         height: fieldHeight,
-                        alignment: Alignment.center,
-                        child: Icon(isPassword
-                            ? Icons.visibility_off
-                            : Icons.visibility))
+                        alignment: Alignment.centerLeft,
+                        child: Icon(
+                            isPassword
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.blue,
+                            size: 25))
                     : Container(),
               ),
             ],

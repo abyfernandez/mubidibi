@@ -2,6 +2,7 @@ import 'package:mubidibi/ui/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/ui/views/login_view.dart';
+import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/views/signup_view.dart';
 
 Route<dynamic> generateRoute(RouteSettings settings) {
@@ -14,12 +15,17 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case SignUpViewRoute:
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: SignUpView(),
+        viewToShow: SignUpFirstPage(),
       );
     case HomeViewRoute:
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: HomeView(),
+      );
+    case TempMovieRoute:
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: MovieView(),
       );
     default:
       return MaterialPageRoute(
