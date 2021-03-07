@@ -2,8 +2,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
+import 'package:mubidibi/models/movie.dart';
 
-class MovieView extends StatelessWidget {
+class MovieView extends StatefulWidget {
+  MovieView({Key key}) : super(key: key);
+
+  @override
+  _MovieViewState createState() => _MovieViewState();
+}
+
+class _MovieViewState extends State<MovieView> {
+  Future<Movie> futureMovie;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ViewModelProvider<MovieViewModel>.withConsumer(
@@ -54,7 +69,7 @@ class MovieView extends StatelessWidget {
                           child: RaisedButton(
                             elevation: 5.0,
                             onPressed: () {
-                              model.getMovie();
+                              futureMovie = model.getMovie();
                             },
                             padding: EdgeInsets.all(15.0),
                             shape: RoundedRectangleBorder(
@@ -73,6 +88,27 @@ class MovieView extends StatelessWidget {
                             ),
                           ),
                         ),
+
+                        // TEST
+
+                        Center(
+                          child: FutureBuilder<Movie>(
+                            future: futureMovie,
+                            builder: (context, snapshot) {
+                              if (snapshot.hasData) {
+                                print("has data");
+                                return Text(snapshot.data.synopsis);
+                              } else if (snapshot.hasError) {
+                                return Text("${snapshot.error}");
+                              }
+
+                              // By default, show a loading spinner.
+                              return CircularProgressIndicator();
+                            },
+                          ),
+                        ),
+
+                        // END OF TEST
                       ],
                     ),
                   ),

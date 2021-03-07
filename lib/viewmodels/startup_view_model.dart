@@ -16,7 +16,7 @@ class StartUpViewModel extends BaseModel {
     if (hasLoggedInUser) {
       await _navigationService.navigateTo(HomeViewRoute);
     } else {
-      await _navigationService.navigateTo(LoginViewRoute);
+      await _navigationService.navigateTo(SignInCategoryViewRoute);
     }
   }
 }

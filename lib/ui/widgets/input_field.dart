@@ -7,6 +7,7 @@ import 'note_text.dart';
 class InputField extends StatefulWidget {
   final TextEditingController controller;
   final TextInputType textInputType;
+  // final Widget icon;
   final bool password;
   final bool isReadOnly;
   final String placeholder;
@@ -23,6 +24,7 @@ class InputField extends StatefulWidget {
   InputField(
       {@required this.controller,
       @required this.placeholder,
+      // @required this.icon,
       this.enterPressed,
       this.fieldFocusNode,
       this.nextFocusNode,
@@ -58,15 +60,8 @@ class _InputFieldState extends State<InputField> {
         Container(
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(40.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 6.0,
-                offset: Offset(0, 2),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(5),
+            color: Color.fromRGBO(50, 50, 50, 1),
           ),
           height: 60.0,
           child: Row(
@@ -74,8 +69,7 @@ class _InputFieldState extends State<InputField> {
               Expanded(
                 child: TextFormField(
                   style: TextStyle(
-                    color: Colors.black,
-                    fontFamily: 'OpenSans',
+                    color: Colors.white,
                   ),
                   controller: widget.controller,
                   keyboardType: widget.textInputType,
@@ -99,20 +93,13 @@ class _InputFieldState extends State<InputField> {
                       widget.placeholder == "Password" ? isPassword : false,
                   readOnly: widget.isReadOnly,
                   decoration: InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.only(top: 14.0),
-                      hintText: widget.placeholder,
-                      prefixIcon: Icon(
-                        widget.placeholder == "Email Address"
-                            ? Icons.email
-                            : Icons.lock,
-                        color: Colors.blue,
-                        size: 20,
-                      ),
-                      hintStyle: TextStyle(
-                        color: Colors.grey[600],
-                        fontFamily: 'OpenSans',
-                      )),
+                    border: InputBorder.none,
+                    labelText: widget.placeholder,
+                    labelStyle: TextStyle(
+                      color: Colors.white,
+                    ),
+                    contentPadding: EdgeInsets.only(left: 15),
+                  ),
                 ),
               ),
               GestureDetector(
@@ -124,12 +111,8 @@ class _InputFieldState extends State<InputField> {
                         width: fieldHeight,
                         height: fieldHeight,
                         alignment: Alignment.centerLeft,
-                        child: Icon(
-                            isPassword
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.blue,
-                            size: 25))
+                        child: Text(isPassword ? "SHOW" : "HIDE",
+                            style: TextStyle(color: Colors.white)))
                     : Container(),
               ),
             ],

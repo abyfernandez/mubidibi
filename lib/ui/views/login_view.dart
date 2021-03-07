@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/locator.dart';
@@ -7,10 +8,37 @@ import 'package:mubidibi/viewmodels/login_view_model.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 
-class LoginView extends StatelessWidget {
+class LoginView extends StatefulWidget {
+  @override
+  _LoginViewState createState() => new _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final NavigationService _navigationService = locator<NavigationService>();
+
+  bool _isButtonDisabled = true;
+
+  bool isButtonDisabled() {
+    if (emailController.text.trim() != "" &&
+        passwordController.text.trim() != "")
+      _isButtonDisabled = false;
+    else
+      _isButtonDisabled = true;
+    return _isButtonDisabled;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    if (emailController.text.trim() != "" &&
+        passwordController.text.trim() != "") {
+      _isButtonDisabled = false;
+    } else
+      _isButtonDisabled = true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,30 +46,47 @@ class LoginView extends StatelessWidget {
       viewModel: LoginViewModel(),
       builder: (context, model, child) => Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: Colors.white,
+        backgroundColor: Color.fromRGBO(20, 20, 20, 1),
+        appBar: AppBar(
+          backgroundColor: Color.fromRGBO(20, 20, 20, 1),
+          centerTitle: true,
+          titleSpacing: 1.5,
+          title: Text("mubidibi",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          leading: IconButton(
+              padding: EdgeInsets.only(left: 20),
+              color: Colors.white,
+              icon: Icon(
+                Icons.arrow_back_ios,
+                size: 20,
+              ),
+              onPressed: () {
+                _navigationService.pop();
+              }),
+          actions: [
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: EdgeInsets.only(right: 20),
+              child: InkWell(
+                  child: Text(
+                    "Help",
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16),
+                  ),
+                  onTap: () {
+                    print("Help button pressed.");
+                  }),
+            ),
+          ],
+        ),
         body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
             child: Stack(
               children: <Widget>[
-                Container(
-                  height: double.infinity,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF73AEF5),
-                        Color(0xFF61A4F1),
-                        Color(0xFF478DE0),
-                        Color(0xFF398AE5),
-                      ],
-                      stops: [0.1, 0.4, 0.7, 0.9],
-                    ),
-                  ),
-                ),
                 Container(
                   height: double.infinity,
                   child: SingleChildScrollView(
@@ -53,14 +98,6 @@ class LoginView extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        SizedBox(height: 60.0),
-
-                        // PLACEHOLDER
-                        Placeholder(
-                          color: Colors.white,
-                          fallbackHeight: 100,
-                        ),
-
                         // EMAIL ADDRESS FIELD
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,6 +107,9 @@ class LoginView extends StatelessWidget {
                               child: InputField(
                                 placeholder: 'Email Address',
                                 controller: emailController,
+                                onChanged: (val) {
+                                  isButtonDisabled();
+                                },
                               ),
                             ),
                           ],
@@ -86,66 +126,41 @@ class LoginView extends StatelessWidget {
                               child: InputField(
                                 placeholder: 'Password',
                                 password: true,
+                                onChanged: (val) {
+                                  isButtonDisabled();
+                                },
                                 controller: passwordController,
                               ),
                             ),
                           ],
                         ),
 
-                        // FORGOT PASSWORD BUTTON
-                        Container(
-                            child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: <Widget>[
-                            Container(
-                              child: Row(
-                                children: <Widget>[
-                                  InkWell(
-                                      child: Text("Sign up for an account",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16.0,
-                                          )),
-                                      onTap: () => _navigationService
-                                          .navigateTo(SignUpViewRoute)),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              alignment: Alignment.centerRight,
-                              child: InkWell(
-                                  child: Text("Forgot Password?",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16.0,
-                                      )),
-                                  onTap: () =>
-                                      print("Forgot Password link tapped.")),
-                            ),
-                          ],
-                        )),
-
-                        // SIGN IN BUTTON
+                        // LOG IN BUTTON
                         Container(
                           padding: EdgeInsets.symmetric(vertical: 30.0),
                           width: double.infinity,
-                          child: RaisedButton(
-                            elevation: 5.0,
-                            onPressed: () {
-                              model.login(
-                                email: emailController.text,
-                                password: passwordController.text,
-                              );
-                            },
+                          child: FlatButton(
+                            onPressed: isButtonDisabled()
+                                ? null
+                                : () async {
+                                    model.login(
+                                        email: emailController.text,
+                                        password: passwordController.text);
+                                  },
+                            // onPressed: () async {
+                            //   model.login(
+                            //       email: emailController.text,
+                            //       password: passwordController.text);
+                            // },
                             padding: EdgeInsets.all(18.0),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(40.0),
-                            ),
-                            color: Colors.blue[700],
+                                borderRadius: BorderRadius.circular(5),
+                                side: BorderSide(color: Colors.black)),
+                            color: Color.fromRGBO(229, 9, 20, 1),
+                            disabledColor: Color.fromRGBO(20, 20, 20, 1),
                             child: Text(
                               'LOGIN',
                               style: TextStyle(
-                                // color: Color(0xFF527DAA),
                                 color: Colors.white,
                                 letterSpacing: 1.5,
                                 fontSize: 16.0,

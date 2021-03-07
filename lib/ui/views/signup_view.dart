@@ -25,7 +25,7 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
     return ViewModelProvider<SignUpViewModel>.withConsumer(
       viewModel: SignUpViewModel(),
       builder: (context, model, child) => Scaffold(
-        // resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
           backgroundColor: Color(0xFF73AEF5),
           elevation: 0,
@@ -63,83 +63,90 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                       stops: [0.1, 0.4, 0.7, 0.9],
                     ),
                   ),
-                  // ),
-                  // Container(
-                  //   height: double.infinity,
-                  //   // child: SingleChildScrollView(
-                  //   physics: AlwaysScrollableScrollPhysics(),
-                  //   padding: EdgeInsets.symmetric(
-                  //     horizontal: 30.0,
-                  //     vertical: 60.0,
-                  //   ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 30.0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      // SizedBox(height: 50.0),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Create Account",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 35.0,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'OpenSans'),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(
-                        height: 30,
-                      ),
-                      // Email Address Form Field
-                      InputField(
-                        controller: emailController,
-                        placeholder: "Email Address",
-                      ),
-                      SizedBox(height: 20.0),
-                      // Password Form Field
-                      InputField(
-                        controller: passwordController,
-                        placeholder: "Password",
-                        password: true,
-                      ),
-                      Container(
-                        alignment: Alignment.centerRight,
-                        child: RaisedButton(
-                          elevation: 5,
-                          padding: EdgeInsets.all(10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                          ),
-                          color: Colors.white,
-                          child: Text(
-                            'Next',
-                            style: TextStyle(
-                                color: Colors.blueAccent,
-                                fontSize: 16,
-                                fontFamily: 'OpenSans'),
-                          ),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => SignUpSecondPage([
-                                        emailController.text,
-                                        passwordController.text,
-                                      ])),
-                            );
-                          },
+                ),
+                Container(
+                  height: double.infinity,
+                  child: SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 30.0,
+                      vertical: 60.0,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        SizedBox(height: 30.0),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Create Account",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 35.0,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'OpenSans'),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+
+                        SizedBox(
+                          height: 30,
+                        ),
+                        // Email Address Form Field
+                        InputField(
+                          controller: emailController,
+                          placeholder: "Email Address",
+                          // icon: Icon(
+                          //   Icons.email,
+                          //   color: Colors.blue,
+                          //   size: 20,
+                          // ),
+                        ),
+                        SizedBox(height: 20.0),
+                        // Password Form Field
+                        InputField(
+                          controller: passwordController,
+                          placeholder: "Password",
+                          password: true,
+                          // icon: Icon(
+                          //   Icons.lock,
+                          //   color: Colors.blue,
+                          //   size: 20,
+                          // ),
+                        ),
+                        Container(
+                          alignment: Alignment.centerRight,
+                          child: RaisedButton(
+                            elevation: 5,
+                            padding: EdgeInsets.all(10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                            ),
+                            color: Colors.white,
+                            child: Text(
+                              'Next',
+                              style: TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontSize: 16,
+                                  fontFamily: 'OpenSans'),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => SignUpSecondPage([
+                                          emailController.text,
+                                          passwordController.text,
+                                        ])),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                // ),
               ],
             ),
           ),
@@ -211,71 +218,81 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                       stops: [0.1, 0.4, 0.7, 0.9],
                     ),
                   ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 30.0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      // SizedBox(height: 50.0),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Create Account",
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 35.0,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'OpenSans'),
-                          ),
-                        ],
-                      ),
-                      SizedBox(
-                        height: 30,
-                      ),
-                      // First Name Form Field
-                      InputField(
-                        controller: firstNameController,
-                        placeholder: "First Name",
-                      ),
-                      SizedBox(height: 20.0),
-
-                      // Last Name Form Field
-                      InputField(
-                        controller: lastNameController,
-                        placeholder: "Last Name",
-                      ),
-                      SizedBox(height: 20.0),
-
-                      // Birthday Form Field
-                      // TO DO: Change to DatePicker field
-                      InputField(
-                        controller: birthdayController,
-                        placeholder: "Birthday",
-                      ),
-                      Container(
-                        alignment: Alignment.centerRight,
-                        child: RaisedButton(
-                          elevation: 5,
-                          padding: EdgeInsets.all(10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5.0),
-                          ),
-                          color: Colors.white,
-                          child: Text(
-                            'Submit',
-                            style: TextStyle(
-                                color: Colors.blueAccent,
-                                fontSize: 16,
-                                fontFamily: 'OpenSans'),
-                          ),
-                          onPressed: () {
-                            this.submitData();
-                          },
+                ),
+                Container(
+                  height: double.infinity,
+                  child: SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 30.0,
+                      vertical: 60.0,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        SizedBox(height: 30.0),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Create Account",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 35.0,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'OpenSans'),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        SizedBox(
+                          height: 30,
+                        ),
+                        // First Name Form Field
+                        InputField(
+                          controller: firstNameController,
+                          placeholder: "First Name",
+                          // icon: null,
+                        ),
+                        SizedBox(height: 20.0),
+
+                        // Last Name Form Field
+                        InputField(
+                          controller: lastNameController,
+                          placeholder: "Last Name",
+                          // icon: null,
+                        ),
+                        SizedBox(height: 20.0),
+
+                        // Birthday Form Field
+                        // TO DO: Change to DatePicker field
+                        InputField(
+                          controller: birthdayController,
+                          placeholder: "Birthday",
+                          // icon: null,
+                        ),
+                        Container(
+                          alignment: Alignment.centerRight,
+                          child: RaisedButton(
+                            elevation: 5,
+                            padding: EdgeInsets.all(10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                            ),
+                            color: Colors.white,
+                            child: Text(
+                              'Submit',
+                              style: TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontSize: 16,
+                                  fontFamily: 'OpenSans'),
+                            ),
+                            onPressed: () {
+                              this.submitData();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

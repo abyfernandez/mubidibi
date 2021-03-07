@@ -44,7 +44,7 @@ class FirestoreService {
       var movieData = await _moviesCollectionReference
           .document("G1XTXGx8uzwny6p9bDBJ")
           .get();
-      return Movie.fromData(movieData.data);
+      return Movie.fromJson(movieData.data);
       // create movie model and please fix your pages !!!!
     } catch (e) {}
   }

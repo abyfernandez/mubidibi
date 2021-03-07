@@ -1,13 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Movie {
-  final String movieId;
+  final int movieId;
   final String title;
   final String synopsis;
-  final List<Map<String, dynamic>> genre;
+  final List<dynamic> genre;
   // final num rating;
-  final DateTime releaseDate;
-  final Timestamp addedAt;
+  final String releaseDate;
+  final String addedAt;
   // final DocumentReference authorRef;
   // final double runningTime;
 
@@ -24,30 +22,41 @@ class Movie {
     // this.runningTime,
   });
 
-  Movie.fromData(Map<String, dynamic> data)
-      : movieId = data['movie_id'],
-        title = data['title'],
-        synopsis = data['synopsis'],
-        genre = data['genre'],
-        releaseDate = data['release_date'],
-        addedAt = data['added_at'];
-  // rating = data['rating'],
-  // releaseDate = data['release_date'];
-  // authorRef = data['author_ref'];
-  // runningTime = data['running_time'];
-
-  Map<String, dynamic> toJson() {
-    return {
-      'movie_id': movieId,
-      'title': title,
-      'synopsis': synopsis,
-      'genre': genre,
-      'release_date': releaseDate,
-      'added_at': addedAt
-      // 'rating': rating,
-      // 'release_date': releaseDate,
-      // 'authorRef': authorRef,
-      // 'runningTime': runningTime,
-    };
+  factory Movie.fromJson(Map<String, dynamic> json) {
+    return Movie(
+      movieId: json['movie_id'],
+      title: json['title'],
+      synopsis: json['synopsis'],
+      genre: json['genre'],
+      releaseDate: json['release_date'],
+      addedAt: json['added_at'],
+    );
   }
+
+  // Movie.fromData(Map<String, dynamic> data)
+  //     : movieId = data['movie_id'],
+  //       title = data['title'],
+  //       synopsis = data['synopsis'],
+  //       genre = data['genre'],
+  //       releaseDate = data['release_date'],
+  //       addedAt = data['added_at'];
+  // // rating = data['rating'],
+  // // releaseDate = data['release_date'];
+  // // authorRef = data['author_ref'];
+  // // runningTime = data['running_time'];
+
+  // Map<String, dynamic> toJson() {
+  //   return {
+  //     'movie_id': movieId,
+  //     'title': title,
+  //     'synopsis': synopsis,
+  //     'genre': genre,
+  //     'release_date': releaseDate,
+  //     'added_at': addedAt
+  //     // 'rating': rating,
+  //     // 'release_date': releaseDate,
+  //     // 'authorRef': authorRef,
+  //     // 'runningTime': runningTime,
+  //   };
+  // }
 }

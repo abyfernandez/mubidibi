@@ -10,9 +10,9 @@ exports.movie = app => {
       client.query(
         'SELECT * FROM movie',
         function onResult (err, result) {
-          if (result) console.log(result.rows);
+          if (result) console.log(JSON.stringify(result.rows[0]));
           release()
-          reply.send(err || result)
+          reply.send(err || JSON.stringify(result.rows[0]))
         }
       )
     }
