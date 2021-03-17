@@ -21,3 +21,14 @@ const EdgeInsets largeFieldPadding =
 // Text Variables
 const TextStyle buttonTitleTextStyle =
     const TextStyle(fontWeight: FontWeight.w700, color: Colors.white);
+
+// Snackbar
+Widget mySnackBar(BuildContext context, String message, Color bgColor) {
+  return SnackBar(
+    content: Text(message,
+        style:
+            Theme.of(context).textTheme.subtitle1.apply(color: Colors.white)),
+    backgroundColor: bgColor,
+    duration: Duration(milliseconds: 1000),
+  );
+}

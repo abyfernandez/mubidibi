@@ -1,11 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:mubidibi/constants/route_names.dart';
-import 'package:mubidibi/locator.dart';
+// import 'package:mubidibi/locator.dart';
 import 'package:flutter/material.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/login_view_model.dart';
-import 'package:mubidibi/services/navigation_service.dart';
+// import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 
 class LoginView extends StatefulWidget {
@@ -16,7 +15,7 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final NavigationService _navigationService = locator<NavigationService>();
+  // final NavigationService _navigationService = locator<NavigationService>();
 
   bool _isButtonDisabled = true;
 
@@ -48,21 +47,14 @@ class _LoginViewState extends State<LoginView> {
         resizeToAvoidBottomInset: false,
         backgroundColor: Color.fromRGBO(20, 20, 20, 1),
         appBar: AppBar(
+          iconTheme: IconThemeData(
+            color: Colors.white, //change your color here
+          ),
           backgroundColor: Color.fromRGBO(20, 20, 20, 1),
           centerTitle: true,
           titleSpacing: 1.5,
           title: Text("mubidibi",
               style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-          leading: IconButton(
-              padding: EdgeInsets.only(left: 20),
-              color: Colors.white,
-              icon: Icon(
-                Icons.arrow_back_ios,
-                size: 20,
-              ),
-              onPressed: () {
-                _navigationService.pop();
-              }),
           actions: [
             Container(
               alignment: Alignment.centerLeft,
@@ -165,7 +157,6 @@ class _LoginViewState extends State<LoginView> {
                                 letterSpacing: 1.5,
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
-                                fontFamily: 'OpenSans',
                               ),
                             ),
                           ),
@@ -191,7 +182,6 @@ class _LoginViewState extends State<LoginView> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16.0,
-                                  fontFamily: 'OpenSans',
                                 )),
                             Expanded(
                               child: new Container(
@@ -211,21 +201,14 @@ class _LoginViewState extends State<LoginView> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: <Widget>[
-                              // Text("Sign in with",
-                              //     style: TextStyle(
-                              //       fontFamily: 'OpenSans',
-                              //       color: Colors.white,
-                              //       fontSize: 16.0,
-                              //     )),
-                              // SizedBox(height: 20.0),
                               GestureDetector(
                                 onTap: () {
                                   print("Sign in with Google");
                                   model.googleSignIn();
                                 },
                                 child: Container(
-                                  height: 50.0,
-                                  width: 50.0,
+                                  height: 40.0,
+                                  width: 40.0,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: Colors.white,

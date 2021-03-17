@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:mubidibi/ui/shared/list_items.dart';
+import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -69,7 +71,7 @@ class _MovieViewState extends State<MovieView> {
                           child: RaisedButton(
                             elevation: 5.0,
                             onPressed: () {
-                              futureMovie = model.getMovie();
+                              // futureMovie = model.getAllMovies();
                             },
                             padding: EdgeInsets.all(15.0),
                             shape: RoundedRectangleBorder(
@@ -83,7 +85,6 @@ class _MovieViewState extends State<MovieView> {
                                 letterSpacing: 1.5,
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.bold,
-                                fontFamily: 'OpenSans',
                               ),
                             ),
                           ),

@@ -1,4 +1,3 @@
-// import 'package:mubidibi/ui/shared/ui_helpers.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 import 'package:flutter/material.dart';
@@ -18,8 +17,6 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  final NavigationService _navigationService = locator<NavigationService>();
-
   @override
   Widget build(BuildContext context) {
     return ViewModelProvider<SignUpViewModel>.withConsumer(
@@ -29,16 +26,9 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
         appBar: AppBar(
           backgroundColor: Color(0xFF73AEF5),
           elevation: 0,
-          toolbarHeight: 100,
-          leadingWidth: 70,
           iconTheme: IconThemeData(
             color: Colors.white, //change your color here
           ),
-          leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios),
-              onPressed: () {
-                _navigationService.pop();
-              }),
         ),
         backgroundColor: Colors.white,
         body: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -75,17 +65,17 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        SizedBox(height: 30.0),
+                        SizedBox(height: 50.0),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               "Create Account",
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 35.0,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'OpenSans'),
+                                color: Colors.white,
+                                fontSize: 35.0,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -97,11 +87,6 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                         InputField(
                           controller: emailController,
                           placeholder: "Email Address",
-                          // icon: Icon(
-                          //   Icons.email,
-                          //   color: Colors.blue,
-                          //   size: 20,
-                          // ),
                         ),
                         SizedBox(height: 20.0),
                         // Password Form Field
@@ -109,11 +94,6 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                           controller: passwordController,
                           placeholder: "Password",
                           password: true,
-                          // icon: Icon(
-                          //   Icons.lock,
-                          //   color: Colors.blue,
-                          //   size: 20,
-                          // ),
                         ),
                         Container(
                           alignment: Alignment.centerRight,
@@ -127,18 +107,21 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                             child: Text(
                               'Next',
                               style: TextStyle(
-                                  color: Colors.blueAccent,
-                                  fontSize: 16,
-                                  fontFamily: 'OpenSans'),
+                                color: Colors.blueAccent,
+                                fontSize: 16,
+                              ),
                             ),
                             onPressed: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => SignUpSecondPage([
-                                          emailController.text,
-                                          passwordController.text,
-                                        ])),
+                                  builder: (context) => SignUpSecondPage(
+                                    [
+                                      emailController.text,
+                                      passwordController.text,
+                                    ],
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -184,16 +167,9 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
         appBar: AppBar(
           backgroundColor: Color(0xFF73AEF5),
           elevation: 0,
-          toolbarHeight: 100,
-          leadingWidth: 70,
           iconTheme: IconThemeData(
             color: Colors.white, //change your color here
           ),
-          leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios),
-              onPressed: () {
-                _navigationService.pop();
-              }),
         ),
         backgroundColor: Colors.white,
         body: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -230,17 +206,17 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        SizedBox(height: 30.0),
+                        SizedBox(height: 50.0),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               "Create Account",
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 35.0,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'OpenSans'),
+                                color: Colors.white,
+                                fontSize: 35.0,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
                         ),
@@ -280,11 +256,32 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                             ),
                             color: Colors.white,
                             child: Text(
+                              'Back',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 16,
+                              ),
+                            ),
+                            onPressed: () {
+                              _navigationService.pop();
+                            },
+                          ),
+                        ),
+                        Container(
+                          alignment: Alignment.centerRight,
+                          child: RaisedButton(
+                            elevation: 5,
+                            padding: EdgeInsets.all(10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5.0),
+                            ),
+                            color: Colors.white,
+                            child: Text(
                               'Submit',
                               style: TextStyle(
-                                  color: Colors.blueAccent,
-                                  fontSize: 16,
-                                  fontFamily: 'OpenSans'),
+                                color: Colors.blueAccent,
+                                fontSize: 16,
+                              ),
                             ),
                             onPressed: () {
                               this.submitData();
@@ -317,6 +314,3 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
     // TO DO: Save to database
   }
 }
-
-// TO DO: Modify input_field.dart or create separate textform fields for fields that are not email and password
-// TO DO: Try to make keyboard visibility work

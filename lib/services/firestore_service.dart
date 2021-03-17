@@ -10,8 +10,6 @@ class FirestoreService {
       Firestore.instance.collection('users');
   final CollectionReference _moviesCollectionReference =
       Firestore.instance.collection('movies');
-  final CollectionReference _actorsCollectionReference =
-      Firestore.instance.collection('actors');
 
   // END OF COLLECTION REFERENCES //
 

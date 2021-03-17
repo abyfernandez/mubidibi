@@ -12,18 +12,22 @@ class SignUpViewModel extends BaseModel {
   final DialogService _dialogService = locator<DialogService>();
   final NavigationService _navigationService = locator<NavigationService>();
 
-  Future signUp(
-      {@required String email,
-      @required String password,
-      @required firstName,
-      @required lastName}) async {
+  Future signUp({
+    @required String email,
+    @required String password,
+    @required firstName,
+    @required lastName,
+    @required birthday,
+  }) async {
     setBusy(true);
 
     var result = await _authenticationService.signUpWithEmail(
-        email: email,
-        password: password,
-        firstName: firstName,
-        lastName: lastName);
+      email: email,
+      password: password,
+      firstName: firstName,
+      lastName: lastName,
+      birthday: birthday,
+    );
 
     setBusy(false);
     if (result is bool) {

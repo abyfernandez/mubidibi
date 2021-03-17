@@ -55,6 +55,7 @@ class AuthenticationService {
     @required String password,
     @required String firstName,
     @required String lastName,
+    @required String birthday,
   }) async {
     try {
       var authResult = await _firebaseAuth.createUserWithEmailAndPassword(
@@ -71,16 +72,6 @@ class AuthenticationService {
       return e.message;
     }
   }
-
-  // Function: SIGN OUT -- Logs out current signed in user
-  // duplicate function //
-  // Future<void> signOut() async {
-  //   try {
-  //     await _firebaseAuth.signOut();
-  //   } catch (e, st) {
-  //     FlutterError.reportError(FlutterErrorDetails(exception: e, stack: st));
-  //   }
-  // }
 
   // Function: SIGN IN WITH GOOGLE -- sign in using provided gmail account
   Future signInWithGoogle() async {
@@ -107,22 +98,10 @@ class AuthenticationService {
 
       await _populateCurrentUser(currentUser);
 
-      // create a new user profile on Firestore
-      // var newUser = User(
-      //     uid: currentUser.uid,
-      //     // firstName: currentUser.firstName,
-      //     // lastName: currentUser.lastName,
-      //     email: currentUser.email,
-      //     type: "user");
-
-      // _currentUser = newUser;
-
       print(currentUser);
 
       await _firestoreService.createUser(User(
           uid: currentUser.uid,
-          // firstName: currentUser.firstName,
-          // lastName: currentUser.lastName,
           displayName: currentUser.displayName,
           photoUrl: currentUser.photoUrl,
           email: currentUser.email,

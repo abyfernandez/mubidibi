@@ -22,24 +22,30 @@ class SignInCategoryView extends StatelessWidget {
             children: <Widget>[
               Container(
                 height: double.infinity,
-                child: SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 30.0,
-                    vertical: 60.0,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      SizedBox(height: 100.0),
+                padding: EdgeInsets.symmetric(
+                  horizontal: 30.0,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.max,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Flexible(
+                      child: SizedBox(height: 100),
+                      flex: 1,
+                    ),
 
-                      // PLACEHOLDER
-                      Placeholder(
-                        color: Colors.red,
-                        fallbackHeight: 100,
-                      ),
-                      SizedBox(height: 100),
-                      Container(
+                    // PLACEHOLDER
+                    Placeholder(
+                      color: Colors.red,
+                      fallbackHeight: 100,
+                    ),
+                    Flexible(
+                      child: SizedBox(height: 100),
+                      flex: 1,
+                    ),
+
+                    Flexible(
+                      child: Container(
                         padding: EdgeInsets.symmetric(vertical: 10.0),
                         width: double.infinity,
                         child: FlatButton(
@@ -48,8 +54,9 @@ class SignInCategoryView extends StatelessWidget {
                           },
                           padding: EdgeInsets.all(18.0),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.zero,
-                              side: BorderSide(color: Colors.grey)),
+                            borderRadius: BorderRadius.zero,
+                            side: BorderSide(color: Colors.grey),
+                          ),
                           color: Colors.black,
                           child: Text(
                             'LOGIN',
@@ -58,12 +65,15 @@ class SignInCategoryView extends StatelessWidget {
                               letterSpacing: 1.5,
                               fontSize: 16.0,
                               fontWeight: FontWeight.bold,
-                              fontFamily: 'OpenSans',
                             ),
                           ),
                         ),
                       ),
-                      Container(
+                      flex: 1,
+                    ),
+
+                    Flexible(
+                      child: Container(
                         padding: EdgeInsets.symmetric(vertical: 10.0),
                         width: double.infinity,
                         child: FlatButton(
@@ -73,8 +83,9 @@ class SignInCategoryView extends StatelessWidget {
                           },
                           padding: EdgeInsets.all(18.0),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.zero,
-                              side: BorderSide(color: Colors.grey)),
+                            borderRadius: BorderRadius.zero,
+                            side: BorderSide(color: Colors.grey),
+                          ),
                           color: Colors.black,
                           child: Text(
                             'SIGN UP',
@@ -83,18 +94,21 @@ class SignInCategoryView extends StatelessWidget {
                               letterSpacing: 1.5,
                               fontSize: 16.0,
                               fontWeight: FontWeight.bold,
-                              fontFamily: 'OpenSans',
                             ),
                           ),
                         ),
                       ),
-                      SizedBox(
-                        height: 200,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          InkWell(
+                      flex: 1,
+                    ),
+
+                    Flexible(
+                      flex: 1,
+                      child: Container(
+                        alignment: Alignment.bottomCenter,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            InkWell(
                               child: Text(
                                 "Help",
                                 style: TextStyle(
@@ -104,8 +118,9 @@ class SignInCategoryView extends StatelessWidget {
                                   letterSpacing: 1.5,
                                 ),
                               ),
-                              onTap: () => {print("Help button tapped.")}),
-                          InkWell(
+                              onTap: () => {print("Help button tapped.")},
+                            ),
+                            InkWell(
                               child: Text(
                                 "Privacy",
                                 style: TextStyle(
@@ -115,11 +130,13 @@ class SignInCategoryView extends StatelessWidget {
                                   letterSpacing: 1.5,
                                 ),
                               ),
-                              onTap: () => {print("Privacy button tapped.")})
-                        ],
+                              onTap: () => {print("Privacy button tapped.")},
+                            )
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
