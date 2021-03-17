@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-
-// import 'package:mubidibi/models/models.dart';
-// import 'package:mubidibi/ui/widgets/widgets.dart';
-// import 'package:video_player/video_player.dart';
 import 'package:mubidibi/ui/widgets/responsive.dart';
 import 'package:mubidibi/ui/widgets/vertical_icon_button.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -45,25 +41,13 @@ class _ContentHeaderMobile extends StatelessWidget {
             ),
           ),
         ),
-        // DecorationImage(
-        //   image: AssetImage(featuredContent.poster),
-        //   fit: BoxFit.cover,
-        // ),
         Container(
           height: 500.0,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [Colors.black, Colors.transparent],
-              begin: Alignment.bottomCenter,
-              end: Alignment.topCenter,
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 110.0,
-          child: SizedBox(
-            width: 250.0,
-            // child: Image.asset(featuredContent.poster),
+                colors: [Colors.black, Colors.transparent],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter),
           ),
         ),
         Positioned(
@@ -75,10 +59,9 @@ class _ContentHeaderMobile extends StatelessWidget {
             children: [
               VerticalIconButton(
                 icon: Icons.add,
-                title: 'List',
-                onTap: () => print('My List'),
+                title: 'My Favorites',
+                onTap: () => print('My Favorites'),
               ),
-              _PlayButton(),
               VerticalIconButton(
                 icon: Icons.info_outline,
                 title: 'Info',
@@ -88,25 +71,6 @@ class _ContentHeaderMobile extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _PlayButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return FlatButton.icon(
-      padding: EdgeInsets.fromLTRB(15.0, 5.0, 20.0, 5.0),
-      onPressed: () => print('Play'),
-      color: Colors.white,
-      icon: const Icon(Icons.play_arrow, size: 30.0),
-      label: const Text(
-        'Play',
-        style: TextStyle(
-          fontSize: 16.0,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 }

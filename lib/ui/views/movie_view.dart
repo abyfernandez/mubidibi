@@ -1,123 +1,218 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:mubidibi/ui/shared/list_items.dart';
-import 'package:mubidibi/viewmodels/crew_view_model.dart';
-import 'package:provider_architecture/provider_architecture.dart';
-import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'package:mubidibi/ui/widgets/circular_clipper.dart';
+import 'package:mubidibi/ui/widgets/content_scroll.dart';
 
 class MovieView extends StatefulWidget {
-  MovieView({Key key}) : super(key: key);
+  final Movie movie;
+
+  MovieView({this.movie});
 
   @override
   _MovieViewState createState() => _MovieViewState();
 }
 
 class _MovieViewState extends State<MovieView> {
-  Future<Movie> futureMovie;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return ViewModelProvider<MovieViewModel>.withConsumer(
-      viewModel: MovieViewModel(),
-      builder: (context, model, child) => Scaffold(
-        resizeToAvoidBottomPadding: false,
-        backgroundColor: Colors.white,
-        body: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle.light,
-          child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Stack(
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.black,
+      body: ListView(
+        children: <Widget>[
+          Stack(
+            children: <Widget>[
+              Container(
+                transform: Matrix4.translationValues(0.0, -50.0, 0.0),
+                child: Hero(
+                  tag: widget.movie.poster,
+                  // child: ClipShadowPath(
+                  //   clipper: CircularClipper(),
+                  //   shadow: Shadow(blurRadius: 20.0),
+                  child: Image(
+                    height: 600.0,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    image: NetworkImage(widget.movie.poster),
+                  ),
+                  // ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: <Widget>[
+                  IconButton(
+                    padding: EdgeInsets.only(left: 30.0),
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.arrow_back),
+                    iconSize: 30.0,
+                    color: Colors.white,
+                  ),
+                  // Image(
+                  //   image: NetworkImage(widget.movie.poster),
+                  //   height: 60.0,
+                  //   width: 150.0,
+                  // ),
+                  IconButton(
+                    padding: EdgeInsets.only(left: 30.0),
+                    onPressed: () => print('Add to Favorites'),
+                    icon: Icon(Icons.favorite_border),
+                    iconSize: 30.0,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+              // Positioned.fill(
+              //   bottom: 10.0,
+              //   child: Align(
+              //     alignment: Alignment.bottomCenter,
+              //     child: RawMaterialButton(
+              //       padding: EdgeInsets.all(10.0),
+              //       elevation: 12.0,
+              //       onPressed: () => print('Play Video'),
+              //       shape: CircleBorder(),
+              //       fillColor: Colors.white,
+              //       child: Icon(
+              //         Icons.play_arrow,
+              //         size: 60.0,
+              //         color: Colors.red,
+              //       ),
+              //     ),
+              //   ),
+              // ),
+              Positioned(
+                bottom: 0.0,
+                left: 20.0,
+                child: IconButton(
+                  onPressed: () => print('Add to My List'),
+                  icon: Icon(Icons.add),
+                  iconSize: 40.0,
+                  color: Colors.white,
+                ),
+              ),
+              Positioned(
+                bottom: 0.0,
+                right: 25.0,
+                child: IconButton(
+                  onPressed: () => print('Share'),
+                  icon: Icon(Icons.share),
+                  iconSize: 35.0,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40.0, vertical: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Container(
-                  height: double.infinity,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF73AEF5),
-                        Color(0xFF61A4F1),
-                        Color(0xFF478DE0),
-                        Color(0xFF398AE5),
-                      ],
-                      stops: [0.1, 0.4, 0.7, 0.9],
-                    ),
+                Text(
+                  widget.movie.title.toUpperCase(),
+                  style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 10.0),
+                Text(
+                  widget.movie.genre[0],
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16.0,
                   ),
                 ),
-                Container(
-                  height: double.infinity,
-                  child: SingleChildScrollView(
-                    physics: AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 40.0,
-                      vertical: 120.0,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                SizedBox(height: 12.0),
+                Text(
+                  '⭐ ⭐ ⭐ ⭐',
+                  style: TextStyle(fontSize: 25.0),
+                ),
+                SizedBox(height: 15.0),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    Column(
                       children: <Widget>[
-                        SizedBox(height: 30.0),
-
-                        // SIGN IN BUTTON
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: 25.0),
-                          width: double.infinity,
-                          child: RaisedButton(
-                            elevation: 5.0,
-                            onPressed: () {
-                              // futureMovie = model.getAllMovies();
-                            },
-                            padding: EdgeInsets.all(15.0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(50.0),
-                            ),
+                        Text(
+                          'Year',
+                          style: TextStyle(
                             color: Colors.white,
-                            child: Text(
-                              'GET MOVIE',
-                              style: TextStyle(
-                                color: Color(0xFF527DAA),
-                                letterSpacing: 1.5,
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            fontSize: 16.0,
                           ),
                         ),
-
-                        // TEST
-
-                        Center(
-                          child: FutureBuilder<Movie>(
-                            future: futureMovie,
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData) {
-                                print("has data");
-                                return Text(snapshot.data.synopsis);
-                              } else if (snapshot.hasError) {
-                                return Text("${snapshot.error}");
-                              }
-
-                              // By default, show a loading spinner.
-                              return CircularProgressIndicator();
-                            },
-                          ),
-                        ),
-
-                        // END OF TEST
+                        SizedBox(height: 2.0),
+                        // Text(
+                        //   DateFormat("y").format(widget.movie.releaseDate),
+                        //   style: TextStyle(
+                        //     fontSize: 20.0,
+                        //     fontWeight: FontWeight.w600,
+                        //   ),
+                        // ),
                       ],
+                    ),
+                    Column(
+                      children: <Widget>[
+                        Text(
+                          'Country',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.0,
+                          ),
+                        ),
+                        SizedBox(height: 2.0),
+                        // Text(
+                        //   widget.movie.country.toUpperCase(),
+                        //   style: TextStyle(
+                        //     fontSize: 20.0,
+                        //     fontWeight: FontWeight.w600,
+                        //   ),
+                        // ),
+                      ],
+                    ),
+                    Column(
+                      children: <Widget>[
+                        Text(
+                          'Length',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.0,
+                          ),
+                        ),
+                        SizedBox(height: 2.0),
+                        // Text(
+                        //   '${widget.movie.length} min',
+                        //   style: TextStyle(
+                        //     fontSize: 20.0,
+                        //     fontWeight: FontWeight.w600,
+                        //   ),
+                        // ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 25.0),
+                Container(
+                  height: 120.0,
+                  child: SingleChildScrollView(
+                    child: Text(
+                      widget.movie.synopsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
+          // ContentScroll(
+          //   images: widget.movie.screenshots,
+          //   title: 'Screenshots',
+          //   imageHeight: 200.0,
+          //   imageWidth: 250.0,
+          // ),
+        ],
       ),
     );
   }

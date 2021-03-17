@@ -7,6 +7,7 @@ import 'package:mubidibi/ui/views/my_drawer.dart';
 import 'package:mubidibi/ui/widgets/content_header.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
+import 'package:mubidibi/ui/views/content_list.dart';
 import 'dart:math';
 
 class HomeView extends StatefulWidget {
@@ -20,8 +21,9 @@ class _HomeViewState extends State<HomeView> {
   final NavigationService _navigationService = locator<NavigationService>();
 
   int _selectedIndex = 0;
-  List<dynamic?> movies = [];
+  List<dynamic> movies = [];
   ScrollController _scrollController;
+  var index = 0;
 
   void _onItemTapped(int index) async {
     if (_selectedIndex == 0 && index == 0) {
@@ -51,26 +53,25 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     fetchMovies();
+    var random = new Random();
+    index = random.nextInt(movies.length == 0 ? 1 : movies.length);
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    print("MOVIES: $movies");
     final Size screenSize = MediaQuery.of(context).size;
-
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
       builder: (context, model, child) => Scaffold(
         extendBodyBehindAppBar: true,
         appBar: PreferredSize(
-            preferredSize: Size(screenSize.width, 200.0),
+            preferredSize: Size(screenSize.width, 150.0),
             child: CustomAppBar(scrollOffset: 0.0)),
-
         // AppBar(
         //   title: Text("mubidibi",
         //       style: TextStyle(color: Colors.red, letterSpacing: 1.5)),
-        //   backgroundColor: Colors.black,
+        //   backgroundColor: Colors.transparent,
         //   iconTheme: IconThemeData(color: Colors.white),
         //   automaticallyImplyLeading: false,
         // ),
@@ -79,33 +80,23 @@ class _HomeViewState extends State<HomeView> {
           controller: _scrollController,
           slivers: [
             SliverToBoxAdapter(
-              child: ContentHeader(featuredContent: movies[0]),
+              child: ContentHeader(featuredContent: movies[index]),
             ),
-            // SliverPadding(
-            //   padding: const EdgeInsets.only(top: 20.0),
-            //   sliver: SliverToBoxAdapter(
-            //     child: Previews(
-            //       key: PageStorageKey('previews'),
-            //       title: 'Previews',
-            //       contentList: previews,
-            //     ),
-            //   ),
-            // ),
-            // SliverToBoxAdapter(
-            //   child: ContentList(
-            //     key: PageStorageKey('myList'),
-            //     title: 'My List',
-            //     contentList: myList,
-            //   ),
-            // ),
-            // SliverToBoxAdapter(
-            //   child: ContentList(
-            //     key: PageStorageKey('originals'),
-            //     title: 'Netflix Originals',
-            //     contentList: originals,
-            //     isOriginals: true,
-            //   ),
-            // ),
+            SliverToBoxAdapter(
+              child: ContentList(
+                key: PageStorageKey('myFavorites'),
+                title: 'My Favorites ',
+                contentList: movies,
+                // myFavorites: true,
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: ContentList(
+                key: PageStorageKey('movies'),
+                title: 'Movies',
+                contentList: movies,
+              ),
+            ),
             // SliverPadding(
             //   padding: const EdgeInsets.only(bottom: 20.0),
             //   sliver: SliverToBoxAdapter(
@@ -152,13 +143,14 @@ class _HomeViewState extends State<HomeView> {
   }
 }
 
+// Floating Action Button
 class MyFAB extends StatelessWidget {
   final NavigationService _navigationService = locator<NavigationService>();
 
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      child: Icon(Icons.add, color: Colors.black, size: 30),
+      child: Icon(Icons.add, color: Colors.white, size: 35),
       backgroundColor: Colors.red,
       onPressed: () async {
         await _navigationService.navigateTo(AddMovieRoute);

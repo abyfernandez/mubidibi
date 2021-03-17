@@ -10,7 +10,7 @@ class CustomAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        vertical: 100.0,
+        vertical: 70.0,
         horizontal: 24.0,
       ),
       color:
@@ -71,7 +71,7 @@ class _AppBarButton extends StatelessWidget {
         title,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 16.0,
+          fontSize: 20.0,
           fontWeight: FontWeight.w600,
         ),
       ),

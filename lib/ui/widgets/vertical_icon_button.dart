@@ -18,7 +18,11 @@ class VerticalIconButton extends StatelessWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Icon(icon, color: Colors.white),
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 25,
+          ),
           const SizedBox(height: 2.0),
           Text(
             title,
