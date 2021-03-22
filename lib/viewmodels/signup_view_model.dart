@@ -35,14 +35,14 @@ class SignUpViewModel extends BaseModel {
         _navigationService.navigateTo(HomeViewRoute);
       } else {
         await _dialogService.showDialog(
-          title: 'Sign Up Failure',
-          description: 'General sign up failure. Please try again later',
+          title: 'Sign Up Failed',
+          description: 'Please check your inputs and try again later',
         );
       }
     } else {
       await _dialogService.showDialog(
-        title: 'Sign Up Failure',
-        description: result,
+        title: 'Sign Up Failed',
+        description: 'Please check your inputs and try again later',
       );
     }
   }

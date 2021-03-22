@@ -26,15 +26,16 @@ class MyApp extends StatelessWidget {
       navigatorKey: locator<NavigationService>().navigationKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: Color.fromARGB(255, 9, 202, 172),
-        backgroundColor: Color.fromARGB(255, 26, 27, 30),
+        primaryColor: Colors.lightBlue,
+        backgroundColor: Colors.white,
+        // backgroundColor: Color.fromARGB(255, 26, 27, 30),
         textTheme:
             GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme.apply()),
 
         // textTheme:
-        // GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme.apply(
-        //       bodyColor: Colors.white,
-        //     )),
+        //     GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme.apply(
+        //           bodyColor: Colors.white,
+        //         )),
       ),
       home: StartUpView(),
       onGenerateRoute: generateRoute,

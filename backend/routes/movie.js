@@ -1,15 +1,5 @@
 exports.movie = app => {
 
-  const Pool = require('pg').Pool
-  const pool = new Pool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'mubidibi',
-    password: 'abifernandez',
-    port: 5432,
-  })
-
-
   // GET MOVIES
   app.get('/mubidibi/movies/', async (req, res) => {
     app.pg.connect(onConnect)
@@ -25,18 +15,18 @@ exports.movie = app => {
           else res.send(err);
         }
       )
+      
     }
   });
 
   // GET ONE MOVIE
-  
   
   // ADD MOVIE
   app.post('/mubidibi/add-movie/', (req, res) => {
     app.pg.connect(onConnect);
     
     // call function add_movie with params: String title, Array genre, Date release_date, String synopsis, String poster, String added_by 
-    // TO DO: make sure other fields are not hardcoded'
+    // TO DO: make sure the added by field is not hardcoded'
 
     // catch apostrophes to avoid errors when inserting
     var title = req.body.title.replace(/'/g,"''");
@@ -87,6 +77,7 @@ exports.movie = app => {
         res.send(err || JSON.stringify(result));
       }
       });
+
 }
 
 

@@ -1,14 +1,15 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/constants/route_names.dart';
-import 'package:mubidibi/ui/widgets/custom_app_bar.dart';
 import 'package:mubidibi/ui/views/my_drawer.dart';
 import 'package:mubidibi/ui/widgets/content_header.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/ui/views/content_list.dart';
-import 'dart:math';
+import 'package:mubidibi/models/movie.dart';
 
 class HomeView extends StatefulWidget {
   HomeView({Key key}) : super(key: key);
@@ -21,9 +22,9 @@ class _HomeViewState extends State<HomeView> {
   final NavigationService _navigationService = locator<NavigationService>();
 
   int _selectedIndex = 0;
-  List<dynamic> movies = [];
+  Future<List<Movie>> movies;
   ScrollController _scrollController;
-  var index = 0;
+  var index;
 
   void _onItemTapped(int index) async {
     if (_selectedIndex == 0 && index == 0) {
@@ -45,16 +46,18 @@ class _HomeViewState extends State<HomeView> {
   }
 
   // function for calling viewmodel's getAllCrew method
-  void fetchMovies() async {
+  Future<List<Movie>> fetchMovies() async {
     var model = MovieViewModel();
-    movies = await model.getAllMovies();
+    return model.getAllMovies();
   }
 
   @override
   void initState() {
-    fetchMovies();
-    var random = new Random();
-    index = random.nextInt(movies.length == 0 ? 1 : movies.length);
+    movies = fetchMovies();
+    movies.then((m) {
+      var rand = new Random();
+      index = rand.nextInt(m.length);
+    });
     super.initState();
   }
 
@@ -65,59 +68,59 @@ class _HomeViewState extends State<HomeView> {
       viewModel: MovieViewModel(),
       builder: (context, model, child) => Scaffold(
         extendBodyBehindAppBar: true,
-        appBar: PreferredSize(
-            preferredSize: Size(screenSize.width, 150.0),
-            child: CustomAppBar(scrollOffset: 0.0)),
-        // AppBar(
-        //   title: Text("mubidibi",
-        //       style: TextStyle(color: Colors.red, letterSpacing: 1.5)),
-        //   backgroundColor: Colors.transparent,
-        //   iconTheme: IconThemeData(color: Colors.white),
-        //   automaticallyImplyLeading: false,
-        // ),
-        floatingActionButton: MyFAB(),
-        body: CustomScrollView(
-          controller: _scrollController,
-          slivers: [
-            SliverToBoxAdapter(
-              child: ContentHeader(featuredContent: movies[index]),
-            ),
-            SliverToBoxAdapter(
-              child: ContentList(
-                key: PageStorageKey('myFavorites'),
-                title: 'My Favorites ',
-                contentList: movies,
-                // myFavorites: true,
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: ContentList(
-                key: PageStorageKey('movies'),
-                title: 'Movies',
-                contentList: movies,
-              ),
-            ),
-            // SliverPadding(
-            //   padding: const EdgeInsets.only(bottom: 20.0),
-            //   sliver: SliverToBoxAdapter(
-            //     child: ContentList(
-            //       key: PageStorageKey('trending'),
-            //       title: 'Trending',
-            //       contentList: trending,
-            //     ),
-            //   ),
-            // )
-          ],
+        appBar: AppBar(
+          title: Text("mubidibi",
+              style: TextStyle(color: Colors.red, letterSpacing: 1.5)),
+          backgroundColor: Colors.transparent,
+          iconTheme: IconThemeData(color: Colors.white),
+          automaticallyImplyLeading: false,
         ),
-        backgroundColor: Colors.black,
+        floatingActionButton: MyFAB(),
+        body: FutureBuilder(
+          future: movies,
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              return CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: ContentHeader(featuredContent: snapshot.data[index]),
+                  ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: 10),
+                  ),
+                  SliverToBoxAdapter(
+                    child: ContentList(
+                      key: PageStorageKey('myFavorites'),
+                      title: 'Favorites',
+                      contentList: snapshot.data,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: ContentList(
+                      key: PageStorageKey('movies'),
+                      title: 'Movies',
+                      contentList: snapshot.data,
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+          },
+        ),
+        backgroundColor: Colors.white,
         endDrawer: Theme(
           data: Theme.of(context).copyWith(
-            canvasColor: Colors.black, //desired color
+            canvasColor: Colors.white, //desired color
           ),
           child: MyDrawer(),
         ),
         bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: Color.fromRGBO(5, 5, 5, 1),
+          backgroundColor: Colors.white,
           items: const <BottomNavigationBarItem>[
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
@@ -133,8 +136,7 @@ class _HomeViewState extends State<HomeView> {
             ),
           ],
           currentIndex: _selectedIndex,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Color.fromRGBO(169, 169, 169, 1),
+          selectedItemColor: Colors.black,
           onTap: _onItemTapped,
           selectedFontSize: 14,
         ),
@@ -150,8 +152,8 @@ class MyFAB extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
-      child: Icon(Icons.add, color: Colors.white, size: 35),
-      backgroundColor: Colors.red,
+      child: Icon(Icons.keyboard_arrow_up, color: Colors.white, size: 35),
+      backgroundColor: Colors.blue,
       onPressed: () async {
         await _navigationService.navigateTo(AddMovieRoute);
       },

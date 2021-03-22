@@ -50,7 +50,6 @@ dependencies:
   image_picker: ^0.6.5
   cached_network_image: ^2.0.0
   google_fonts: ^0.3.8
-  curved_navigation_bar: ^0.3.2
   font_awesome_flutter: ^8.8.1
   flutter_rating_bar: ^3.0.1+1
   shimmer: ^1.1.1
@@ -63,7 +62,6 @@ dependencies:
   flutter_markdown: ^0.3.5
   firebase_core: ^0.4.0+9
   firebase_analytics: ^5.0.2
-  sizer: ^1.1.8
   page_slider: ^0.0.2
   multiselect_formfield: ^0.1.5
   searchable_dropdown: ^1.1.3

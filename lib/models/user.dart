@@ -1,40 +1,41 @@
 class User {
-  final String uid;
+  final String userId;
   final String firstName;
+  final String middleName;
   final String lastName;
-  final String displayName;
-  final String photoUrl;
-  final String email;
-  final String type;
+  final String birthday;
+  final bool isAdmin;
+  // final String photoUrl;
 
   User({
-    this.uid,
+    this.userId,
     this.firstName,
+    this.middleName,
     this.lastName,
-    this.displayName,
-    this.photoUrl,
-    this.email,
-    this.type,
+    this.birthday,
+    this.isAdmin,
+    // this.photoUrl,
   });
 
-  User.fromData(Map<String, dynamic> data)
-      : uid = data['uid'],
-        firstName = data['first_name'],
-        lastName = data['last_name'],
-        displayName = data['first_name'] + " " + data['last_name'],
-        photoUrl = data['photo'],
-        email = data['email'],
-        type = data['type'];
-
-  Map<String, dynamic> toJson() {
-    return {
-      'uid': uid,
-      'first_name': firstName,
-      'last_name': lastName,
-      'display_name': displayName,
-      'photo': photoUrl,
-      'email': email,
-      'type': type,
-    };
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      userId: json['id'],
+      firstName: json['first_name'],
+      middleName: json['middle_name'],
+      lastName: json['last_name'],
+      birthday: json['birthday'],
+      isAdmin: json['is_admin'],
+      // photoUrl: json['photo'],
+    );
   }
+
+  Map<String, dynamic> toJson() => {
+        'uid': userId,
+        'first_name': firstName,
+        'middle_name': middleName,
+        'last_name': lastName,
+        // 'photo': photoUrl,
+        'birthday': birthday,
+        'is_admin': isAdmin,
+      };
 }

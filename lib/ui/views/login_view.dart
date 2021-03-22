@@ -15,28 +15,10 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  // final NavigationService _navigationService = locator<NavigationService>();
-
-  bool _isButtonDisabled = true;
-
-  bool isButtonDisabled() {
-    if (emailController.text.trim() != "" &&
-        passwordController.text.trim() != "")
-      _isButtonDisabled = false;
-    else
-      _isButtonDisabled = true;
-    return _isButtonDisabled;
-  }
 
   @override
   void initState() {
     super.initState();
-
-    if (emailController.text.trim() != "" &&
-        passwordController.text.trim() != "") {
-      _isButtonDisabled = false;
-    } else
-      _isButtonDisabled = true;
   }
 
   @override
@@ -45,16 +27,16 @@ class _LoginViewState extends State<LoginView> {
       viewModel: LoginViewModel(),
       builder: (context, model, child) => Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: Color.fromRGBO(20, 20, 20, 1),
         appBar: AppBar(
           iconTheme: IconThemeData(
-            color: Colors.white, //change your color here
+            color: Colors.lightBlue, // change your color here
           ),
-          backgroundColor: Color.fromRGBO(20, 20, 20, 1),
+          backgroundColor: Colors.white,
           centerTitle: true,
           titleSpacing: 1.5,
           title: Text("mubidibi",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  color: Colors.lightBlue, fontWeight: FontWeight.bold)),
           actions: [
             Container(
               alignment: Alignment.centerLeft,
@@ -63,7 +45,7 @@ class _LoginViewState extends State<LoginView> {
                   child: Text(
                     "Help",
                     style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.lightBlue,
                         fontWeight: FontWeight.bold,
                         fontSize: 16),
                   ),
@@ -99,9 +81,6 @@ class _LoginViewState extends State<LoginView> {
                               child: InputField(
                                 placeholder: 'Email Address',
                                 controller: emailController,
-                                onChanged: (val) {
-                                  isButtonDisabled();
-                                },
                               ),
                             ),
                           ],
@@ -118,9 +97,6 @@ class _LoginViewState extends State<LoginView> {
                               child: InputField(
                                 placeholder: 'Password',
                                 password: true,
-                                onChanged: (val) {
-                                  isButtonDisabled();
-                                },
                                 controller: passwordController,
                               ),
                             ),
@@ -132,24 +108,20 @@ class _LoginViewState extends State<LoginView> {
                           padding: EdgeInsets.symmetric(vertical: 30.0),
                           width: double.infinity,
                           child: FlatButton(
-                            onPressed: isButtonDisabled()
-                                ? null
-                                : () async {
-                                    model.login(
-                                        email: emailController.text,
-                                        password: passwordController.text);
-                                  },
-                            // onPressed: () async {
-                            //   model.login(
-                            //       email: emailController.text,
-                            //       password: passwordController.text);
-                            // },
+                            onPressed: () async {
+                              model.login(
+                                  email: emailController.text,
+                                  password: passwordController.text);
+                            },
                             padding: EdgeInsets.all(18.0),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                                side: BorderSide(color: Colors.black)),
-                            color: Color.fromRGBO(229, 9, 20, 1),
-                            disabledColor: Color.fromRGBO(20, 20, 20, 1),
+                              borderRadius: BorderRadius.circular(5),
+                              side: BorderSide(
+                                color: Colors.transparent,
+                              ),
+                            ),
+                            color: Colors.lightBlue,
+                            disabledColor: Color.fromRGBO(192, 192, 192, 1),
                             child: Text(
                               'LOGIN',
                               style: TextStyle(
@@ -174,13 +146,13 @@ class _LoginViewState extends State<LoginView> {
                                   margin: const EdgeInsets.only(
                                       left: 10.0, right: 20.0),
                                   child: Divider(
-                                    color: Colors.white,
+                                    color: Colors.black,
                                     height: 20,
                                   )),
                             ),
                             Text("OR LOG IN WITH",
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Colors.black,
                                   fontSize: 16.0,
                                 )),
                             Expanded(
@@ -188,7 +160,7 @@ class _LoginViewState extends State<LoginView> {
                                   margin: const EdgeInsets.only(
                                       left: 20.0, right: 10.0),
                                   child: Divider(
-                                    color: Colors.white,
+                                    color: Colors.black,
                                     height: 20,
                                   )),
                             ),

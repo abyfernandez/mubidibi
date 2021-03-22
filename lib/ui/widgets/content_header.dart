@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:full_screen_image/full_screen_image.dart';
+import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/widgets/responsive.dart';
 import 'package:mubidibi/ui/widgets/vertical_icon_button.dart';
+import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'dart:ui';
 
 class ContentHeader extends StatelessWidget {
   final Movie featuredContent;
@@ -41,14 +45,24 @@ class _ContentHeaderMobile extends StatelessWidget {
             ),
           ),
         ),
-        Container(
-          height: 500.0,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                colors: [Colors.black, Colors.transparent],
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter),
+        GestureDetector(
+          child: Container(
+            height: 500.0,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                  colors: [Colors.black, Colors.transparent],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter),
+            ),
           ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => FullPhoto(url: featuredContent.poster),
+              ),
+            );
+          },
         ),
         Positioned(
           left: 0,
@@ -65,7 +79,15 @@ class _ContentHeaderMobile extends StatelessWidget {
               VerticalIconButton(
                 icon: Icons.info_outline,
                 title: 'Info',
-                onTap: () => print('Info'),
+                // Show Movie Details
+                onTap: () => {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MovieView(movie: featuredContent),
+                    ),
+                  ),
+                },
               ),
             ],
           ),

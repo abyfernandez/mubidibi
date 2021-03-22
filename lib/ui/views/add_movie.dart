@@ -587,7 +587,7 @@ class _AddMovieState extends State<AddMovie> {
                                         genre: filmGenres,
                                         directors: crewIds(directors),
                                         writers: crewIds(writers),
-                                        addedBy: currentUser.uid);
+                                        addedBy: currentUser.userId);
 
                                     response.then((res) => {
                                           if (res.statusCode == 200)

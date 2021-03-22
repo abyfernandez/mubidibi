@@ -4,6 +4,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mubidibi/services/firestore_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/models/user.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:mubidibi/globals.dart' as Config;
 
 class AuthenticationService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -16,7 +19,7 @@ class AuthenticationService {
   // Function: POPULATE CURRENT USER -- gets current user's details (basic sync)
   Future _populateCurrentUser(FirebaseUser user) async {
     if (user != null) {
-      _currentUser = await _firestoreService.getUser(user.uid);
+      _currentUser = await getUser(userId: user.uid);
     }
   }
 
@@ -38,11 +41,30 @@ class AuthenticationService {
       assert(user.uid == currentUser.uid);
 
       await _populateCurrentUser(currentUser); // populate the user information
-      print(_currentUser.toJson());
+      print('CURRENT USER: $_currentUser.toJson()');
 
       return _currentUser != null;
     } catch (e) {
       return e.message;
+    }
+  }
+
+  // Function: GET USER
+  Future<User> getUser({@required String userId}) async {
+    var queryParams = {
+      'id': userId,
+    };
+
+    // create URI and attach params
+    var uri = Uri.http(Config.apiNoHTTP, '/mubidibi/user/$userId', queryParams);
+
+    // send API request
+    final response = await http.get(uri);
+    if (response.statusCode == 200) {
+      print(jsonDecode(response.body));
+      return User.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Failed to load user');
     }
   }
 
@@ -61,11 +83,10 @@ class AuthenticationService {
       var authResult = await _firebaseAuth.createUserWithEmailAndPassword(
           email: email, password: password);
       await _firestoreService.createUser(User(
-          uid: authResult.user.uid,
-          email: authResult.user.email,
-          firstName: firstName,
-          lastName: lastName,
-          type: "user"));
+        userId: authResult.user.uid,
+        firstName: firstName,
+        lastName: lastName,
+      ));
 
       return authResult.user != null;
     } catch (e) {
@@ -100,12 +121,12 @@ class AuthenticationService {
 
       print(currentUser);
 
-      await _firestoreService.createUser(User(
-          uid: currentUser.uid,
-          displayName: currentUser.displayName,
-          photoUrl: currentUser.photoUrl,
-          email: currentUser.email,
-          type: "user"));
+      // await _firestoreService.createUser(User(
+      //     uid: currentUser.uid,
+      //     displayName: currentUser.displayName,
+      //     photoUrl: currentUser.photoUrl,
+      //     email: currentUser.email,
+      //     type: "user"));
 
       print("User signed in.");
 

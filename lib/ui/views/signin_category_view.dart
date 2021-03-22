@@ -3,6 +3,7 @@ import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:flutter/services.dart';
 import 'package:mubidibi/constants/route_names.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SignInCategoryView extends StatelessWidget {
   SignInCategoryView({Key key}) : super(key: key);
@@ -13,7 +14,6 @@ class SignInCategoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.black,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: GestureDetector(
@@ -33,17 +33,26 @@ class SignInCategoryView extends StatelessWidget {
                       child: SizedBox(height: 100),
                       flex: 1,
                     ),
-
-                    // PLACEHOLDER
-                    Placeholder(
-                      color: Colors.red,
-                      fallbackHeight: 100,
+                    Shimmer.fromColors(
+                      period: Duration(milliseconds: 500),
+                      baseColor: Colors.blue,
+                      highlightColor: Colors.red,
+                      child: Container(
+                        height: 100,
+                        alignment: Alignment.center,
+                        child: Text(
+                          "mubidibi",
+                          style: TextStyle(
+                            fontSize: 50,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                     Flexible(
                       child: SizedBox(height: 100),
                       flex: 1,
                     ),
-
                     Flexible(
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: 10.0),
@@ -54,10 +63,10 @@ class SignInCategoryView extends StatelessWidget {
                           },
                           padding: EdgeInsets.all(18.0),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
-                            side: BorderSide(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(5),
+                            side: BorderSide(color: Colors.lightBlue),
                           ),
-                          color: Colors.black,
+                          color: Colors.lightBlue,
                           child: Text(
                             'LOGIN',
                             style: TextStyle(
@@ -71,7 +80,6 @@ class SignInCategoryView extends StatelessWidget {
                       ),
                       flex: 1,
                     ),
-
                     Flexible(
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: 10.0),
@@ -83,10 +91,10 @@ class SignInCategoryView extends StatelessWidget {
                           },
                           padding: EdgeInsets.all(18.0),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
-                            side: BorderSide(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(5),
+                            side: BorderSide(color: Colors.lightBlue),
                           ),
-                          color: Colors.black,
+                          color: Colors.lightBlue,
                           child: Text(
                             'SIGN UP',
                             style: TextStyle(
@@ -100,7 +108,6 @@ class SignInCategoryView extends StatelessWidget {
                       ),
                       flex: 1,
                     ),
-
                     Flexible(
                       flex: 1,
                       child: Container(

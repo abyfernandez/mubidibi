@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:mubidibi/ui/shared/ui_helpers.dart';
 
 import 'note_text.dart';
@@ -7,7 +8,8 @@ import 'note_text.dart';
 class InputField extends StatefulWidget {
   final TextEditingController controller;
   final TextInputType textInputType;
-  // final Widget icon;
+  final Function onTap;
+  final String hintText;
   final bool password;
   final bool isReadOnly;
   final String placeholder;
@@ -24,7 +26,8 @@ class InputField extends StatefulWidget {
   InputField(
       {@required this.controller,
       @required this.placeholder,
-      // @required this.icon,
+      this.hintText,
+      this.onTap,
       this.enterPressed,
       this.fieldFocusNode,
       this.nextFocusNode,
@@ -61,7 +64,7 @@ class _InputFieldState extends State<InputField> {
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
-            color: Color.fromRGBO(50, 50, 50, 1),
+            border: Border.all(color: Colors.black),
           ),
           height: 60.0,
           child: Row(
@@ -69,13 +72,14 @@ class _InputFieldState extends State<InputField> {
               Expanded(
                 child: TextFormField(
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Colors.black,
                   ),
                   controller: widget.controller,
                   keyboardType: widget.textInputType,
                   focusNode: widget.fieldFocusNode,
                   textInputAction: widget.textInputAction,
                   onChanged: widget.onChanged,
+                  onTap: widget.onTap,
                   inputFormatters:
                       widget.formatter != null ? [widget.formatter] : null,
                   onEditingComplete: () {
@@ -93,10 +97,14 @@ class _InputFieldState extends State<InputField> {
                       widget.placeholder == "Password" ? isPassword : false,
                   readOnly: widget.isReadOnly,
                   decoration: InputDecoration(
+                    hintText: widget.hintText,
+                    hintStyle: TextStyle(
+                      color: Colors.white,
+                    ),
                     border: InputBorder.none,
                     labelText: widget.placeholder,
                     labelStyle: TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                     ),
                     contentPadding: EdgeInsets.only(left: 15),
                   ),
@@ -112,7 +120,7 @@ class _InputFieldState extends State<InputField> {
                         height: fieldHeight,
                         alignment: Alignment.centerLeft,
                         child: Text(isPassword ? "SHOW" : "HIDE",
-                            style: TextStyle(color: Colors.white)))
+                            style: TextStyle(color: Colors.black)))
                     : Container(),
               ),
             ],

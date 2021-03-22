@@ -20,21 +20,21 @@ class MyDrawer extends StatelessWidget {
       child: ListView(
         children: <Widget>[
           UserAccountsDrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+            ),
+            accountName: Text('$currentUser.firstName $currentUser.lastName',
+                style: TextStyle(color: Colors.white)),
+            accountEmail: Text('', style: TextStyle(color: Colors.white)),
+            currentAccountPicture: CircleAvatar(
+              backgroundImage: NetworkImage(
+                // currentUser.photoUrl ??
+                'https://lh3.googleusercontent.com/-cXXaVVq8nMM/AAAAAAAAAAI/AAAAAAAAAKI/_Y1WfBiSnRI/photo.jpg?sz=50',
               ),
-              accountName: Text(currentUser.displayName ?? ' ',
-                  style: TextStyle(color: Colors.white)),
-              accountEmail: Text(currentUser.email ?? ' ',
-                  style: TextStyle(color: Colors.white)),
-              currentAccountPicture: CircleAvatar(
-                backgroundImage: NetworkImage(
-                  currentUser.photoUrl ??
-                      'https://lh3.googleusercontent.com/-cXXaVVq8nMM/AAAAAAAAAAI/AAAAAAAAAKI/_Y1WfBiSnRI/photo.jpg?sz=50',
-                ),
-                radius: 60,
-                backgroundColor: Colors.transparent,
-              )),
+              radius: 60,
+              backgroundColor: Colors.transparent,
+            ),
+          ),
           ListTile(
             title: Text("Profile"),
             leading: Icon(FontAwesomeIcons.user),

@@ -17,6 +17,24 @@ exports.crew = app => {
       )
     }
   });
+
+  // GET CREW BY MOVIE ID
+  // app.get('mubidibi/crew/:id', (req, res) => {
+  //   app.pg.connect(onConnect);
+
+  //   function onConnect (err, client, release) {
+  //     if (err) return res.send(err)
+
+  //     // DIRECTORS
+  //     client.query(
+  //       "SELECT * FROM movie_director WHERE movie_id == $1", [req.params.id],
+  //     ).then((result) => {
+        
+  //       // WRITERS
+
+  //     })
+  //   }
+  // });
 }
 
 
