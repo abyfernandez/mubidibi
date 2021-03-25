@@ -12,8 +12,6 @@ class Movie {
   final String synopsis;
   final String poster;
   final List<dynamic> genre;
-  // final List<dynamic> director;
-  // final List<dynamic> writer;
   final String releaseDate;
   final String addedBy;
 
@@ -23,8 +21,6 @@ class Movie {
     this.synopsis,
     this.poster,
     this.genre,
-    // this.director,
-    // this.writer,
     this.releaseDate,
     this.addedBy,
   });
@@ -36,8 +32,6 @@ class Movie {
       synopsis: json['synopsis'],
       poster: json['poster'],
       genre: json['genre'],
-      // director: json['director'],
-      // writer: json['writer'],
       releaseDate: json['release_date'],
       addedBy: json['added_by'],
     );
@@ -49,8 +43,6 @@ class Movie {
         "synopsis": synopsis,
         "poster": poster,
         "genre": genre,
-        // "director": director,
-        // "writer": writer,
         "release_date": releaseDate,
         "added_by": addedBy,
       };

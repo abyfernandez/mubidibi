@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/services/authentication_service.dart';
+import 'package:mubidibi/services/dialog_service.dart';
+import 'package:mubidibi/services/navigation_service.dart';
+import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
@@ -10,39 +15,47 @@ import 'package:mubidibi/ui/shared/list_items.dart';
 import 'package:searchable_dropdown/searchable_dropdown.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
+import 'package:mubidibi/ui/widgets/my_stepper.dart';
 
 // TO DO: FIX UI (e.g. INPUT FORM FIELDS)
 
 class AddMovie extends StatefulWidget {
-  AddMovie({Key key}) : super(key: key);
-  _AddMovieState createState() => _AddMovieState();
-}
+  final Movie movie;
 
-const MaterialColor _buttonTextColor = MaterialColor(0xFFC41A3B, <int, Color>{
-  50: Color(0xFFC41A3B),
-  100: Color(0xFFC41A3B),
-  200: Color(0xFFC41A3B),
-  300: Color(0xFFC41A3B),
-  400: Color(0xFFC41A3B),
-  500: Color(0xFFC41A3B),
-  600: Color(0xFFC41A3B),
-  700: Color(0xFFC41A3B),
-  800: Color(0xFFC41A3B),
-  900: Color(0xFFC41A3B),
-});
+  AddMovie({Key key, this.movie}) : super(key: key);
+
+  @override
+  _AddMovieState createState() => _AddMovieState(movie);
+}
 
 // ADD MOVIE FIRST PAGE
 class _AddMovieState extends State<AddMovie> {
-  DateTime _date = DateTime.now();
+  final Movie movie;
+
+  _AddMovieState(this.movie);
+
+  DateTime _date;
   final titleController = TextEditingController();
   final synopsisController = TextEditingController();
   final posterController = TextEditingController();
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
+  final NavigationService _navigationService = locator<NavigationService>();
+  final DialogService _dialogService = locator<DialogService>();
 
+  Future<List<List<Crew>>>
+      movieCrew; // crewList that can only be retrieved when movie is passed from detail (edit function)
   List<int> filmGenres = []; // Genre(s)
   List<int> directors = []; // Director(s)
   List<int> writers = []; // Writer(s)
+  int currentStep = 0;
+  List<String> stepperTitle = [
+    "Title, Release Date, and Synopsis",
+    "Poster",
+    "Crew Member/s",
+    "Genre/s",
+    "Review"
+  ];
 
   final List<DropdownMenuItem> genreItems =
       genres.map<DropdownMenuItem<String>>((String value) {
@@ -74,19 +87,12 @@ class _AddMovieState extends State<AddMovie> {
   Future<Null> _selectDate(BuildContext context) async {
     DateTime _datePicker = await showDatePicker(
         context: context,
-        initialDate: _date,
+        initialDate: _date == null ? DateTime.now() : _date,
         firstDate: DateTime(1900),
         lastDate: DateTime(2030),
         initialDatePickerMode: DatePickerMode.day,
         builder: (BuildContext context, Widget child) {
-          return Theme(
-            data: ThemeData(
-              primarySwatch: _buttonTextColor,
-              primaryColor: Color(0xFFC41A3B),
-              accentColor: Color(0xFFC41A3B),
-            ),
-            child: child,
-          );
+          return child;
         });
 
     if (_datePicker != null && _datePicker != _date) {
@@ -101,12 +107,39 @@ class _AddMovieState extends State<AddMovie> {
     List<int> crewIds = [];
     for (var i in indices) {
       for (var j = 0; j < crewList.length; j++) {
-        if (i == j) {
-          crewIds.add(crewList[i].crewId);
+        if (i == crewList[j].crewId) {
+          crewIds.add(crewList[j].crewId);
         }
       }
     }
     return crewIds;
+  }
+
+  // the genre array passed from the detail view is in string and named form, not as indices of the genres itself so we have to convert it first
+  List<int> genreIndices(List<dynamic> genresFromDetail) {
+    List<int> genreIndices = [];
+    for (var item in genresFromDetail) {
+      for (var i = 0; i < movie.genre.length; i++) {
+        if (item == movie.genre[i]) {
+          genreIndices.add(i);
+        }
+      }
+    }
+    return genreIndices;
+  }
+
+  // TO DO: the crew array that is retrieved after getting the movie id from movie_view is in dynamic/asyncsnapshot type, but we need int so we have to convert it
+  // List<int> directorIndices(Future<List<List<Crew>>> movieCrew) {
+  //   List<int> directorIndices = [];
+  //   for (var item in movieCrew)
+
+  // }
+
+  // function for calling viewmodel's getCrewForDetails method (EDIT MOVIE)
+  Future<List<List<Crew>>> fetchMovieCrew(String movieId) async {
+    var model = CrewViewModel();
+    var crew = await model.getCrewForDetails(movieId: movieId);
+    return crew;
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -114,29 +147,52 @@ class _AddMovieState extends State<AddMovie> {
   @override
   void initState() {
     fetchCrew();
+    movieCrew = fetchMovieCrew(
+        movie?.movieId.toString()); // get movie crew for MOVIE EDIT
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     var currentUser = _authenticationService.currentUser;
 
     final _scaffoldKey = GlobalKey<ScaffoldState>();
 
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
+      onModelReady: (model) async {
+        // update controller's text field
+        titleController.text = movie?.title ?? '';
+        _date = DateTime.parse(movie?.releaseDate) ?? DateTime.now();
+        synopsisController.text = movie?.synopsis ?? '';
+        posterController.text = movie?.poster ?? '';
+        filmGenres = genreIndices(movie?.genre) ?? [];
+        // crew here
+        // directors = // TO DO: crew initial value in fields
+      },
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
-        backgroundColor: Color.fromRGBO(20, 20, 20, 1),
         appBar: AppBar(
           iconTheme: IconThemeData(
-            color: Colors.white, //change your color here
+            color: Colors.black, //change your color here
           ),
-          backgroundColor: Color.fromRGBO(20, 20, 20, 1),
+          leading: GestureDetector(
+            child: Icon(Icons.arrow_back),
+            onTap: () async {
+              var response = await _dialogService.showConfirmationDialog(
+                  title: "Confirm cancellation",
+                  cancelTitle: "No",
+                  confirmationTitle: "Yes",
+                  description: "Are you sure that you want to close the form?");
+              if (response.confirmed == true) {
+                _navigationService.pop();
+              }
+            },
+          ),
+          backgroundColor: Colors.white,
           title: Text(
             "Add Movie",
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.black),
           ),
         ),
         body: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -155,463 +211,208 @@ class _AddMovieState extends State<AddMovie> {
                     child: Form(
                       key: _formKey,
                       child: Column(
-                        children: <Widget>[
+                        children: [
                           SizedBox(height: 20),
-                          // DIVIDER
-                          Column(children: <Widget>[
-                            Row(children: <Widget>[
-                              Expanded(
-                                child: new Container(
-                                    margin: const EdgeInsets.only(
-                                        left: 10.0, right: 20.0),
-                                    child: Divider(
-                                      color: Colors.red,
-                                      thickness: 1,
-                                      height: 20,
-                                    )),
-                              ),
-                              Text("FILM INFO",
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.bold,
-                                  )),
-                              Expanded(
-                                child: new Container(
-                                    margin: const EdgeInsets.only(
-                                        left: 20.0, right: 10.0),
-                                    child: Divider(
-                                      color: Colors.red,
-                                      thickness: 1,
-                                      height: 20,
-                                    )),
-                              ),
-                            ]),
-                          ]),
-                          SizedBox(height: 20),
-                          // MOVIE TITLE
-                          Theme(
-                            data: theme.copyWith(
-                              primaryColor: Colors.white,
-                            ),
-                            child: TextFormField(
-                              controller: titleController,
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
-                              decoration: InputDecoration(
-                                labelText: "Title",
-                                labelStyle: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                floatingLabelBehavior:
-                                    FloatingLabelBehavior.always,
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value.isEmpty) {
-                                  return 'Movie title is required';
+                          MyStepper(
+                            type: MyStepperType.vertical,
+                            currentStep: currentStep,
+                            onStepTapped: (step) async {
+                              // only allow tapping of steps for those already completed
+                              if (step <= currentStep) {
+                                // do not allow tapping of future steps
+                                setState(() => currentStep = step);
+                              } else if (step == currentStep + 1) {
+                                // allow tapping of immediate future step once the fields are all filled out
+                                switch (currentStep) {
+                                  case 0: // title, release date, and synopsis
+                                    if (titleController.text.trim() == "" ||
+                                        _date == null ||
+                                        synopsisController.text.trim() == "") {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'All fields are required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => currentStep = step);
+                                    }
+                                    break;
+                                  case 1: // poster
+                                    if (posterController.text.trim() == "") {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Poster is required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => currentStep = step);
+                                    }
+                                    break;
+                                  case 2: // crew members
+                                    if (directors.length == 0 ||
+                                        writers.length == 0) {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'All fields are required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => currentStep = step);
+                                    }
+                                    break;
+                                  case 3: // genre
+                                    if (filmGenres.length == 0) {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Genre is required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => currentStep = step);
+                                    }
+                                    break;
                                 }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            height: 20,
-                          ),
-
-                          // SYNOPSIS
-                          Theme(
-                            data: theme.copyWith(
-                              primaryColor: Colors.white,
-                            ),
-                            child: TextFormField(
-                              controller: synopsisController,
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
-                              maxLines: 5,
-                              decoration: InputDecoration(
-                                labelText: "Synopsis",
-                                labelStyle: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                floatingLabelBehavior:
-                                    FloatingLabelBehavior.always,
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value.isEmpty) {
-                                  return 'Synopsis is required';
+                              } else if (step >= currentStep + 2) {
+                                // show error snackbar
+                                _scaffoldKey.currentState.showSnackBar(
+                                    mySnackBar(
+                                        context,
+                                        'Skipping of steps is not allowed.',
+                                        Colors.red));
+                              }
+                            },
+                            onStepCancel: () => {
+                              if (currentStep != 0)
+                                setState(() => --currentStep)
+                            }, // else do nothing
+                            onStepContinue: () async {
+                              if (currentStep + 1 != stepperTitle.length) {
+                                // do not allow user to continue to next step if inputs aren't filled out yet
+                                switch (currentStep) {
+                                  case 0: // title, release date, and synopsis
+                                    if (titleController.text.trim() == "" ||
+                                        _date == null ||
+                                        synopsisController.text.trim() == "") {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'All fields are required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => ++currentStep);
+                                    }
+                                    break;
+                                  case 1: // poster
+                                    if (posterController.text.trim() == "") {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Poster is required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => ++currentStep);
+                                    }
+                                    break;
+                                  case 2: // crew members
+                                    if (directors.length == 0 ||
+                                        writers.length == 0) {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'All fields are required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => ++currentStep);
+                                    }
+                                    break;
+                                  case 3: // genre
+                                    if (filmGenres.length == 0) {
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Genre is required.',
+                                              Colors.red));
+                                    } else {
+                                      setState(() => ++currentStep);
+                                    }
+                                    break;
                                 }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            height: 20,
-                          ),
-                          // Release Date
-                          Theme(
-                            data: theme.copyWith(
-                              primaryColor: Colors.white,
-                            ),
-                            child: TextFormField(
-                              readOnly: true,
-                              onTap: () {
-                                _selectDate(context);
-                              },
-                              decoration: InputDecoration(
-                                labelText: "Release Date",
-                                labelStyle: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                hintText: DateFormat("MMM. d, y").format(_date),
-                                hintStyle: TextStyle(
-                                  color: Colors.white,
-                                ),
-                                floatingLabelBehavior:
-                                    FloatingLabelBehavior.always,
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 20,
-                          ),
-                          // POSTER URL
-                          Theme(
-                            data: theme.copyWith(
-                              primaryColor: Colors.white,
-                            ),
-                            child: TextFormField(
-                              controller: posterController,
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
-                              maxLines: 2,
-                              decoration: InputDecoration(
-                                labelText: "Poster URL",
-                                labelStyle: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold),
-                                floatingLabelBehavior:
-                                    FloatingLabelBehavior.always,
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.white),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                              ),
-                              validator: (value) {
-                                if (value.isEmpty) {
-                                  return 'Poster URL is required.';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          SizedBox(
-                            height: 20,
-                          ),
-                          // GENRE
-                          Container(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              "Genre(s)",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Theme(
-                            data: theme.copyWith(
-                              primaryColor: Colors.black,
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.white),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Column(
-                                children: <Widget>[
-                                  SearchableDropdown.multiple(
-                                    key: UniqueKey(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                    menuBackgroundColor: Colors.white,
-                                    underline: Container(),
-                                    items: genreItems,
-                                    selectedItems: filmGenres,
-                                    hint: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Text("Select any",
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                    ),
-                                    searchHint: Text("Select any",
-                                        style: TextStyle(color: Colors.white)),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        filmGenres = value;
-                                      });
-                                    },
-                                    closeButton: (filmGenres) {
-                                      return (filmGenres.isNotEmpty
-                                          ? "Save ${filmGenres.length == 1 ? '"' + genreItems[filmGenres.first].value.toString() + '"' : '(' + filmGenres.length.toString() + ')'}"
-                                          : "Save without selection");
-                                    },
-                                    isExpanded: true,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          // DIVIDER
-                          Column(children: <Widget>[
-                            Row(children: <Widget>[
-                              Expanded(
-                                child: new Container(
-                                    margin: const EdgeInsets.only(
-                                        left: 10.0, right: 20.0),
-                                    child: Divider(
-                                      color: Colors.red,
-                                      thickness: 1,
-                                      height: 20,
-                                    )),
-                              ),
-                              Text("CAST AND CREW",
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 16.0,
-                                    fontWeight: FontWeight.bold,
-                                  )),
-                              Expanded(
-                                child: new Container(
-                                    margin: const EdgeInsets.only(
-                                        left: 20.0, right: 10.0),
-                                    child: Divider(
-                                      color: Colors.red,
-                                      thickness: 1,
-                                      height: 20,
-                                    )),
-                              ),
-                            ]),
-                          ]),
-                          SizedBox(height: 20),
-                          // DIRECTOR(S)
-                          Container(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              "Director(s)",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                              } else {
+                                // last step
+                                var confirm =
+                                    await _dialogService.showConfirmationDialog(
+                                        title: "Confirm Details",
+                                        cancelTitle: "No",
+                                        confirmationTitle: "Yes",
+                                        description:
+                                            "Are you sure that you want to continue?");
+                                if (confirm.confirmed == true) {
+                                  final response = await model.addMovie(
+                                      title: titleController.text,
+                                      synopsis: synopsisController.text,
+                                      releaseDate: _date.toIso8601String(),
+                                      poster: posterController.text,
+                                      genre: filmGenres,
+                                      directors: crewIds(directors),
+                                      writers: crewIds(writers),
+                                      addedBy: currentUser.userId);
 
-                          Theme(
-                            data: theme.copyWith(
-                              primaryColor: Colors.black,
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.white),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Column(
-                                children: <Widget>[
-                                  SearchableDropdown.multiple(
-                                    key: UniqueKey(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                    menuBackgroundColor: Colors.white,
-                                    underline: Container(),
-                                    items: crewItems,
-                                    selectedItems: directors,
-                                    hint: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Text("Select any",
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                    ),
-                                    searchHint: Text("Select any",
-                                        style: TextStyle(color: Colors.white)),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        directors = value;
-                                      });
-                                    },
-                                    closeButton: (directors) {
-                                      return (directors.isNotEmpty
-                                          ? "Save ${directors.length == 1 ? '"' + crewItems[directors.first].value.toString() + '"' : '(' + directors.length.toString() + ')'}"
-                                          : "Save without selection");
-                                    },
-                                    isExpanded: true,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          // WRITER(S)
-                          Container(
-                            alignment: Alignment.topLeft,
-                            child: Text(
-                              "Writer(s)",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                                  if (response != null) {
+                                    // show success snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(
+                                            context,
+                                            'Movie added successfully.',
+                                            Colors.green));
 
-                          Theme(
-                            data: theme.copyWith(
-                              primaryColor: Colors.black,
-                            ),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.white),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: Column(
-                                children: <Widget>[
-                                  SearchableDropdown.multiple(
-                                    key: UniqueKey(),
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                    menuBackgroundColor: Colors.white,
-                                    underline: Container(),
-                                    items: crewItems,
-                                    selectedItems: writers,
-                                    hint: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: Text("Select any",
-                                          style:
-                                              TextStyle(color: Colors.white)),
-                                    ),
-                                    searchHint: Text("Select any",
-                                        style: TextStyle(color: Colors.white)),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        writers = value;
-                                      });
-                                    },
-                                    closeButton: (writers) {
-                                      return (writers.isNotEmpty
-                                          ? "Save ${writers.length == 1 ? '"' + crewItems[writers.first].value.toString() + '"' : '(' + writers.length.toString() + ')'}"
-                                          : "Save without selection");
-                                    },
-                                    isExpanded: true,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Container(
-                            alignment: Alignment.bottomRight,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16.0),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    primary: Color.fromRGBO(220, 20, 60, 1)),
-                                onPressed: () {
-                                  // Validate returns true if the form is valid, or false
-                                  // otherwise.
-                                  if (_formKey.currentState.validate()) {
-                                    // If the form is valid, save the data
-                                    final response = model.addMovie(
-                                        title: titleController.text,
-                                        synopsis: synopsisController.text,
-                                        releaseDate: _date.toIso8601String(),
-                                        poster: posterController.text,
-                                        genre: filmGenres,
-                                        directors: crewIds(directors),
-                                        writers: crewIds(writers),
-                                        addedBy: currentUser.userId);
-
-                                    response.then((res) => {
-                                          if (res.statusCode == 200)
-                                            {
-                                              _scaffoldKey.currentState
-                                                  .showSnackBar(mySnackBar(
-                                                      context,
-                                                      'Movie added successfully.',
-                                                      Colors.green))
-                                            }
-                                          else
-                                            {
-                                              _scaffoldKey.currentState
-                                                  .showSnackBar(mySnackBar(
-                                                      context,
-                                                      'Something went wrong. Try again.',
-                                                      Colors.red))
-                                            }
-                                        });
+                                    // redirect to detail view using response
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            MovieView(movie: response),
+                                      ),
+                                    );
+                                  } else {
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(
+                                            context,
+                                            'Something went wrong. Check your inputs and try again.',
+                                            Colors.red));
                                   }
-                                },
-                                child: Text('Submit'),
-                              ),
-                            ),
+                                }
+                              }
+                            },
+                            steps: [
+                              for (var i = 0; i < stepperTitle.length; i++)
+                                MyStep(
+                                  title: Text(
+                                    stepperTitle[i],
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  isActive: i <= currentStep,
+                                  state: i == currentStep
+                                      ? MyStepState.editing
+                                      : i < currentStep
+                                          ? MyStepState.complete
+                                          : MyStepState.indexed,
+                                  content: LimitedBox(
+                                    maxWidth: 300,
+                                    child: getContent(i),
+                                  ),
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -625,24 +426,539 @@ class _AddMovieState extends State<AddMovie> {
       ),
     );
   }
+
+  Widget getContent(int index) {
+    switch (index) {
+      case 0:
+        return Container(
+          child: Column(
+            children: [
+              SizedBox(height: 10),
+              // MOVIE TITLE
+              TextFormField(
+                controller: titleController,
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Title *",
+                  hintStyle: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
+                  filled: true,
+                  fillColor: Color.fromRGBO(240, 240, 240, 1),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                validator: (value) {
+                  if (value.isEmpty) {
+                    return 'Movie title is required';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                readOnly: true,
+                onTap: () {
+                  _selectDate(context);
+                },
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Color.fromRGBO(240, 240, 240, 1),
+                  hintText: _date != null
+                      ? DateFormat("MMM. d, y").format(_date)
+                      : "Release Date *",
+                  hintStyle: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: synopsisController,
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+                maxLines: 5,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Color.fromRGBO(240, 240, 240, 1),
+                  hintText: "Synopsis *",
+                  hintStyle: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                ),
+                validator: (value) {
+                  if (value.isEmpty) {
+                    return 'Synopsis is required';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(
+                height: 10,
+              ),
+            ],
+          ),
+        );
+      case 1:
+        return Container(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 10,
+              ),
+              TextFormField(
+                controller: posterController,
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+                maxLines: 1,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Color.fromRGBO(240, 240, 240, 1),
+                  hintText: "Poster *",
+                  hintStyle: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                ),
+                validator: (value) {
+                  if (value.isEmpty) {
+                    return 'Poster URL is required.';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        );
+      case 2:
+        return Container(
+          child: Column(
+            children: [
+              SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Column(
+                  children: <Widget>[
+                    SearchableDropdown.multiple(
+                      selectedValueWidgetFn: (item) => InputChip(
+                        label: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                        backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+                        deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+                        padding: EdgeInsets.all(7),
+                        onPressed: () {},
+                        onDeleted: () {
+                          setState(() {
+                            var index = crewItems.indexWhere(
+                                (director) => director.value == item);
+                            directors.removeWhere((item) => item == index);
+                          });
+                        },
+                      ),
+                      key: UniqueKey(),
+                      style: TextStyle(
+                        color: Colors.black,
+                      ),
+                      underline: Container(),
+                      items: crewItems,
+                      selectedItems: directors,
+                      hint: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text("Director *",
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16)),
+                      ),
+                      searchHint: Text("Search Any",
+                          style: TextStyle(color: Colors.white)),
+                      onChanged: (value) {
+                        setState(() {
+                          directors = value;
+                        });
+                      },
+                      closeButton: (directors) {
+                        return (directors.isNotEmpty
+                            ? "Save ${directors.length == 1 ? '"' + crewItems[directors.first].value.toString() + '"' : '(' + directors.length.toString() + ')'}"
+                            : "Save without selection");
+                      },
+                      isExpanded: true,
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Column(
+                  children: <Widget>[
+                    SearchableDropdown.multiple(
+                      selectedValueWidgetFn: (item) => InputChip(
+                        label: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                        backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+                        deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+                        padding: EdgeInsets.all(7),
+                        onPressed: () {},
+                        onDeleted: () {
+                          setState(() {
+                            var index = crewItems
+                                .indexWhere((writer) => writer.value == item);
+                            writers.removeWhere((item) => item == index);
+                          });
+                        },
+                      ),
+                      key: UniqueKey(),
+                      style: TextStyle(
+                        color: Colors.black,
+                      ),
+                      menuBackgroundColor: Colors.white,
+                      underline: Container(),
+                      items: crewItems,
+                      selectedItems: writers,
+                      hint: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text("Writer *",
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16)),
+                      ),
+                      searchHint: Text("Search Any",
+                          style: TextStyle(color: Colors.white)),
+                      onChanged: (value) {
+                        setState(() {
+                          writers = value;
+                        });
+                      },
+                      closeButton: (writers) {
+                        return (writers.isNotEmpty
+                            ? "Save ${writers.length == 1 ? '"' + crewItems[writers.first].value.toString() + '"' : '(' + writers.length.toString() + ')'}"
+                            : "Save without selection");
+                      },
+                      isExpanded: true,
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        );
+      case 3:
+        return Container(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Column(
+                  children: <Widget>[
+                    SearchableDropdown.multiple(
+                      selectedValueWidgetFn: (item) => InputChip(
+                        label: Text(
+                          item,
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
+                        backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+                        deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+                        padding: EdgeInsets.all(7),
+                        onPressed: () {},
+                        onDeleted: () {
+                          setState(() {
+                            var index = genreItems
+                                .indexWhere((genre) => genre.value == item);
+                            filmGenres.removeWhere((item) => item == index);
+                          });
+                        },
+                      ),
+                      key: UniqueKey(),
+                      style: TextStyle(
+                        color: Colors.black,
+                      ),
+                      underline: Container(),
+                      items: genreItems,
+                      selectedItems: filmGenres,
+                      hint: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Text("Genre *",
+                            style:
+                                TextStyle(color: Colors.black, fontSize: 16)),
+                      ),
+                      searchHint: Text("Select any",
+                          style: TextStyle(color: Colors.white)),
+                      onChanged: (value) {
+                        setState(() {
+                          filmGenres = value;
+                        });
+                      },
+                      closeButton: (filmGenres) {
+                        return (filmGenres.isNotEmpty
+                            ? "Save ${filmGenres.length == 1 ? '"' + genreItems[filmGenres.first].value.toString() + '"' : '(' + filmGenres.length.toString() + ')'}"
+                            : "Save without selection");
+                      },
+                      isExpanded: true,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      case 4:
+        return Container(
+          height: 400,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            color: Color.fromRGBO(240, 240, 240, 1),
+          ),
+          padding: EdgeInsets.all(10),
+          child: Scrollbar(
+            child: SingleChildScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text("Title: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        )),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      titleController.text,
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text("Release Date: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        )),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      _date == null
+                          ? ''
+                          : DateFormat("MMM. d, y").format(_date),
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text("Synopsis: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        )),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      synopsisController.text,
+                      style: TextStyle(
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text("Poster: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        )),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: posterController.text.trim() != ""
+                        ? Image.network(
+                            posterController.text,
+                            width: 150,
+                            height: 200,
+                          )
+                        : null,
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text("Director/s: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        )),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Column(
+                        children: crewIds(directors)
+                            .map<Widget>(
+                              (index) => new Row(
+                                children: [
+                                  new Icon(Icons.fiber_manual_record, size: 16),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  new Text(
+                                    crewItems[index].value,
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            )
+                            .toList()),
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text("Writer/s: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        )),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Column(
+                        children: crewIds(writers)
+                            .map<Widget>(
+                              (index) => new Row(
+                                children: [
+                                  new Icon(Icons.fiber_manual_record, size: 16),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  new Text(
+                                    crewItems[index].value,
+                                    style: TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                            )
+                            .toList()),
+                  ),
+                  SizedBox(height: 10),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text("Genre/s: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        )),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Column(
+                        children: filmGenres
+                            .map<Widget>(
+                              (index) => new Row(
+                                children: [
+                                  new Icon(Icons.fiber_manual_record, size: 16),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  genreItems[index].child,
+                                ],
+                              ),
+                            )
+                            .toList()),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+    }
+    return null;
+  }
 }
-
-// // ADD MOVIE SECOND PAGE
-// class SecondPage extends StatefulWidget {
-//   final List<String> previousFields;
-
-//   SecondPage(this.previousFields);
-
-//   @override
-//   _SecondPageState createState() => _SecondPageState();
-// }
-
-// class _SecondPageState extends State<SignUpSecondPage> {
-//   // Controllers
-//   final directorController = TextEditingController();
-//   final lastNameController = TextEditingController();
-//   final birthdayController = TextEditingController();
-
-//   final NavigationService _navigationService = locator<NavigationService>();
-
-//   List<String> newUser = [];

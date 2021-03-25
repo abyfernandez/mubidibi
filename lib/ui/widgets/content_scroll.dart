@@ -18,23 +18,22 @@ class ContentScroll extends StatelessWidget {
     return Column(
       children: <Widget>[
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 40.0),
+          padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               GestureDetector(
                 onTap: () => print('View $title'),
-                child: Icon(
-                  Icons.arrow_forward,
-                  color: Colors.black,
-                  size: 30.0,
+                child: Text(
+                  "See all",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -49,26 +48,50 @@ class ContentScroll extends StatelessWidget {
             itemBuilder: (BuildContext context, int index) {
               return Container(
                 margin: EdgeInsets.symmetric(
-                  horizontal: 10.0,
+                  horizontal: 5.0,
                   vertical: 20.0,
                 ),
                 width: imageWidth,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black54,
-                      offset: Offset(0.0, 4.0),
-                      blurRadius: 6.0,
+                  borderRadius: BorderRadius.circular(5.0),
+                ),
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(5.0),
+                      child: Image(
+                        image: AssetImage(images[index]),
+                        fit: BoxFit.fill,
+                        width: imageWidth,
+                        height: imageHeight,
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 2,
+                      left: 2,
+                      right: 2,
+                      child: Container(
+                        alignment: Alignment.bottomLeft,
+                        child: Text(
+                          'Actor Name Here',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black54,
+                              offset: Offset(0.0, 4.0),
+                              blurRadius: 6.0,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10.0),
-                  child: Image(
-                    image: AssetImage(images[index]),
-                    fit: BoxFit.cover,
-                  ),
                 ),
               );
             },

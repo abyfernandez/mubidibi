@@ -11,7 +11,6 @@ exports.user = app => {
         "SELECT * FROM account WHERE id = $1", [req.params.id],
         function onResult (err, result) {
           release()
-          console.log(result.rows)
           res.send(err || JSON.stringify(result.rows[0]));
         }
       )

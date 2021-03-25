@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:full_screen_image/full_screen_image.dart';
+import 'package:mubidibi/constants/route_names.dart';
+import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/widgets/responsive.dart';
 import 'package:mubidibi/ui/widgets/vertical_icon_button.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'dart:ui';
+
+import '../../locator.dart';
 
 class ContentHeader extends StatelessWidget {
   final Movie featuredContent;
@@ -33,9 +36,33 @@ class _ContentHeaderMobile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final NavigationService _navigationService = locator<NavigationService>();
     return Stack(
       alignment: Alignment.center,
       children: [
+        Container(
+          alignment: Alignment.center,
+          margin: const EdgeInsets.symmetric(horizontal: 8.0),
+          height: 500.0,
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black54,
+                offset: Offset(0.0, 4.0),
+                blurRadius: 2.0,
+              ),
+            ],
+          ),
+          child: Text(
+            featuredContent.title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         Container(
           height: 500.0,
           decoration: BoxDecoration(

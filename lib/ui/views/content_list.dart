@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:mubidibi/constants/route_names.dart';
+import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
+
+import '../../locator.dart';
 
 class ContentList extends StatelessWidget {
   final String title;
   final List<Movie> contentList;
-  // final bool myFavorites;
 
   const ContentList({
     Key key,
     @required this.title,
     @required this.contentList,
-    // this.myFavorites = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final NavigationService _navigationService = locator<NavigationService>();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Column(
@@ -33,7 +36,6 @@ class ContentList extends StatelessWidget {
             ),
           ),
           Container(
-            // height: myFavorites ? 220.0 : 400.0,
             height: 220.0,
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(
@@ -54,19 +56,46 @@ class ContentList extends StatelessWidget {
                       ),
                     ),
                   },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                    height: 200.0,
-                    // height: myFavorites ? 200.0 : 200.0,
-                    // width: myFavorites ? 130.0 : 250.0,
-                    width: 130.0,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5),
-                      image: DecorationImage(
-                        image: NetworkImage(content.poster),
-                        fit: BoxFit.cover,
+                  child: Stack(
+                    children: [
+                      Container(
+                        alignment: Alignment.center,
+                        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                        height: 200.0,
+                        width: 130.0,
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black54,
+                              offset: Offset(0.0, 4.0),
+                              blurRadius: 2.0,
+                            ),
+                          ],
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Text(
+                          content.title,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                        height: 200.0,
+                        width: 130.0,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          image: DecorationImage(
+                            image: NetworkImage(content.poster),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },

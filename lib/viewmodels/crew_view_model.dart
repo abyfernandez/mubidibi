@@ -2,6 +2,8 @@ import 'base_model.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 class CrewViewModel extends BaseModel {
   // Function: GET CREW
@@ -15,6 +17,38 @@ class CrewViewModel extends BaseModel {
     } else {
       throw Exception('Failed to get crew');
     }
+  }
+
+  // Function: GET CREW for Movie Detail View
+  Future<List<List<Crew>>> getCrewForDetails({@required String movieId}) async {
+    var queryParams = {
+      'id': movieId,
+    };
+
+    setBusy(true);
+
+    // create URI and attach the params
+    var uri =
+        Uri.http(Config.apiNoHTTP, '/mubidibi/crew/$movieId', queryParams);
+
+    // send API Request
+    final response = await http.get(uri);
+    List<List<Crew>> crew = [];
+    var items = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      // create a list of CREW
+      if (items.isNotEmpty) {
+        for (var i = 0; i < items.length; i++) {
+          var item = List<Crew>.from(items[i].map((x) => Crew.fromJson(x)));
+
+          crew.add(item);
+        }
+      }
+    } else {
+      throw Exception('Failed to get crew');
+    }
+    return crew;
   }
 
   // // Function: ADD CREW (Director/Writer) -

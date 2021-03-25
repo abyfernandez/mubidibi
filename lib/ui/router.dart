@@ -35,7 +35,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         routeName: settings.name,
         viewToShow: HomeView(),
       );
-    case TempMovieRoute:
+    case MovieViewRoute:
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: MovieView(),

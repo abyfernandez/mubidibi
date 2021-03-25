@@ -10,6 +10,7 @@ import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/ui/views/content_list.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'package:floating_action_bubble/floating_action_bubble.dart';
 
 class HomeView extends StatefulWidget {
   HomeView({Key key}) : super(key: key);
@@ -18,13 +19,17 @@ class HomeView extends StatefulWidget {
   _HomeViewState createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> {
+class _HomeViewState extends State<HomeView>
+    with SingleTickerProviderStateMixin {
   final NavigationService _navigationService = locator<NavigationService>();
 
   int _selectedIndex = 0;
   Future<List<Movie>> movies;
   ScrollController _scrollController;
   var index;
+  Animation<double> _animation;
+  AnimationController _animationController;
+  IconData FABIcon = Icons.add;
 
   void _onItemTapped(int index) async {
     if (_selectedIndex == 0 && index == 0) {
@@ -58,6 +63,16 @@ class _HomeViewState extends State<HomeView> {
       var rand = new Random();
       index = rand.nextInt(m.length);
     });
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 260),
+    );
+
+    final curvedAnimation =
+        CurvedAnimation(curve: Curves.easeInOut, parent: _animationController);
+    _animation = Tween<double>(begin: 0, end: 1).animate(curvedAnimation);
+
     super.initState();
   }
 
@@ -70,12 +85,60 @@ class _HomeViewState extends State<HomeView> {
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           title: Text("mubidibi",
-              style: TextStyle(color: Colors.red, letterSpacing: 1.5)),
+              style: TextStyle(color: Colors.lightBlue, letterSpacing: 1.5)),
           backgroundColor: Colors.transparent,
           iconTheme: IconThemeData(color: Colors.white),
           automaticallyImplyLeading: false,
         ),
-        floatingActionButton: MyFAB(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        floatingActionButton: FloatingActionBubble(
+          // Menu items
+          items: <Bubble>[
+            // Floating action menu item
+            Bubble(
+              title: "Movie",
+              iconColor: Colors.white,
+              bubbleColor: Colors.lightBlue,
+              icon: Icons.add,
+              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+              onPress: () async {
+                await _navigationService.navigateTo(AddMovieRoute);
+                _animationController.reverse();
+              },
+            ),
+            //Floating action menu item
+            Bubble(
+              title: "Crew",
+              iconColor: Colors.white,
+              bubbleColor: Colors.lightBlue,
+              icon: Icons.add,
+              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+              onPress: () async {
+                _animationController.reverse();
+              },
+            ),
+          ],
+
+          // animation controller
+          animation: _animation,
+
+          // On pressed change animation state
+          onPress: () => {
+            _animationController.isCompleted
+                ? _animationController.reverse()
+                : _animationController.forward(),
+            setState(() {
+              FABIcon = FABIcon == Icons.add ? Icons.close : Icons.add;
+            })
+          },
+
+          // Floating Action button Icon color
+          iconColor: Colors.white,
+
+          // Flaoting Action button Icon
+          iconData: FABIcon,
+          backGroundColor: Colors.lightBlue,
+        ),
         body: FutureBuilder(
           future: movies,
           builder: (BuildContext context, AsyncSnapshot snapshot) {
@@ -146,17 +209,17 @@ class _HomeViewState extends State<HomeView> {
 }
 
 // Floating Action Button
-class MyFAB extends StatelessWidget {
-  final NavigationService _navigationService = locator<NavigationService>();
+// class MyFAB extends StatelessWidget {
+//   final NavigationService _navigationService = locator<NavigationService>();
 
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton(
-      child: Icon(Icons.keyboard_arrow_up, color: Colors.white, size: 35),
-      backgroundColor: Colors.blue,
-      onPressed: () async {
-        await _navigationService.navigateTo(AddMovieRoute);
-      },
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return FloatingActionButton(
+//       child: Icon(Icons.keyboard_arrow_up, color: Colors.white, size: 35),
+//       backgroundColor: Colors.blue,
+//       onPressed: () async {
+//         await _navigationService.navigateTo(AddMovieRoute);
+//       },
+//     );
+//   }
+// }
