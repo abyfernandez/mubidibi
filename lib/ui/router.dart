@@ -1,3 +1,5 @@
+import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
@@ -41,16 +43,20 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         viewToShow: MovieView(),
       );
     case AddMovieRoute:
+      var movie = settings.arguments as Movie;
+      var crew = settings.arguments as Crew;
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: AddMovie(),
+        viewToShow: AddMovie(movie: movie),
       );
     default:
       return MaterialPageRoute(
-          builder: (_) => Scaffold(
-                body: Center(
-                    child: Text('No route defined for ${settings.name}')),
-              ));
+        builder: (_) => Scaffold(
+          body: Center(
+            child: Text('No route defined for ${settings.name}'),
+          ),
+        ),
+      );
   }
 }
 

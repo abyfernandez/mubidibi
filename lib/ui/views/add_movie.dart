@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
-import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/services/authentication_service.dart';
@@ -21,6 +23,7 @@ import 'package:mubidibi/ui/widgets/my_stepper.dart';
 
 class AddMovie extends StatefulWidget {
   final Movie movie;
+  // final List<List<Crew>> crew;
 
   AddMovie({Key key, this.movie}) : super(key: key);
 
@@ -31,20 +34,22 @@ class AddMovie extends StatefulWidget {
 // ADD MOVIE FIRST PAGE
 class _AddMovieState extends State<AddMovie> {
   final Movie movie;
+  // final List<List<Crew>> crew;
 
   _AddMovieState(this.movie);
 
   DateTime _date;
   final titleController = TextEditingController();
   final synopsisController = TextEditingController();
-  final posterController = TextEditingController();
+  File imageFile; // for uploading poster w/ image picker
+  final picker = ImagePicker();
+  var mimetype;
+  String base64Image; // picked image in base64 format
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
   final NavigationService _navigationService = locator<NavigationService>();
   final DialogService _dialogService = locator<DialogService>();
 
-  Future<List<List<Crew>>>
-      movieCrew; // crewList that can only be retrieved when movie is passed from detail (edit function)
   List<int> filmGenres = []; // Genre(s)
   List<int> directors = []; // Director(s)
   List<int> writers = []; // Writer(s)
@@ -128,18 +133,29 @@ class _AddMovieState extends State<AddMovie> {
     return genreIndices;
   }
 
-  // TO DO: the crew array that is retrieved after getting the movie id from movie_view is in dynamic/asyncsnapshot type, but we need int so we have to convert it
-  // List<int> directorIndices(Future<List<List<Crew>>> movieCrew) {
-  //   List<int> directorIndices = [];
-  //   for (var item in movieCrew)
-
+  // // function for calling viewmodel's getCrewForDetails method (EDIT MOVIE)
+  // Future<List<List<Crew>>> fetchMovieCrew(String movieId) async {
+  //   if (movieId != null) {
+  //     var model = CrewViewModel();
+  //     var crew = await model.getCrewForDetails(movieId: movieId);
+  //     return crew;
+  //   } else {
+  //     return [];
+  //   }
   // }
 
-  // function for calling viewmodel's getCrewForDetails method (EDIT MOVIE)
-  Future<List<List<Crew>>> fetchMovieCrew(String movieId) async {
-    var model = CrewViewModel();
-    var crew = await model.getCrewForDetails(movieId: movieId);
-    return crew;
+  // get image using image picker
+  Future getImage() async {
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      imageFile = File(pickedFile.path);
+      setState(() {
+        imageFile = imageFile;
+        mimetype = lookupMimeType(pickedFile.path);
+      });
+    } else {
+      print('No image selected.');
+    }
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -147,8 +163,6 @@ class _AddMovieState extends State<AddMovie> {
   @override
   void initState() {
     fetchCrew();
-    movieCrew = fetchMovieCrew(
-        movie?.movieId.toString()); // get movie crew for MOVIE EDIT
     super.initState();
   }
 
@@ -163,11 +177,14 @@ class _AddMovieState extends State<AddMovie> {
       onModelReady: (model) async {
         // update controller's text field
         titleController.text = movie?.title ?? '';
-        _date = DateTime.parse(movie?.releaseDate) ?? DateTime.now();
+        _date = movie?.releaseDate != null
+            ? DateTime.parse(movie?.releaseDate)
+            : null;
         synopsisController.text = movie?.synopsis ?? '';
-        posterController.text = movie?.poster ?? '';
-        filmGenres = genreIndices(movie?.genre) ?? [];
+        // TO DO: IMAGE EDIT
+        filmGenres = genreIndices(movie?.genre ?? []);
         // crew here
+        // crew != null ? directors = crew[0] : []
         // directors = // TO DO: crew initial value in fields
       },
       builder: (context, model, child) => Scaffold(
@@ -239,7 +256,7 @@ class _AddMovieState extends State<AddMovie> {
                                     }
                                     break;
                                   case 1: // poster
-                                    if (posterController.text.trim() == "") {
+                                    if (imageFile == null) {
                                       // show error snackbar
                                       _scaffoldKey.currentState.showSnackBar(
                                           mySnackBar(
@@ -277,12 +294,46 @@ class _AddMovieState extends State<AddMovie> {
                                     break;
                                 }
                               } else if (step >= currentStep + 2) {
-                                // show error snackbar
-                                _scaffoldKey.currentState.showSnackBar(
-                                    mySnackBar(
-                                        context,
-                                        'Skipping of steps is not allowed.',
-                                        Colors.red));
+                                // check first if steps before the clicked step are all filled out before allowing or not
+                                bool checker = true;
+                                for (var i = currentStep; i < step; i++) {
+                                  switch (i) {
+                                    case 0: // title, release date, and synopsis
+                                      if (titleController.text.trim() == "" ||
+                                          _date == null ||
+                                          synopsisController.text.trim() ==
+                                              "") {
+                                        checker = false;
+                                      }
+                                      break;
+                                    case 1: // poster
+                                      if (imageFile == null) {
+                                        checker = false;
+                                      }
+                                      break;
+                                    case 2: // crew members
+                                      if (directors.length == 0 ||
+                                          writers.length == 0) {
+                                        checker = false;
+                                      }
+                                      break;
+                                    case 3: // genre
+                                      if (filmGenres.length == 0) {
+                                        checker = false;
+                                      }
+                                      break;
+                                  }
+                                }
+                                if (checker == false) {
+                                  // show error snackbar
+                                  _scaffoldKey.currentState.showSnackBar(
+                                      mySnackBar(
+                                          context,
+                                          'Skipping of steps is not allowed.',
+                                          Colors.red));
+                                } else {
+                                  setState(() => currentStep = step);
+                                }
                               }
                             },
                             onStepCancel: () => {
@@ -308,7 +359,7 @@ class _AddMovieState extends State<AddMovie> {
                                     }
                                     break;
                                   case 1: // poster
-                                    if (posterController.text.trim() == "") {
+                                    if (imageFile == null) {
                                       // show error snackbar
                                       _scaffoldKey.currentState.showSnackBar(
                                           mySnackBar(
@@ -359,11 +410,14 @@ class _AddMovieState extends State<AddMovie> {
                                       title: titleController.text,
                                       synopsis: synopsisController.text,
                                       releaseDate: _date.toIso8601String(),
-                                      poster: posterController.text,
+                                      poster: imageFile,
+                                      mimetype: mimetype,
                                       genre: filmGenres,
                                       directors: crewIds(directors),
                                       writers: crewIds(writers),
                                       addedBy: currentUser.userId);
+
+                                  // while response is not yet returned, show circular progress indicator
 
                                   if (response != null) {
                                     // show success snackbar
@@ -553,40 +607,52 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              TextFormField(
-                controller: posterController,
-                style: TextStyle(
-                  color: Colors.black,
+              // Material(
+              //   child: Container(
+              //     child: IconButton(
+              //       tooltip: 'Send Image',
+              //       icon: Icon(Icons.image, size: 50),
+              //       onPressed: getImage,
+              //       color: Theme.of(context).accentColor,
+              //     ),
+              //   ),
+              // ),
+              GestureDetector(
+                onTap: getImage,
+                child: Container(
+                  height: 200,
+                  width: 150,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: imageFile != null
+                      ? Container(
+                          height: 200,
+                          width: 150,
+                          child: Image.file(
+                            imageFile,
+                            width: 150,
+                            height: 200,
+                            fit: BoxFit.cover,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        )
+                      : Container(
+                          height: 200,
+                          width: 150,
+                          child: Icon(
+                            Icons.camera_alt,
+                            color: Colors.grey[800],
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color.fromRGBO(240, 240, 240, 1),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
                 ),
-                maxLines: 1,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Color.fromRGBO(240, 240, 240, 1),
-                  hintText: "Poster *",
-                  hintStyle: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                ),
-                validator: (value) {
-                  if (value.isEmpty) {
-                    return 'Poster URL is required.';
-                  }
-                  return null;
-                },
-              ),
+              )
             ],
           ),
         );
@@ -861,13 +927,17 @@ class _AddMovieState extends State<AddMovie> {
                   ),
                   Container(
                     alignment: Alignment.topLeft,
-                    child: posterController.text.trim() != ""
-                        ? Image.network(
-                            posterController.text,
+                    child: imageFile != null
+                        ? Image.file(
+                            imageFile,
                             width: 150,
                             height: 200,
+                            fit: BoxFit.cover,
                           )
                         : null,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
                   ),
                   SizedBox(height: 10),
                   Container(

@@ -106,13 +106,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
-  cupertino_stepper:
+  dio:
     dependency: "direct main"
     description:
-      name: cupertino_stepper
+      name: dio
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.1.2"
+    version: "3.0.10"
   expandable:
     dependency: "direct main"
     description:
@@ -309,7 +309,7 @@ packages:
       name: font_awesome_flutter
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "8.11.0"
+    version: "8.12.0"
   get_it:
     dependency: "direct main"
     description:
@@ -415,13 +415,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.3.0-nullsafety.3"
-  multiselect_formfield:
+  mime:
     dependency: "direct main"
     description:
-      name: multiselect_formfield
+      name: mime
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.1.5"
+    version: "0.9.7"
   octo_image:
     dependency: transitive
     description:
@@ -429,13 +429,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.3.0"
-  page_slider:
-    dependency: "direct main"
-    description:
-      name: page_slider
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.0.2"
   path:
     dependency: transitive
     description:

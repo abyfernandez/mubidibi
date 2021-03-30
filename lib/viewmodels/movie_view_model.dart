@@ -1,5 +1,6 @@
+import 'dart:io';
+import 'package:http_parser/http_parser.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
-
 import 'base_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -7,6 +8,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:mubidibi/ui/shared/list_items.dart';
+import 'package:dio/dio.dart';
 
 class MovieViewModel extends BaseModel {
   // Function: GET ALL MOVIES
@@ -21,48 +23,13 @@ class MovieViewModel extends BaseModel {
     }
   }
 
-  // Function: ADD MOVIE -
-  // Future<http.Response> addMovie({
-  //   @required String title,
-  //   String synopsis,
-  //   String releaseDate,
-  //   String poster,
-  //   List<int> genre,
-  //   List<int> directors,
-  //   List<int> writers,
-  //   String addedBy,
-  // }) async {
-  //   setBusy(true);
-
-  //   List<String> filmGenres = [];
-
-  //   for (var g in genre) {
-  //     filmGenres.add(genres.singleWhere((i) => genres.indexOf(i) == g));
-  //   }
-
-  //   return http.post(
-  //     Config.api + 'add-movie/',
-  //     headers: <String, String>{
-  //       'Content-Type': 'application/json; charset=UTF-8',
-  //     },
-  //     body: jsonEncode(<String, dynamic>{
-  //       'title': title,
-  //       'synopsis': synopsis,
-  //       'releaseDate': releaseDate,
-  //       'poster': poster,
-  //       'genre': filmGenres,
-  //       'directors': directors,
-  //       'writers': writers,
-  //       'added_by': addedBy
-  //     }),
-  //   );
-  // }
-
+  // Function: ADD MOVIE
   Future<Movie> addMovie({
     @required String title,
     String synopsis,
     String releaseDate,
-    String poster,
+    String mimetype,
+    File poster,
     List<int> genre,
     List<int> directors,
     List<int> writers,
@@ -77,26 +44,34 @@ class MovieViewModel extends BaseModel {
       filmGenres.add(genres.singleWhere((i) => genres.indexOf(i) == g));
     }
 
-    var response = await http.post(
-      Config.api + 'add-movie/',
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, dynamic>{
+    String filename = poster.path.split('/').last;
+    List<String> mime = mimetype.split('/');
+
+    // multi-part request
+    Dio dio = new Dio();
+    FormData formData = new FormData.fromMap({
+      "movie": jsonEncode(<String, dynamic>{
         'title': title,
         'synopsis': synopsis,
-        'releaseDate': releaseDate,
-        'poster': poster,
+        'release_date': releaseDate,
         'genre': filmGenres,
         'directors': directors,
         'writers': writers,
-        'added_by': addedBy
+        'added_by': addedBy,
       }),
+      "file": MultipartFile.fromFileSync(poster.path,
+          filename: filename, contentType: MediaType(mime[0], mime[1])),
+    });
+    var response = await dio.post(
+      Config.api + 'add-movie/',
+      data: formData,
     );
 
-    if (response.body != null) {
+    print(response);
+
+    if (response.statusCode == 200) {
       // convert json response to type Movie
-      movie = Movie.fromJson(json.decode(response.body));
+      movie = Movie.fromJson(json.decode(response.data.toString()));
     }
 
     return movie;

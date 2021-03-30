@@ -1,25 +1,24 @@
 const { routes } = require('./routes');
 const fastify = require('fastify');
 const cors = require('fastify-cors');
+const multipart = require('fastify-multipart');
+
+// // declare cloudinary
+// const cloudinary = require('cloudinary').v2;
+// // end of dependencies
 
 exports.build = async (opts = { logger: false, trustProxy: false }) => {
   // initialize our server using Fastify
   const app = fastify(opts);
-  
+
   // Connect to the Database
   app.register(require('fastify-postgres'), {
     connectionString: 'postgres://postgres:abifernandez@localhost/mubidibi'
-    // TO DO: Create Config file
   });
 
-//   const Pool = require('pg').Pool
-// const pool = new Pool({
-//   user: 'me',
-//   host: 'localhost',
-//   database: 'api',
-//   password: 'password',
-//   port: 5432,
-// })
+  // register multipart
+  app.register(multipart, {
+  });
 
   app.register(cors, {
     origin: true,
@@ -30,19 +29,3 @@ exports.build = async (opts = { logger: false, trustProxy: false }) => {
 
   return app;
 };
-
-
-/**
- * This is the function to call to initialize the server
- *
-//  * @param {{ logger: boolean, trustProxy: boolean }} opts
-//  * @returns {*}
-//  */
-// exports.build = async (opts = { logger: true, trustProxy: true }) => {
-//   // initialize our server using Fastify
-//   const app = fastify(opts);
-
-//   routes(app);
-
-//   return app;
-// };

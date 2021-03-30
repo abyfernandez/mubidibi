@@ -1,5 +1,4 @@
 exports.movie = app => {
-
   // GET MOVIES
   app.get('/mubidibi/movies/', async (req, res) => {
     app.pg.connect(onConnect)
@@ -23,51 +22,80 @@ exports.movie = app => {
   // app.get('/mubidibi/movie/:id', (req,res) => {
   //   app.pg.connect(onConnect)
 
-
   // })
 
   // ADD MOVIE
-  app.post('/mubidibi/add-movie/', (req, res) => {
-    app.pg.connect(onConnect);
+  app.post('/mubidibi/add-movie/', async (req, res) => {
 
     // call function add_movie with params: String title, Array genre, Date release_date, String synopsis, String poster, String added_by 
-    // TO DO: make sure the added by field is not hardcoded'
+
+    // upload image to cloudinary 
+    var cloudinary = require('cloudinary').v2;
+
+    cloudinary.config({
+      cloud_name: "mubidibi-sp",
+      api_key: '385294841727974',
+      api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
+    });
+
+    var data = await req.file();
+    var buffer = await data.toBuffer();
+    var posterURL;
+
+    var base64String = await buffer.toString('base64');
+    var base64String = base64String.replace(/(\r\n|\n|\r)/gm, "");
+
+    // convert base64 to data uri
+    var imageURI = `data:${data.mimetype};base64,${base64String}`;
+
+    var upload = await cloudinary.v2.uploader.upload(imageURI,
+      {
+        folder: "folder-name",
+      },
+      async function (err, result) {
+        if (err) return err;
+        else {
+          posterURL = result.url;
+        }
+      }
+    );
+
+    app.pg.connect(onConnect); // DB connection
+
+    var movieData = JSON.parse(data.fields.movie.value);    // movie data sent from the frontend
 
     // catch apostrophes to avoid errors when inserting
-    var title = req.body.title.replace(/'/g, "''");
-    var synopsis = req.body.synopsis.replace(/'/g, "''");
+    var title = movieData.title.replace(/'/g, "''");
+    var synopsis = movieData.synopsis.replace(/'/g, "''");
 
     var query = `select "add_movie" (
       '${title}',
       array [`
 
-    req.body.genre.forEach(genre => {
+    movieData.genre.forEach(genre => {
       query = query.concat(`'`, genre, `'`)
-      if (genre != req.body.genre[req.body.genre.length - 1]) {
+      if (genre != movieData.genre[movieData.genre.length - 1]) {
         query = query.concat(',')
       }
     });
 
-    var date = req.body.releaseDate != '' ? `'${req.body.releaseDate}'` : ''
-
     query = query.concat(
       `], 
-        ${date}, 
+        '${movieData.release_date}', 
         '${synopsis}', 
-        '${req.body.poster}', 
-        '2015-09301'
+        '${posterURL}', 
+        '${movieData.added_by}'
         )`
     );
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-
       var movie = await client.query(query).then(async (result) => {
         var id = result.rows[0].add_movie; // movie id to be returned by the called function
 
         // add directors
-        req.body.directors.forEach(director => {
+        movieData.directors.forEach(director => {
           client.query(
             `call add_movie_director_with_director_arg(
                 ${director}
@@ -76,7 +104,7 @@ exports.movie = app => {
         });
 
         // add writers
-        req.body.writers.forEach(writer => {
+        movieData.writers.forEach(writer => {
           client.query(
             `call add_movie_writer_with_writer_arg(
                 ${writer}
@@ -113,18 +141,6 @@ exports.movie = app => {
     }
   });
 }
-
-
-  // const deleteUser = (request, response) => {
-  //   const id = parseInt(request.params.id)
-
-  //   pool.query('DELETE FROM users WHERE id = $1', [id], (error, results) => {
-  //     if (error) {
-  //       throw error
-  //     }
-  //     response.status(200).send(`User deleted with ID: ${id}`)
-  //   })
-  // }
 
 
 

@@ -1,6 +1,7 @@
 const { crew } = require('./crew');
 const { movie } = require('./movie');
 const { user } = require('./user');
+const { review } = require('./review');
 
 // Initialize all Routes
 
@@ -26,4 +27,6 @@ exports.routes = app => {
   crew(app);
   // Call User Routes
   user(app);
+  // Call Review Routes
+  review(app);
 }
