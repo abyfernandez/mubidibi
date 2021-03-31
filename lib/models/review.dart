@@ -10,24 +10,32 @@ class Review {
   final int reviewId;
   final int movieId;
   final String userId;
-  final String rating;
+  final String firstName;
+  final String middleName;
+  final String lastName;
+  final double rating;
   final String review;
+  final String addedAt;
 
-  Review({
-    this.reviewId,
-    this.movieId,
-    this.userId,
-    this.rating,
-    this.review,
-  });
+  Review(
+      {this.reviewId,
+      this.movieId,
+      this.userId,
+      this.firstName,
+      this.middleName,
+      this.lastName,
+      this.rating,
+      this.review,
+      this.addedAt});
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
       reviewId: json['id'],
       movieId: json['movie_id'],
       userId: json['account_id'],
-      rating: json['rating'],
+      rating: json['rating'] == 0 ? 0.00 : json['rating'],
       review: json['review'],
+      addedAt: json['added_at'],
     );
   }
 
@@ -37,5 +45,6 @@ class Review {
         "account_id": userId,
         "rating": rating,
         "review": review,
+        "added_at": addedAt,
       };
 }
