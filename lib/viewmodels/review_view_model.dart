@@ -7,11 +7,23 @@ import 'package:flutter/foundation.dart';
 
 class ReviewViewModel extends BaseModel {
   List<Review> reviews = [];
+  Review _editingReview;
+  bool isEditing = false;
 
   void setReviews(List<Review> response) {
     reviews = response;
     notifyListeners();
     print("notified listeners");
+  }
+
+  void setEditing(Review editingReview) {
+    _editingReview = editingReview;
+    notifyListeners();
+  }
+
+  void setEdit(bool value) {
+    isEditing = value;
+    notifyListeners();
   }
 
   // Function: GET ALL REVIEWS OF A SPECIFIC MOVIE

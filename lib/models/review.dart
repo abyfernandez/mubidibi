@@ -13,7 +13,7 @@ class Review {
   final String firstName;
   final String middleName;
   final String lastName;
-  final double rating;
+  final num rating;
   final String review;
   final String addedAt;
 
@@ -33,7 +33,10 @@ class Review {
       reviewId: json['id'],
       movieId: json['movie_id'],
       userId: json['account_id'],
-      rating: json['rating'] == 0 ? 0.00 : json['rating'],
+      firstName: json['first_name'],
+      middleName: json['middle_name'],
+      lastName: json['last_name'],
+      rating: json['rating'],
       review: json['review'],
       addedAt: json['added_at'],
     );

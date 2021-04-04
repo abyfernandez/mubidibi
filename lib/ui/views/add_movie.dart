@@ -23,28 +23,34 @@ import 'package:mubidibi/ui/widgets/my_stepper.dart';
 
 class AddMovie extends StatefulWidget {
   final Movie movie;
-  // final List<List<Crew>> crew;
+  final List<List<Crew>> crewEdit;
 
-  AddMovie({Key key, this.movie}) : super(key: key);
+  AddMovie({Key key, this.movie, this.crewEdit}) : super(key: key);
 
   @override
-  _AddMovieState createState() => _AddMovieState(movie);
+  _AddMovieState createState() => _AddMovieState(movie, crewEdit);
 }
 
 // ADD MOVIE FIRST PAGE
 class _AddMovieState extends State<AddMovie> {
   final Movie movie;
-  // final List<List<Crew>> crew;
+  final List<List<Crew>> crewEdit;
 
-  _AddMovieState(this.movie);
+  _AddMovieState(this.movie, this.crewEdit);
 
+  // MOVIE FIELD VARIABLES
   DateTime _date;
   final titleController = TextEditingController();
   final synopsisController = TextEditingController();
+  final runtimeController = TextEditingController();
   File imageFile; // for uploading poster w/ image picker
   final picker = ImagePicker();
   var mimetype;
   String base64Image; // picked image in base64 format
+  var screenshots = List(); // for uploading movie screenshots
+  var imageURI = ''; // for movie edit
+
+  // SERVICES
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
   final NavigationService _navigationService = locator<NavigationService>();
@@ -53,9 +59,12 @@ class _AddMovieState extends State<AddMovie> {
   List<int> filmGenres = []; // Genre(s)
   List<int> directors = []; // Director(s)
   List<int> writers = []; // Writer(s)
+  List<DropdownMenuItem> crewItems = [];
+  List<Crew> crewList = [];
+
   int currentStep = 0;
   List<String> stepperTitle = [
-    "Title, Release Date, and Synopsis",
+    "Title, Release Date, Running Time, and Synopsis",
     "Poster",
     "Crew Member/s",
     "Genre/s",
@@ -69,9 +78,6 @@ class _AddMovieState extends State<AddMovie> {
       child: Text(value),
     );
   }).toList();
-
-  List<DropdownMenuItem> crewItems = []; // declare a class variable
-  List<Crew> crewList = []; // declare a class variable
 
   // function for calling viewmodel's getAllCrew method
   void fetchCrew() async {
@@ -133,18 +139,7 @@ class _AddMovieState extends State<AddMovie> {
     return genreIndices;
   }
 
-  // // function for calling viewmodel's getCrewForDetails method (EDIT MOVIE)
-  // Future<List<List<Crew>>> fetchMovieCrew(String movieId) async {
-  //   if (movieId != null) {
-  //     var model = CrewViewModel();
-  //     var crew = await model.getCrewForDetails(movieId: movieId);
-  //     return crew;
-  //   } else {
-  //     return [];
-  //   }
-  // }
-
-  // get image using image picker
+  // get image using image picker for movie poster
   Future getImage() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -156,6 +151,41 @@ class _AddMovieState extends State<AddMovie> {
     } else {
       print('No image selected.');
     }
+  }
+
+  // get images using image picker for movie screenshots
+  Future getScreenshot() async {
+    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      var image = File(pickedFile.path);
+      setState(() {
+        screenshots.add(image);
+      });
+      print(screenshots.length);
+    } else {
+      print('No image selected.');
+    }
+  }
+
+  Widget displayScreenshots() {
+    return Column(
+        children: screenshots
+            .map(
+              (pic) => Container(
+                height: 200,
+                width: 150,
+                child: Image.file(
+                  pic,
+                  width: 150,
+                  height: 200,
+                  fit: BoxFit.cover,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+            )
+            .toList());
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -181,11 +211,21 @@ class _AddMovieState extends State<AddMovie> {
             ? DateTime.parse(movie?.releaseDate)
             : null;
         synopsisController.text = movie?.synopsis ?? '';
+
         // TO DO: IMAGE EDIT
+        imageURI = movie?.poster ?? '';
+
+        // GENRES
         filmGenres = genreIndices(movie?.genre ?? []);
-        // crew here
-        // crew != null ? directors = crew[0] : []
-        // directors = // TO DO: crew initial value in fields
+
+        // CREW
+        directors = crewEdit.isNotEmpty
+            ? crewEdit[0].map((d) => d.crewId).toList()
+            : [];
+        writers = crewEdit.isNotEmpty
+            ? crewEdit[1].map((e) => e.crewId).toList()
+            : [];
+        // TO DO: ACTORS FIELD
       },
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
@@ -256,7 +296,8 @@ class _AddMovieState extends State<AddMovie> {
                                     }
                                     break;
                                   case 1: // poster
-                                    if (imageFile == null) {
+                                    if (imageFile == null ||
+                                        imageURI.trim() == '') {
                                       // show error snackbar
                                       _scaffoldKey.currentState.showSnackBar(
                                           mySnackBar(
@@ -307,7 +348,8 @@ class _AddMovieState extends State<AddMovie> {
                                       }
                                       break;
                                     case 1: // poster
-                                      if (imageFile == null) {
+                                      if (imageFile == null ||
+                                          imageURI.trim() == '') {
                                         checker = false;
                                       }
                                       break;
@@ -359,7 +401,8 @@ class _AddMovieState extends State<AddMovie> {
                                     }
                                     break;
                                   case 1: // poster
-                                    if (imageFile == null) {
+                                    if (imageFile == null ||
+                                        imageURI.trim() == '') {
                                       // show error snackbar
                                       _scaffoldKey.currentState.showSnackBar(
                                           mySnackBar(
@@ -410,7 +453,10 @@ class _AddMovieState extends State<AddMovie> {
                                       title: titleController.text,
                                       synopsis: synopsisController.text,
                                       releaseDate: _date.toIso8601String(),
+                                      runningTime: 100.toString(),
                                       poster: imageFile,
+                                      imageURI: imageURI,
+                                      screenshots: screenshots,
                                       mimetype: mimetype,
                                       genre: filmGenres,
                                       directors: crewIds(directors),
@@ -607,16 +653,6 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              // Material(
-              //   child: Container(
-              //     child: IconButton(
-              //       tooltip: 'Send Image',
-              //       icon: Icon(Icons.image, size: 50),
-              //       onPressed: getImage,
-              //       color: Theme.of(context).accentColor,
-              //     ),
-              //   ),
-              // ),
               GestureDetector(
                 onTap: getImage,
                 child: Container(
@@ -625,20 +661,23 @@ class _AddMovieState extends State<AddMovie> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  child: imageFile != null
+                  child: imageFile != null || imageURI.trim() != ''
                       ? Container(
                           height: 200,
                           width: 150,
-                          child: Image.file(
-                            imageFile,
-                            width: 150,
-                            height: 200,
-                            fit: BoxFit.cover,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        )
+                          child: imageFile != null
+                              ? Image.file(
+                                  imageFile,
+                                  width: 150,
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.network(
+                                  imageURI,
+                                  width: 150,
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                ))
                       : Container(
                           height: 200,
                           width: 150,
@@ -652,7 +691,36 @@ class _AddMovieState extends State<AddMovie> {
                           ),
                         ),
                 ),
-              )
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              GestureDetector(
+                onTap: getScreenshot,
+                child: Container(
+                  height: 200,
+                  width: 150,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Container(
+                    height: 200,
+                    width: 150,
+                    child: Icon(
+                      Icons.camera_alt,
+                      color: Colors.grey[800],
+                    ),
+                    decoration: BoxDecoration(
+                      color: Color.fromRGBO(240, 240, 240, 1),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                ),
+              ),
+
+              // multiple files for screenshots
+              // TO DO: FIX UI FOR DISPLAY
+              screenshots.length != 0 ? displayScreenshots() : Container(),
             ],
           ),
         );

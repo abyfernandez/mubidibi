@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
+import 'package:mime/mime.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'base_model.dart';
 import 'package:flutter/foundation.dart';
@@ -29,7 +30,10 @@ class MovieViewModel extends BaseModel {
     String synopsis,
     String releaseDate,
     String mimetype,
+    String runningTime,
     File poster,
+    String imageURI,
+    List screenshots,
     List<int> genre,
     List<int> directors,
     List<int> writers,
@@ -47,6 +51,9 @@ class MovieViewModel extends BaseModel {
     String filename = poster.path.split('/').last;
     List<String> mime = mimetype.split('/');
 
+    // TO DO: EDIT AND/OR ADD MOVIE
+    // TO DO: MUTIPLE IMAGE UPLOAD
+
     // multi-part request
     Dio dio = new Dio();
     FormData formData = new FormData.fromMap({
@@ -54,6 +61,7 @@ class MovieViewModel extends BaseModel {
         'title': title,
         'synopsis': synopsis,
         'release_date': releaseDate,
+        'running_time': runningTime,
         'genre': filmGenres,
         'directors': directors,
         'writers': writers,
@@ -61,6 +69,12 @@ class MovieViewModel extends BaseModel {
       }),
       "file": MultipartFile.fromFileSync(poster.path,
           filename: filename, contentType: MediaType(mime[0], mime[1])),
+      "files": screenshots
+          .map((file) => MultipartFile.fromFileSync(file.path,
+              filename: file.path.split('/').last,
+              contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                  lookupMimeType(file.path).split('/')[1])))
+          .toList(),
     });
     var response = await dio.post(
       Config.api + 'add-movie/',

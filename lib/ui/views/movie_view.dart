@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,6 +41,7 @@ class _MovieViewState extends State<MovieView>
   _MovieViewState(this.movie);
 
   Future<List<List<Crew>>> crew;
+  List<List<Crew>> crewEdit;
   Future<List<Review>> reviews;
   ScrollController _scrollController;
   Animation<double> _animation;
@@ -58,6 +60,12 @@ class _MovieViewState extends State<MovieView>
   Future<List<List<Crew>>> fetchCrew(String movieId) async {
     var model = CrewViewModel();
     var crew = await model.getCrewForDetails(movieId: movieId);
+
+    setState(() {
+      crewEdit = crew;
+    });
+
+    print(crewEdit);
     return crew;
   }
 
@@ -69,161 +77,182 @@ class _MovieViewState extends State<MovieView>
     return timeago.format(timeAgo, locale: 'en_short');
   }
 
+  void _showPopupMenu() async {
+    await showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(100, 100, 100, 100),
+      items: [
+        PopupMenuItem<String>(child: const Text('Doge'), value: 'Doge'),
+        PopupMenuItem<String>(child: const Text('Lion'), value: 'Lion'),
+      ],
+      elevation: 8.0,
+    );
+  }
+
   // check if currentUser has left a review. Display in first row if true.
   Widget checkReview(List<Review> reviews) {
+    var model = ReviewViewModel();
+
     if (reviews.isNotEmpty) {
       userReview =
           reviews.singleWhere((review) => review.userId == currentUser.userId);
-      var userReviews =
-          reviews.where((review) => review.userId != currentUser.userId);
-      return Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15.0),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            ListTile(
-              leading: Icon(Icons.account_circle, size: 45),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
+
+      return Column(
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                ListTile(
+                  leading: Icon(Icons.account_circle, size: 45),
+                  title: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(currentUser.firstName +
-                          " " +
-                          (currentUser.middleName != null
-                              ? currentUser.middleName +
-                                  "" +
-                                  currentUser.lastName
-                              : currentUser.lastName)),
-                      SizedBox(
-                        width: 5,
+                      Row(
+                        children: [
+                          Text(userReview.firstName +
+                              " " +
+                              (userReview.middleName != null
+                                  ? userReview.middleName +
+                                      "" +
+                                      userReview.lastName
+                                  : userReview.lastName)),
+                          SizedBox(
+                            width: 5,
+                          ),
+                          Text(
+                            timeAgo(userReview.addedAt) + " ago" ?? ' ',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
                       ),
-                      Text(
-                        timeAgo(userReview.addedAt) + " ago" ?? ' ',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      GestureDetector(
+                        child: Icon(Icons.more_vert),
+                        onTap: () {
+                          _showPopupMenu();
+                          // print("More");
+                          //
+                        },
                       ),
+                      // PopupMenuButton(
+                      //   itemBuilder: (BuildContext context) => [
+                      //     PopupMenuItem(child: Text('Edit'), value: 'edit'),
+                      //     PopupMenuItem(child: Text('Delete'), value: 'delete'),
+                      //   ],
+                      //   onSelected: (route) {
+                      //     print(route);
+                      //   },
+                      // ),
                     ],
                   ),
-                  GestureDetector(
-                    child: Icon(Icons.more_vert),
-                    onTap: () {
-                      print("More");
-                    },
+                  subtitle: IgnorePointer(
+                    ignoring: true,
+                    child: userReview.rating != 0.00
+                        ? RatingBar.builder(
+                            direction: Axis.horizontal,
+                            allowHalfRating: true,
+                            itemCount: 5,
+                            itemSize: 20,
+                            initialRating: userReview.rating,
+                            unratedColor: Color.fromRGBO(192, 192, 192, 1),
+                            itemBuilder: (context, _) => Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                            ),
+                            onRatingUpdate: (rating) {},
+                            updateOnDrag: true,
+                          )
+                        : Text("No rating",
+                            style: TextStyle(
+                                fontSize: 14, fontStyle: FontStyle.italic)),
                   ),
-                ],
-              ),
-              subtitle: IgnorePointer(
-                ignoring: true,
-                child: userReview.rating != 0.00
-                    ? RatingBar.builder(
-                        direction: Axis.horizontal,
-                        allowHalfRating: true,
-                        itemCount: 5,
-                        itemSize: 20,
-                        initialRating: userReview.rating,
-                        unratedColor: Color.fromRGBO(192, 192, 192, 1),
-                        itemBuilder: (context, _) => Icon(
-                          Icons.circle,
-                          color: Colors.blue,
-                        ),
-                        onRatingUpdate: (rating) {},
-                        updateOnDrag: true,
-                      )
-                    : Text("No rating",
-                        style: TextStyle(
-                            fontSize: 14, fontStyle: FontStyle.italic)),
-              ),
+                ),
+                Container(
+                  alignment: Alignment.centerLeft,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child:
+                      Text(userReview.review, style: TextStyle(fontSize: 15)),
+                ),
+              ],
             ),
-            ListTile(
-              title: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 5, vertical: 0),
-                child: Text(userReview.review, style: TextStyle(fontSize: 15)),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       );
-
-      // userReviews.map((review) {
-      //     return Card(
-      //       shape: RoundedRectangleBorder(
-      //         borderRadius: BorderRadius.circular(15.0),
-      //       ),
-      //       child: Column(
-      //         mainAxisSize: MainAxisSize.min,
-      //         children: <Widget>[
-      //           ListTile(
-      //             leading: Icon(Icons.account_circle, size: 45),
-      //             title: Row(
-      //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      //               children: [
-      //                 Row(
-      //                   children: [
-      //                     Text(review.firstName +
-      //                         " " +
-      //                         (review.middleName != null
-      //                             ? review.middleName + "" + review.lastName
-      //                             : review.lastName)),
-      //                     SizedBox(
-      //                       width: 5,
-      //                     ),
-      //                     Text(
-      //                       timeAgo(review.addedAt) + " ago" ?? ' ',
-      //                       style:
-      //                           TextStyle(color: Colors.grey, fontSize: 14),
-      //                     ),
-      //                   ],
-      //                 ),
-      //                 GestureDetector(
-      //                   child: Icon(Icons.more_vert),
-      //                   onTap: () {
-      //                     print("More");
-      //                   },
-      //                 ),
-      //               ],
-      //             ),
-      //             subtitle: IgnorePointer(
-      //               ignoring: true,
-      //               child: review.rating != 0.00
-      //                   ? RatingBar.builder(
-      //                       direction: Axis.horizontal,
-      //                       allowHalfRating: true,
-      //                       itemCount: 5,
-      //                       itemSize: 20,
-      //                       initialRating: review.rating,
-      //                       unratedColor: Color.fromRGBO(192, 192, 192, 1),
-      //                       itemBuilder: (context, _) => Icon(
-      //                         Icons.circle,
-      //                         color: Colors.blue,
-      //                       ),
-      //                       onRatingUpdate: (rating) {},
-      //                       updateOnDrag: true,
-      //                     )
-      //                   : Text("No rating",
-      //                       style: TextStyle(
-      //                           fontSize: 14, fontStyle: FontStyle.italic)),
-      //             ),
-      //           ),
-      //           ListTile(
-      //             title: Padding(
-      //               padding:
-      //                   EdgeInsets.symmetric(horizontal: 5, vertical: 0),
-      //               child:
-      //                   Text(review.review, style: TextStyle(fontSize: 15)),
-      //             ),
-      //           ),
-      //         ],
-      //       ),
-      //     );
-      //   });
-      // ),
-      // ],
-      // );
     } else {
       return Container();
     }
+  }
+
+  Widget displayReviews(List<Review> reviews) {
+    var userReviews =
+        reviews.where((review) => review.userId != currentUser.userId).toList();
+
+    return Column(
+        children: userReviews
+            .map(
+              (review) => Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    ListTile(
+                      leading: Icon(Icons.account_circle, size: 45),
+                      title: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(review.firstName +
+                              " " +
+                              (review.middleName != null
+                                  ? review.middleName + "" + review.lastName
+                                  : review.lastName)),
+                          SizedBox(
+                            width: 5,
+                          ),
+                          Text(
+                            timeAgo(review.addedAt) + " ago" ?? ' ',
+                            style: TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                      subtitle: IgnorePointer(
+                        ignoring: true,
+                        child: review.rating != 0.00
+                            ? RatingBar.builder(
+                                direction: Axis.horizontal,
+                                allowHalfRating: true,
+                                itemCount: 5,
+                                itemSize: 20,
+                                initialRating: review.rating.toDouble(),
+                                unratedColor: Color.fromRGBO(192, 192, 192, 1),
+                                itemBuilder: (context, _) => Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                ),
+                                onRatingUpdate: (rating) {},
+                                updateOnDrag: true,
+                              )
+                            : Text("No rating",
+                                style: TextStyle(
+                                    fontSize: 14, fontStyle: FontStyle.italic)),
+                      ),
+                    ),
+                    Container(
+                      alignment: Alignment.centerLeft,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child:
+                          Text(review.review, style: TextStyle(fontSize: 15)),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList());
   }
 
   @override
@@ -245,7 +274,7 @@ class _MovieViewState extends State<MovieView>
   @override
   Widget build(BuildContext context) {
     final _scaffoldKey = GlobalKey<ScaffoldState>();
-    double _rating;
+    num _rating;
 
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
@@ -270,7 +299,8 @@ class _MovieViewState extends State<MovieView>
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddMovie(movie: movie),
+                    builder: (context) =>
+                        AddMovie(movie: movie, crewEdit: crewEdit),
                   ),
                 );
                 _animationController.reverse();
@@ -463,7 +493,7 @@ class _MovieViewState extends State<MovieView>
                           ),
                           SizedBox(height: 2.0),
                           Text(
-                            '125 mins.',
+                            movie.runningTime.toString() + " mins.",
                             style: TextStyle(
                               fontSize: 16.0,
                             ),
@@ -630,143 +660,158 @@ class _MovieViewState extends State<MovieView>
             // Add Review Text Area
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
-              child: !model.busy && model.reviews.isEmpty
-                  ? Container(
-                      decoration: BoxDecoration(
-                        color: Color.fromRGBO(240, 240, 240, 1),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+              child: Column(
+                children: [
+                  !model.busy &&
+                          (model.reviews
+                                  .where((review) =>
+                                      review.userId == currentUser.userId)
+                                  .isNotEmpty &&
+                              model.isEditing == false)
+                      ? checkReview(model.reviews)
+                      : Container(
+                          decoration: BoxDecoration(
+                            color: Color.fromRGBO(240, 240, 240, 1),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: 10,
-                              ),
-                              Padding(
-                                padding: EdgeInsets.only(top: 10),
-                                child: Row(
-                                  children: [
-                                    Text("Your rating: ",
-                                        style: TextStyle(fontSize: 16)),
-                                    RatingBar.builder(
-                                      direction: Axis.horizontal,
-                                      allowHalfRating: true,
-                                      itemCount: 5,
-                                      itemSize: 25,
-                                      unratedColor:
-                                          Color.fromRGBO(192, 192, 192, 1),
-                                      itemPadding:
-                                          EdgeInsets.symmetric(horizontal: 2.0),
-                                      itemBuilder: (context, _) => Icon(
-                                        Icons.circle,
-                                        color: Colors.blue,
-                                      ),
-                                      onRatingUpdate: (rating) {
-                                        _rating = rating;
-                                      },
-                                      updateOnDrag: true,
+                              Row(
+                                children: [
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 10),
+                                    child: Row(
+                                      children: [
+                                        Text("Your rating: ",
+                                            style: TextStyle(fontSize: 16)),
+                                        RatingBar.builder(
+                                          direction: Axis.horizontal,
+                                          allowHalfRating: true,
+                                          itemCount: 5,
+                                          itemSize: 25,
+                                          unratedColor:
+                                              Color.fromRGBO(192, 192, 192, 1),
+                                          itemPadding: EdgeInsets.symmetric(
+                                              horizontal: 2.0),
+                                          itemBuilder: (context, _) => Icon(
+                                            Icons.star,
+                                            color: Colors.amber,
+                                          ),
+                                          onRatingUpdate: (rating) {
+                                            _rating = rating;
+                                          },
+                                          updateOnDrag: true,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Padding(
-                            padding: EdgeInsets.only(left: 10),
-                            child: Text("Your review:",
-                                style: TextStyle(fontSize: 16)),
-                          ),
-                          SizedBox(height: 5),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
-                            child: TextFormField(
-                              controller: reviewController,
-                              style: TextStyle(
-                                color: Colors.black,
+                              SizedBox(height: 10),
+                              Padding(
+                                padding: EdgeInsets.only(left: 10),
+                                child: Text("Your review:",
+                                    style: TextStyle(fontSize: 16)),
                               ),
-                              maxLines: null,
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.white,
-                                hintText: "Write here...",
-                                hintStyle: TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 16,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide.none,
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide.none,
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(5),
-                                  borderSide: BorderSide(color: Colors.red),
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                          Container(
-                            padding: EdgeInsets.only(left: 20),
-                            alignment: Alignment.centerLeft,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(5)),
-                            child: ButtonTheme(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 6.0,
-                                  horizontal:
-                                      10.0), //adds padding inside the button
-                              materialTapTargetSize: MaterialTapTargetSize
-                                  .shrinkWrap, //limits the touch area to the button area
-                              minWidth: 0, //wraps child's width
-                              height: 0,
-                              child: FlatButton(
-                                color: Colors.lightBlue,
-                                onPressed: () {
-                                  print(_rating);
-                                  // submit post and save into db
-                                  var model = ReviewViewModel();
-                                  final response = model.addReview(
-                                      movieId: movie.movieId.toString(),
-                                      userId: currentUser.userId.toString(),
-                                      rating: _rating.toString(),
-                                      review: reviewController.text);
-
-                                  if (response != null) {
-                                    // show success snackbar
-                                    _scaffoldKey.currentState.showSnackBar(
-                                        mySnackBar(
-                                            context,
-                                            'Your review has been posted.',
-                                            Colors.green));
-                                  } else {
-                                    // show error snackbar
-                                    _scaffoldKey.currentState.showSnackBar(
-                                        mySnackBar(
-                                            context,
-                                            'Something went wrong. Please try again later.',
-                                            Colors.green));
-                                  }
-                                },
-                                child: Text(
-                                  "POST",
+                              SizedBox(height: 5),
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 20),
+                                child: TextFormField(
+                                  controller: reviewController,
                                   style: TextStyle(
-                                      fontSize: 14, color: Colors.white),
+                                    color: Colors.black,
+                                  ),
+                                  maxLines: null,
+                                  decoration: InputDecoration(
+                                    filled: true,
+                                    fillColor: Colors.white,
+                                    hintText: "Write here...",
+                                    hintStyle: TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 16,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    errorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(5),
+                                      borderSide: BorderSide(color: Colors.red),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                          SizedBox(height: 10),
-                        ],
-                      ))
-                  : checkReview(model.reviews),
+                              SizedBox(height: 10),
+                              Container(
+                                padding: EdgeInsets.only(left: 20),
+                                alignment: Alignment.centerLeft,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5)),
+                                child: ButtonTheme(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 6.0,
+                                      horizontal:
+                                          10.0), //adds padding inside the button
+                                  materialTapTargetSize: MaterialTapTargetSize
+                                      .shrinkWrap, //limits the touch area to the button area
+                                  minWidth: 0, //wraps child's width
+                                  height: 0,
+                                  child: FlatButton(
+                                    color: Colors.lightBlue,
+                                    onPressed: () {
+                                      print(_rating);
+                                      // submit post and save into db
+                                      var model = ReviewViewModel();
+                                      final response = model.addReview(
+                                          movieId: movie.movieId.toString(),
+                                          userId: currentUser.userId.toString(),
+                                          rating: _rating.toString(),
+                                          review: reviewController.text);
+
+                                      if (response != null) {
+                                        // show success snackbar
+                                        _scaffoldKey.currentState.showSnackBar(
+                                            mySnackBar(
+                                                context,
+                                                'Your review has been posted.',
+                                                Colors.green));
+                                      } else {
+                                        // show error snackbar
+                                        _scaffoldKey.currentState.showSnackBar(
+                                            mySnackBar(
+                                                context,
+                                                'Something went wrong. Please try again later.',
+                                                Colors.green));
+                                      }
+                                    },
+                                    child: Text(
+                                      "POST",
+                                      style: TextStyle(
+                                          fontSize: 14, color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 10),
+                            ],
+                          )),
+                ],
+              ),
             ),
+            // display other reviews for this movie
+            Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: !model.busy && model.reviews.isNotEmpty
+                    ? displayReviews(model.reviews)
+                    : Container()),
             SizedBox(height: 25),
           ],
         ),
