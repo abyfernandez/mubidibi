@@ -643,6 +643,9 @@ class _MovieViewState extends State<MovieView>
                 'assets/test/5.jpeg',
                 'assets/test/6.jpg'
               ],
+              // images: crewEdit[2]
+              //     .map((actors) => actors.p)
+              //     .toList(),
               title: 'Actors',
               imageHeight: 150.0,
               imageWidth: 100.0,

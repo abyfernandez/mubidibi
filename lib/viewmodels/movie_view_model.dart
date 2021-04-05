@@ -52,7 +52,24 @@ class MovieViewModel extends BaseModel {
     List<String> mime = mimetype.split('/');
 
     // TO DO: EDIT AND/OR ADD MOVIE
-    // TO DO: MUTIPLE IMAGE UPLOAD
+
+    var images = [];
+
+    void setImages() {
+      images.add(MultipartFile.fromFileSync(poster.path,
+          filename: filename,
+          contentType:
+              MediaType(mime[0], mime[1]))); // add poster in first index
+      images.addAll(screenshots
+          .map((file) => MultipartFile.fromFileSync(file.path,
+              filename: file.path.split('/').last,
+              contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                  lookupMimeType(file.path).split('/')[1])))
+          .toList());
+    }
+
+    // prepare images for formdata
+    setImages();
 
     // multi-part request
     Dio dio = new Dio();
@@ -67,14 +84,9 @@ class MovieViewModel extends BaseModel {
         'writers': writers,
         'added_by': addedBy,
       }),
-      "file": MultipartFile.fromFileSync(poster.path,
-          filename: filename, contentType: MediaType(mime[0], mime[1])),
-      "files": screenshots
-          .map((file) => MultipartFile.fromFileSync(file.path,
-              filename: file.path.split('/').last,
-              contentType: MediaType(lookupMimeType(file.path).split('/')[0],
-                  lookupMimeType(file.path).split('/')[1])))
-          .toList(),
+      // "file": MultipartFile.fromFileSync(poster.path,
+      //     filename: filename, contentType: MediaType(mime[0], mime[1])),
+      "files": images,
     });
     var response = await dio.post(
       Config.api + 'add-movie/',

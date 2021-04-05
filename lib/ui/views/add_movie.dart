@@ -296,7 +296,7 @@ class _AddMovieState extends State<AddMovie> {
                                     }
                                     break;
                                   case 1: // poster
-                                    if (imageFile == null ||
+                                    if (imageFile == null &&
                                         imageURI.trim() == '') {
                                       // show error snackbar
                                       _scaffoldKey.currentState.showSnackBar(
@@ -348,7 +348,7 @@ class _AddMovieState extends State<AddMovie> {
                                       }
                                       break;
                                     case 1: // poster
-                                      if (imageFile == null ||
+                                      if (imageFile == null &&
                                           imageURI.trim() == '') {
                                         checker = false;
                                       }
@@ -401,7 +401,7 @@ class _AddMovieState extends State<AddMovie> {
                                     }
                                     break;
                                   case 1: // poster
-                                    if (imageFile == null ||
+                                    if (imageFile == null &&
                                         imageURI.trim() == '') {
                                       // show error snackbar
                                       _scaffoldKey.currentState.showSnackBar(
