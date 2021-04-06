@@ -65,7 +65,6 @@ class _MovieViewState extends State<MovieView>
       crewEdit = crew;
     });
 
-    print(crewEdit);
     return crew;
   }
 
@@ -117,7 +116,7 @@ class _MovieViewState extends State<MovieView>
                               " " +
                               (userReview.middleName != null
                                   ? userReview.middleName +
-                                      "" +
+                                      " " +
                                       userReview.lastName
                                   : userReview.lastName)),
                           SizedBox(
@@ -133,8 +132,6 @@ class _MovieViewState extends State<MovieView>
                         child: Icon(Icons.more_vert),
                         onTap: () {
                           _showPopupMenu();
-                          // print("More");
-                          //
                         },
                       ),
                       // PopupMenuButton(
@@ -530,126 +527,143 @@ class _MovieViewState extends State<MovieView>
             SizedBox(height: 15),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: Text("Directors",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  )),
+              child: ContentScroll(
+                crew: crewEdit != null
+                    ? crewEdit[1].map((director) => director).toList()
+                    : [],
+                title: 'Directors',
+                imageHeight: 120.0,
+                imageWidth: 100.0,
+              ),
             ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 40.0),
-              alignment: Alignment.topLeft,
-              child: FutureBuilder(
-                  future: crew,
-                  builder: (BuildContext context, AsyncSnapshot snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      if (snapshot.data[0].isEmpty)
-                        return Column(
-                          children: [
-                            Text(
-                              "No records found.",
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        );
-                      else {
-                        return Column(
-                            children: snapshot.data[0]
-                                .map<Widget>(
-                                  (director) => new Row(
-                                    children: [
-                                      new Icon(Icons.fiber_manual_record,
-                                          size: 16),
-                                      SizedBox(
-                                        width: 5,
-                                      ),
-                                      new Text(
-                                        director.firstName +
-                                            " " +
-                                            director.lastName,
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                                .toList());
-                      }
-                    } else {
-                      return Container();
-                    }
-                  }),
-            ),
+            // Padding(
+            //   padding: EdgeInsets.symmetric(horizontal: 20.0),
+            //   child: Text("Directors",
+            //       style: TextStyle(
+            //         fontSize: 18,
+            //         fontWeight: FontWeight.bold,
+            //       )),
+            // ),
+            // Container(
+            //   padding: EdgeInsets.symmetric(horizontal: 40.0),
+            //   alignment: Alignment.topLeft,
+            //   child: FutureBuilder(
+            //       future: crew,
+            //       builder: (BuildContext context, AsyncSnapshot snapshot) {
+            //         if (snapshot.connectionState == ConnectionState.done) {
+            //           if (snapshot.data[0].isEmpty)
+            //             return Column(
+            //               children: [
+            //                 Text(
+            //                   "No records found.",
+            //                   style: TextStyle(fontSize: 16),
+            //                 ),
+            //               ],
+            //             );
+            //           else {
+            //             return Column(
+            //                 children: snapshot.data[0]
+            //                     .map<Widget>(
+            //                       (director) => new Row(
+            //                         children: [
+            //                           new Icon(Icons.fiber_manual_record,
+            //                               size: 16),
+            //                           SizedBox(
+            //                             width: 5,
+            //                           ),
+            //                           new Text(
+            //                             director.firstName +
+            //                                 " " +
+            //                                 director.lastName,
+            //                             style: TextStyle(fontSize: 16),
+            //                           ),
+            //                         ],
+            //                       ),
+            //                     )
+            //                     .toList());
+            //           }
+            //         } else {
+            //           return Container();
+            //         }
+            //       }),
+            // ),
             SizedBox(height: 15),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: Text("Writers",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  )),
+              child: ContentScroll(
+                crew: crewEdit != null
+                    ? crewEdit[1].map((writer) => writer).toList()
+                    : [],
+                title: 'Writers',
+                imageHeight: 120.0,
+                imageWidth: 100.0,
+              ),
             ),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 40.0),
-              alignment: Alignment.topLeft,
-              child: FutureBuilder(
-                  future: crew,
-                  builder: (BuildContext context, AsyncSnapshot snapshot) {
-                    if (snapshot.connectionState == ConnectionState.done) {
-                      if (snapshot.data[1].isEmpty)
-                        return Column(
-                          children: [
-                            Text(
-                              "No records found.",
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ],
-                        );
-                      else {
-                        return Column(
-                            children: snapshot.data[1]
-                                .map<Widget>(
-                                  (writer) => new Row(
-                                    children: [
-                                      new Icon(Icons.fiber_manual_record,
-                                          size: 16),
-                                      SizedBox(
-                                        width: 5,
-                                      ),
-                                      new Text(
-                                        writer.firstName +
-                                            " " +
-                                            writer.lastName,
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                                .toList());
-                      }
-                    } else {
-                      return Container();
-                    }
-                  }),
+            // Padding(
+            //   padding: EdgeInsets.symmetric(horizontal: 20.0),
+            //   child: Text("Writers",
+            //       style: TextStyle(
+            //         fontSize: 18,
+            //         fontWeight: FontWeight.bold,
+            //       )),
+            // ),
+            // Container(
+            //   padding: EdgeInsets.symmetric(horizontal: 40.0),
+            //   alignment: Alignment.topLeft,
+            //   child: FutureBuilder(
+            //       future: crew,
+            //       builder: (BuildContext context, AsyncSnapshot snapshot) {
+            //         if (snapshot.connectionState == ConnectionState.done) {
+            //           if (snapshot.data[1].isEmpty)
+            //             return Column(
+            //               children: [
+            //                 Text(
+            //                   "No records found.",
+            //                   style: TextStyle(fontSize: 16),
+            //                 ),
+            //               ],
+            //             );
+            //           else {
+            //             return Column(
+            //                 children: snapshot.data[1]
+            //                     .map<Widget>(
+            //                       (writer) => new Row(
+            //                         children: [
+            //                           new Icon(Icons.fiber_manual_record,
+            //                               size: 16),
+            //                           SizedBox(
+            //                             width: 5,
+            //                           ),
+            //                           new Text(
+            //                             writer.firstName +
+            //                                 " " +
+            //                                 writer.lastName,
+            //                             style: TextStyle(fontSize: 16),
+            //                           ),
+            //                         ],
+            //                       ),
+            //                     )
+            //                     .toList());
+            //           }
+            //         } else {
+            //           return Container();
+            //         }
+            //       }),
+            // ),
+            SizedBox(height: 15),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.0),
+              child: ContentScroll(
+                crew: crewEdit != null
+                    ? crewEdit[2].map((actors) => actors).toList()
+                    : [],
+                title: 'Actors',
+                imageHeight: 120.0,
+                imageWidth: 100.0,
+              ),
             ),
             SizedBox(height: 15),
-            ContentScroll(
-              // images are hardcoded for now.
-              // TO DO: create a function that returns a List<String> of all the photos of the crew
-              images: [
-                'assets/test/1.jpg',
-                'assets/test/2.jpg',
-                'assets/test/3.jpg',
-                'assets/test/4.jpg',
-                'assets/test/5.jpeg',
-                'assets/test/6.jpg'
-              ],
-              // images: crewEdit[2]
-              //     .map((actors) => actors.p)
-              //     .toList(),
-              title: 'Actors',
-              imageHeight: 150.0,
-              imageWidth: 100.0,
-            ),
+
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 20.0),
               child: Text("Reviews",
@@ -667,9 +681,10 @@ class _MovieViewState extends State<MovieView>
                 children: [
                   !model.busy &&
                           (model.reviews
-                                  .where((review) =>
-                                      review.userId == currentUser.userId)
-                                  .isNotEmpty &&
+                                      .where((review) =>
+                                          review.userId == currentUser.userId)
+                                      .length !=
+                                  0 &&
                               model.isEditing == false)
                       ? checkReview(model.reviews)
                       : Container(

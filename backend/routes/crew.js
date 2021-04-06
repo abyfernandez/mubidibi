@@ -44,7 +44,7 @@ exports.crew = app => {
       crew.push(actor.rows);
 
       release();
-      res.send(JSON.stringify(crew));
+      res.send(err || JSON.stringify(crew));
       // res.send(err || crew);
     }
   });

@@ -39,11 +39,13 @@ class CrewViewModel extends BaseModel {
     if (response.statusCode == 200) {
       // create a list of CREW
       if (items.isNotEmpty) {
-        for (var i = 0; i < items.length; i++) {
-          var item = List<Crew>.from(items[i].map((x) => Crew.fromJson(x)));
-
-          crew.add(item);
-        }
+        // for (var i = 0; i < items.length; i++) {
+        //   var item = List<Crew>.from(
+        //       List<Crew>.from(items[i].map((x) => Crew.fromJson(x))));
+        //   crew.add(item);
+        // }
+        crew = List<List<Crew>>.from(
+            items.map((x) => List<Crew>.from(x.map((x) => Crew.fromJson(x)))));
       }
     } else {
       throw Exception('Failed to get crew');

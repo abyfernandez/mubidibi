@@ -43,6 +43,8 @@ class _AddMovieState extends State<AddMovie> {
   final titleController = TextEditingController();
   final synopsisController = TextEditingController();
   final runtimeController = TextEditingController();
+  final dateController = TextEditingController();
+
   File imageFile; // for uploading poster w/ image picker
   final picker = ImagePicker();
   var mimetype;
@@ -65,7 +67,7 @@ class _AddMovieState extends State<AddMovie> {
   int currentStep = 0;
   List<String> stepperTitle = [
     "Title, Release Date, Running Time, and Synopsis",
-    "Poster",
+    "Poster and Screenshots",
     "Crew Member/s",
     "Genre/s",
     "Review"
@@ -109,6 +111,7 @@ class _AddMovieState extends State<AddMovie> {
     if (_datePicker != null && _datePicker != _date) {
       setState(() {
         _date = _datePicker;
+        dateController.text = DateFormat("MMM. d, y").format(_date);
       });
     }
   }
@@ -168,27 +171,61 @@ class _AddMovieState extends State<AddMovie> {
   }
 
   Widget displayScreenshots() {
-    return Column(
-        children: screenshots
-            .map(
-              (pic) => Container(
-                height: 200,
-                width: 150,
-                child: Image.file(
-                  pic,
-                  width: 150,
-                  height: 200,
-                  fit: BoxFit.cover,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: screenshots
+          .map(
+            (pic) => Stack(
+              children: [
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 5),
+                  height: 70,
+                  width: 70,
+                  child: Image.file(
+                    pic,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
                 ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
+                Container(
+                  alignment: Alignment.center,
+                  child: GestureDetector(
+                    child: Icon(Icons.close),
+                    onTap: () {
+                      setState(() {
+                        screenshots.remove(pic);
+                      });
+                    },
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey,
+                        offset: Offset(0.0, 2.0),
+                        blurRadius: 6.0,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            )
-            .toList());
+              ],
+            ),
+          )
+          .toList(),
+    );
   }
 
-  final _formKey = GlobalKey<FormState>();
+  List<GlobalKey<FormState>> _formKeys = [
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>()
+  ];
 
   @override
   void initState() {
@@ -217,13 +254,16 @@ class _AddMovieState extends State<AddMovie> {
 
         // GENRES
         filmGenres = genreIndices(movie?.genre ?? []);
-
         // CREW
-        directors = crewEdit.isNotEmpty
-            ? crewEdit[0].map((d) => d.crewId).toList()
+        directors = crewEdit != null
+            ? crewEdit.isNotEmpty
+                ? crewEdit[0].map((d) => d.crewId).toList()
+                : []
             : [];
-        writers = crewEdit.isNotEmpty
-            ? crewEdit[1].map((e) => e.crewId).toList()
+        writers = crewEdit != null
+            ? crewEdit.isNotEmpty
+                ? crewEdit[1].map((e) => e.crewId).toList()
+                : []
             : [];
         // TO DO: ACTORS FIELD
       },
@@ -265,258 +305,248 @@ class _AddMovieState extends State<AddMovie> {
                     padding: EdgeInsets.symmetric(
                       horizontal: 30.0,
                     ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        children: [
-                          SizedBox(height: 20),
-                          MyStepper(
-                            type: MyStepperType.vertical,
-                            currentStep: currentStep,
-                            onStepTapped: (step) async {
-                              // only allow tapping of steps for those already completed
-                              if (step <= currentStep) {
-                                // do not allow tapping of future steps
-                                setState(() => currentStep = step);
-                              } else if (step == currentStep + 1) {
-                                // allow tapping of immediate future step once the fields are all filled out
-                                switch (currentStep) {
-                                  case 0: // title, release date, and synopsis
-                                    if (titleController.text.trim() == "" ||
-                                        _date == null ||
-                                        synopsisController.text.trim() == "") {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'All fields are required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => currentStep = step);
-                                    }
-                                    break;
-                                  case 1: // poster
-                                    if (imageFile == null &&
-                                        imageURI.trim() == '') {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'Poster is required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => currentStep = step);
-                                    }
-                                    break;
-                                  case 2: // crew members
-                                    if (directors.length == 0 ||
-                                        writers.length == 0) {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'All fields are required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => currentStep = step);
-                                    }
-                                    break;
-                                  case 3: // genre
-                                    if (filmGenres.length == 0) {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'Genre is required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => currentStep = step);
-                                    }
-                                    break;
-                                }
-                              } else if (step >= currentStep + 2) {
-                                // check first if steps before the clicked step are all filled out before allowing or not
-                                bool checker = true;
-                                for (var i = currentStep; i < step; i++) {
-                                  switch (i) {
-                                    case 0: // title, release date, and synopsis
-                                      if (titleController.text.trim() == "" ||
-                                          _date == null ||
-                                          synopsisController.text.trim() ==
-                                              "") {
-                                        checker = false;
-                                      }
-                                      break;
-                                    case 1: // poster
-                                      if (imageFile == null &&
-                                          imageURI.trim() == '') {
-                                        checker = false;
-                                      }
-                                      break;
-                                    case 2: // crew members
-                                      if (directors.length == 0 ||
-                                          writers.length == 0) {
-                                        checker = false;
-                                      }
-                                      break;
-                                    case 3: // genre
-                                      if (filmGenres.length == 0) {
-                                        checker = false;
-                                      }
-                                      break;
-                                  }
-                                }
-                                if (checker == false) {
-                                  // show error snackbar
-                                  _scaffoldKey.currentState.showSnackBar(
-                                      mySnackBar(
-                                          context,
-                                          'Skipping of steps is not allowed.',
-                                          Colors.red));
-                                } else {
-                                  setState(() => currentStep = step);
-                                }
-                              }
-                            },
-                            onStepCancel: () => {
-                              if (currentStep != 0)
-                                setState(() => --currentStep)
-                            }, // else do nothing
-                            onStepContinue: () async {
-                              if (currentStep + 1 != stepperTitle.length) {
-                                // do not allow user to continue to next step if inputs aren't filled out yet
-                                switch (currentStep) {
-                                  case 0: // title, release date, and synopsis
-                                    if (titleController.text.trim() == "" ||
-                                        _date == null ||
-                                        synopsisController.text.trim() == "") {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'All fields are required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => ++currentStep);
-                                    }
-                                    break;
-                                  case 1: // poster
-                                    if (imageFile == null &&
-                                        imageURI.trim() == '') {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'Poster is required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => ++currentStep);
-                                    }
-                                    break;
-                                  case 2: // crew members
-                                    if (directors.length == 0 ||
-                                        writers.length == 0) {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'All fields are required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => ++currentStep);
-                                    }
-                                    break;
-                                  case 3: // genre
-                                    if (filmGenres.length == 0) {
-                                      // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'Genre is required.',
-                                              Colors.red));
-                                    } else {
-                                      setState(() => ++currentStep);
-                                    }
-                                    break;
-                                }
-                              } else {
-                                // last step
-                                var confirm =
-                                    await _dialogService.showConfirmationDialog(
-                                        title: "Confirm Details",
-                                        cancelTitle: "No",
-                                        confirmationTitle: "Yes",
-                                        description:
-                                            "Are you sure that you want to continue?");
-                                if (confirm.confirmed == true) {
-                                  final response = await model.addMovie(
-                                      title: titleController.text,
-                                      synopsis: synopsisController.text,
-                                      releaseDate: _date.toIso8601String(),
-                                      runningTime: 100.toString(),
-                                      poster: imageFile,
-                                      imageURI: imageURI,
-                                      screenshots: screenshots,
-                                      mimetype: mimetype,
-                                      genre: filmGenres,
-                                      directors: crewIds(directors),
-                                      writers: crewIds(writers),
-                                      addedBy: currentUser.userId);
-
-                                  // while response is not yet returned, show circular progress indicator
-
-                                  if (response != null) {
-                                    // show success snackbar
-                                    _scaffoldKey.currentState.showSnackBar(
-                                        mySnackBar(
-                                            context,
-                                            'Movie added successfully.',
-                                            Colors.green));
-
-                                    // redirect to detail view using response
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            MovieView(movie: response),
-                                      ),
-                                    );
-                                  } else {
+                    child:
+                        // Form(
+                        //   key: _formKey,
+                        //   child:
+                        Column(
+                      children: [
+                        SizedBox(height: 20),
+                        MyStepper(
+                          type: MyStepperType.vertical,
+                          currentStep: currentStep,
+                          onStepTapped: (step) async {
+                            // only allow tapping of steps for those already completed
+                            if (step <= currentStep) {
+                              // do not allow tapping of future steps
+                              setState(() => currentStep = step);
+                            } else if (step == currentStep + 1) {
+                              // allow tapping of immediate future step once the fields are all filled out
+                              switch (currentStep) {
+                                case 0: // title, release date, and synopsis
+                                  if (titleController.text.trim() == "" ||
+                                      _date == null ||
+                                      synopsisController.text.trim() == "") {
                                     // show error snackbar
                                     _scaffoldKey.currentState.showSnackBar(
                                         mySnackBar(
                                             context,
-                                            'Something went wrong. Check your inputs and try again.',
+                                            'All fields are required.',
                                             Colors.red));
+                                  } else {
+                                    setState(() => currentStep = step);
                                   }
+                                  break;
+                                case 1: // poster
+                                  if (imageFile == null &&
+                                      imageURI.trim() == '') {
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(context,
+                                            'Poster is required.', Colors.red));
+                                  } else {
+                                    setState(() => currentStep = step);
+                                  }
+                                  break;
+                                case 2: // crew members
+                                  if (directors.length == 0 ||
+                                      writers.length == 0) {
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(
+                                            context,
+                                            'All fields are required.',
+                                            Colors.red));
+                                  } else {
+                                    setState(() => currentStep = step);
+                                  }
+                                  break;
+                                case 3: // genre
+                                  if (filmGenres.length == 0) {
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(context,
+                                            'Genre is required.', Colors.red));
+                                  } else {
+                                    setState(() => currentStep = step);
+                                  }
+                                  break;
+                              }
+                            } else if (step >= currentStep + 2) {
+                              // check first if steps before the clicked step are all filled out before allowing or not
+                              bool checker = true;
+                              for (var i = currentStep; i < step; i++) {
+                                switch (i) {
+                                  case 0: // title, release date, and synopsis
+                                    if (titleController.text.trim() == "" ||
+                                        _date == null ||
+                                        synopsisController.text.trim() == "") {
+                                      checker = false;
+                                    }
+                                    break;
+                                  case 1: // poster
+                                    if (imageFile == null &&
+                                        imageURI.trim() == '') {
+                                      checker = false;
+                                    }
+                                    break;
+                                  case 2: // crew members
+                                    if (directors.length == 0 ||
+                                        writers.length == 0) {
+                                      checker = false;
+                                    }
+                                    break;
+                                  case 3: // genre
+                                    if (filmGenres.length == 0) {
+                                      checker = false;
+                                    }
+                                    break;
                                 }
                               }
-                            },
-                            steps: [
-                              for (var i = 0; i < stepperTitle.length; i++)
-                                MyStep(
-                                  title: Text(
-                                    stepperTitle[i],
-                                    style: TextStyle(
-                                      fontSize: 18,
+                              if (checker == false) {
+                                // show error snackbar
+                                _scaffoldKey.currentState.showSnackBar(
+                                    mySnackBar(
+                                        context,
+                                        'Skipping of steps is not allowed.',
+                                        Colors.red));
+                              } else {
+                                setState(() => currentStep = step);
+                              }
+                            }
+                          },
+                          onStepCancel: () => {
+                            if (currentStep != 0) setState(() => --currentStep)
+                          }, // else do nothing
+                          onStepContinue: () async {
+                            if (currentStep + 1 != stepperTitle.length) {
+                              // do not allow user to continue to next step if inputs aren't filled out yet
+                              switch (currentStep) {
+                                case 0: // title, release date, and synopsis
+                                  setState(() {
+                                    if (_formKeys[currentStep]
+                                        .currentState
+                                        .validate()) {
+                                      currentStep++;
+                                    }
+                                  });
+                                  break;
+
+                                case 1: // poster
+                                  if (imageFile == null &&
+                                      imageURI.trim() == "") {
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(context,
+                                            'Poster is required', Colors.red));
+                                  } else {
+                                    setState(() {
+                                      currentStep++;
+                                    });
+                                  }
+                                  break;
+                                case 2: // crew members
+                                  if (directors.length == 0 ||
+                                      writers.length == 0) {
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(
+                                            context,
+                                            'All fields are required.',
+                                            Colors.red));
+                                  } else {
+                                    setState(() => ++currentStep);
+                                  }
+                                  break;
+                                case 3: // genre
+                                  if (filmGenres.length == 0) {
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(context,
+                                            'Genre is required.', Colors.red));
+                                  } else {
+                                    setState(() => ++currentStep);
+                                  }
+                                  break;
+                              }
+                            } else {
+                              // last step
+                              var confirm =
+                                  await _dialogService.showConfirmationDialog(
+                                      title: "Confirm Details",
+                                      cancelTitle: "No",
+                                      confirmationTitle: "Yes",
+                                      description:
+                                          "Are you sure that you want to continue?");
+                              if (confirm.confirmed == true) {
+                                final response = await model.addMovie(
+                                    title: titleController.text,
+                                    synopsis: synopsisController.text,
+                                    releaseDate: _date.toIso8601String(),
+                                    runningTime: 100.toString(),
+                                    poster: imageFile,
+                                    imageURI: imageURI,
+                                    screenshots: screenshots,
+                                    mimetype: mimetype,
+                                    genre: filmGenres,
+                                    directors: crewIds(directors),
+                                    writers: crewIds(writers),
+                                    addedBy: currentUser.userId);
+
+                                // while response is not yet returned, show circular progress indicator
+
+                                if (response != null) {
+                                  // show success snackbar
+                                  _scaffoldKey.currentState.showSnackBar(
+                                      mySnackBar(
+                                          context,
+                                          'Movie added successfully.',
+                                          Colors.green));
+
+                                  // redirect to detail view using response
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          MovieView(movie: response),
                                     ),
-                                  ),
-                                  isActive: i <= currentStep,
-                                  state: i == currentStep
-                                      ? MyStepState.editing
-                                      : i < currentStep
-                                          ? MyStepState.complete
-                                          : MyStepState.indexed,
-                                  content: LimitedBox(
-                                    maxWidth: 300,
-                                    child: getContent(i),
+                                  );
+                                } else {
+                                  // show error snackbar
+                                  _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                      context,
+                                      'Something went wrong. Check your inputs and try again.',
+                                      Colors.red));
+                                }
+                              }
+                            }
+                          },
+                          steps: [
+                            for (var i = 0; i < stepperTitle.length; i++)
+                              MyStep(
+                                title: Text(
+                                  stepperTitle[i],
+                                  style: TextStyle(
+                                    fontSize: 18,
                                   ),
                                 ),
-                            ],
-                          ),
-                        ],
-                      ),
+                                isActive: i <= currentStep,
+                                state: i == currentStep
+                                    ? MyStepState.editing
+                                    : i < currentStep
+                                        ? MyStepState.complete
+                                        : MyStepState.indexed,
+                                content: LimitedBox(
+                                  maxWidth: 300,
+                                  child: Form(
+                                      key: _formKeys[i], child: getContent(i)),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
+                    // ),
                   ),
                 ),
               ],
@@ -537,6 +567,7 @@ class _AddMovieState extends State<AddMovie> {
               // MOVIE TITLE
               TextFormField(
                 controller: titleController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 style: TextStyle(
                   color: Colors.black,
                 ),
@@ -558,11 +589,15 @@ class _AddMovieState extends State<AddMovie> {
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.red),
                   ),
                 ),
                 validator: (value) {
-                  if (value.isEmpty) {
+                  if (value.isEmpty || value == null) {
                     return 'Movie title is required';
                   }
                   return null;
@@ -573,6 +608,9 @@ class _AddMovieState extends State<AddMovie> {
               ),
               TextFormField(
                 readOnly: true,
+                controller: dateController,
+                keyboardType: TextInputType.datetime,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 onTap: () {
                   _selectDate(context);
                 },
@@ -599,15 +637,67 @@ class _AddMovieState extends State<AddMovie> {
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.red),
                   ),
                 ),
+                validator: (value) {
+                  if (value.isEmpty || value == null) {
+                    return 'Release Date is required';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 10),
+              // RUNNING TIME
+              TextFormField(
+                controller: runtimeController,
+                keyboardType: TextInputType.number,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+                decoration: InputDecoration(
+                  hintText: "Running Time (in minutes) *",
+                  hintStyle: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
+                  filled: true,
+                  fillColor: Color.fromRGBO(240, 240, 240, 1),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide.none,
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                ),
+                validator: (value) {
+                  if (value.isEmpty || value == null) {
+                    return 'Running time is required';
+                  }
+                  return null;
+                },
               ),
               SizedBox(
                 height: 10,
               ),
               TextFormField(
                 controller: synopsisController,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 style: TextStyle(
                   color: Colors.black,
                 ),
@@ -632,9 +722,13 @@ class _AddMovieState extends State<AddMovie> {
                     borderRadius: BorderRadius.circular(5),
                     borderSide: BorderSide(color: Colors.red),
                   ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(5),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
                 ),
                 validator: (value) {
-                  if (value.isEmpty) {
+                  if (value.isEmpty || value == null) {
                     return 'Synopsis is required';
                   }
                   return null;
@@ -648,79 +742,122 @@ class _AddMovieState extends State<AddMovie> {
         );
       case 1:
         return Container(
+          alignment: Alignment.topLeft,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
                 height: 10,
               ),
-              GestureDetector(
-                onTap: getImage,
-                child: Container(
-                  height: 200,
-                  width: 150,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: imageFile != null || imageURI.trim() != ''
-                      ? Container(
-                          height: 200,
-                          width: 150,
-                          child: imageFile != null
-                              ? Image.file(
-                                  imageFile,
-                                  width: 150,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                )
-                              : Image.network(
-                                  imageURI,
-                                  width: 150,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                ))
-                      : Container(
-                          height: 200,
-                          width: 150,
-                          child: Icon(
-                            Icons.camera_alt,
-                            color: Colors.grey[800],
-                          ),
-                          decoration: BoxDecoration(
-                            color: Color.fromRGBO(240, 240, 240, 1),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        ),
-                ),
-              ),
+              Text('Poster',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 10,
               ),
-              GestureDetector(
-                onTap: getScreenshot,
-                child: Container(
-                  height: 200,
-                  width: 150,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Container(
-                    height: 200,
-                    width: 150,
-                    child: Icon(
-                      Icons.camera_alt,
-                      color: Colors.grey[800],
+              Stack(
+                children: [
+                  GestureDetector(
+                    onTap: getImage,
+                    child: Container(
+                      margin: EdgeInsets.only(left: 20),
+                      height: 200,
+                      width: 150,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: imageFile != null || imageURI.trim() != ''
+                          ? Container(
+                              height: 200,
+                              width: 150,
+                              child: imageFile != null
+                                  ? Image.file(
+                                      imageFile,
+                                      width: 150,
+                                      height: 200,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.network(
+                                      imageURI,
+                                      width: 150,
+                                      height: 200,
+                                      fit: BoxFit.cover,
+                                    ))
+                          : Container(
+                              height: 200,
+                              width: 150,
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: Colors.grey[800],
+                              ),
+                              decoration: BoxDecoration(
+                                color: Color.fromRGBO(240, 240, 240, 1),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                            ),
                     ),
-                    decoration: BoxDecoration(
-                      color: Color.fromRGBO(240, 240, 240, 1),
-                      borderRadius: BorderRadius.circular(5),
+                  ),
+                  imageFile != null || imageURI.trim() != ''
+                      ? Container(
+                          margin: EdgeInsets.only(left: 25, top: 5),
+                          // height: 200,
+                          width: 25,
+                          alignment: Alignment.center,
+                          child: GestureDetector(
+                            child: Icon(Icons.close),
+                            onTap: () {
+                              setState(() {
+                                imageFile = null;
+                                imageURI = '';
+                              });
+                            },
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey,
+                                offset: Offset(0.0, 2.0),
+                                blurRadius: 6.0,
+                              ),
+                            ],
+                          ),
+                        )
+                      : Container(),
+                ],
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              Text('Screenshots',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              SizedBox(
+                height: 10,
+              ),
+              // multiple files for screenshots
+              Padding(
+                padding: EdgeInsets.only(left: 15),
+                child: Container(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Container(
+                            margin: EdgeInsets.symmetric(horizontal: 5),
+                            child: GestureDetector(
+                              child: Icon(Icons.image),
+                              onTap: getScreenshot,
+                            ),
+                            width: 70,
+                            height: 70,
+                            color: Color.fromRGBO(240, 240, 240, 1)),
+                        screenshots.length != 0
+                            ? displayScreenshots()
+                            : Container(),
+                      ],
                     ),
                   ),
                 ),
               ),
-
-              // multiple files for screenshots
-              // TO DO: FIX UI FOR DISPLAY
-              screenshots.length != 0 ? displayScreenshots() : Container(),
             ],
           ),
         );
