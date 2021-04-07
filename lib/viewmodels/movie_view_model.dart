@@ -24,8 +24,30 @@ class MovieViewModel extends BaseModel {
     }
   }
 
+  // Function: GET ONE MOVIE
+  Future<Movie> getOneMovie({@required String movieId}) async {
+    var queryParams = {
+      'id': movieId,
+    };
+    setBusy(true);
+
+    var uri =
+        Uri.http(Config.apiNoHTTP, '/mubidibi/movie/$movieId', queryParams);
+
+    // send API Request
+    final response = await http.get(uri);
+
+    setBusy(false);
+
+    if (response.statusCode == 200) {
+      return Movie.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load movie');
+    }
+  }
+
   // Function: ADD MOVIE
-  Future<Movie> addMovie({
+  Future<int> addMovie({
     @required String title,
     String synopsis,
     String releaseDate,
@@ -38,28 +60,34 @@ class MovieViewModel extends BaseModel {
     List<int> directors,
     List<int> writers,
     String addedBy,
+    int movieId,
   }) async {
     setBusy(true);
 
     List<String> filmGenres = [];
-    Movie movie;
+    var id;
+    String filename;
+    List<String> mime;
+    var images = [];
+    Response response;
 
     for (var g in genre) {
       filmGenres.add(genres.singleWhere((i) => genres.indexOf(i) == g));
     }
 
-    String filename = poster.path.split('/').last;
-    List<String> mime = mimetype.split('/');
+    if (poster != null && mimetype.trim() != '') {
+      filename = poster.path.split('/').last;
+      mime = mimetype.split('/');
+    }
 
-    // TO DO: EDIT AND/OR ADD MOVIE
-
-    var images = [];
-
+    // TO DO: EDIT MOVIE
     void setImages() {
-      images.add(MultipartFile.fromFileSync(poster.path,
-          filename: filename,
-          contentType:
-              MediaType(mime[0], mime[1]))); // add poster in first index
+      if (poster != null) {
+        images.add(MultipartFile.fromFileSync(poster.path,
+            filename: filename,
+            contentType:
+                MediaType(mime[0], mime[1]))); // add poster in first index
+      }
       images.addAll(screenshots
           .map((file) => MultipartFile.fromFileSync(file.path,
               filename: file.path.split('/').last,
@@ -83,28 +111,37 @@ class MovieViewModel extends BaseModel {
         'directors': directors,
         'writers': writers,
         'added_by': addedBy,
+        'posterURI': imageURI,
+        'poster': poster == null ? false : true
       }),
-      // "file": MultipartFile.fromFileSync(poster.path,
-      //     filename: filename, contentType: MediaType(mime[0], mime[1])),
       "files": images,
     });
-    var response = await dio.post(
-      Config.api + 'add-movie/',
-      data: formData,
-    );
 
-    print(response);
-
-    if (response.statusCode == 200) {
-      // convert json response to type Movie
-      movie = Movie.fromJson(json.decode(response.data.toString()));
+    if (movieId != 0) {
+      // UPDATE MOVIE
+      response = await dio.put(Config.api + 'update-movie/$movieId',
+          data: formData, queryParameters: {'id': movieId});
+    } else {
+      // INSERT MOVIE
+      response = await dio.post(
+        Config.api + 'add-movie/',
+        data: formData,
+      );
     }
 
-    return movie;
+    print(json.decode(response.data));
+
+    if (response.statusCode == 200) {
+      id = json.decode(response.data);
+    } else {
+      id = 0;
+    }
+
+    return id;
   }
 
   // DELETE MOVIE
-  Future<http.Response> deleteMovie({@required String id}) async {
+  Future<int> deleteMovie({@required String id}) async {
     var queryParams = {
       'id': id,
     };
@@ -112,6 +149,9 @@ class MovieViewModel extends BaseModel {
     var uri = Uri.http(Config.apiNoHTTP, '/mubidibi/movies/$id', queryParams);
 
     final response = await http.delete(uri);
-    return response;
+
+    if (response.statusCode == 200) {
+      return (json.decode(response.body));
+    }
   }
 }

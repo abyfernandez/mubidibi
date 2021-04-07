@@ -7,6 +7,7 @@ import 'package:mubidibi/ui/widgets/vertical_icon_button.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'dart:ui';
+import 'package:mubidibi/globals.dart' as Config;
 
 import '../../locator.dart';
 
@@ -37,13 +38,16 @@ class _ContentHeaderMobile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final NavigationService _navigationService = locator<NavigationService>();
+    MediaQueryData queryData;
+    queryData = MediaQuery.of(context);
     return Stack(
       alignment: Alignment.center,
       children: [
         Container(
           alignment: Alignment.center,
           margin: const EdgeInsets.symmetric(horizontal: 8.0),
-          height: 500.0,
+          // height: 500.0,
+          height: (queryData.size.height / 2) + 100,
           decoration: BoxDecoration(
             boxShadow: [
               BoxShadow(
@@ -64,17 +68,19 @@ class _ContentHeaderMobile extends StatelessWidget {
           ),
         ),
         Container(
-          height: 500.0,
+          // height: 500.0,
+          height: (queryData.size.height / 2) + 100,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(featuredContent.poster),
+              image: NetworkImage(featuredContent.poster ?? Config.imgNotFound),
               fit: BoxFit.cover,
             ),
           ),
         ),
         GestureDetector(
           child: Container(
-            height: 500.0,
+            // height: 500.0,
+            height: (queryData.size.height / 2) + 100,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                   colors: [Colors.black, Colors.transparent],
@@ -86,7 +92,8 @@ class _ContentHeaderMobile extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FullPhoto(url: featuredContent.poster),
+                builder: (context) => FullPhoto(
+                    url: featuredContent.poster ?? Config.imgNotFound),
               ),
             );
           },

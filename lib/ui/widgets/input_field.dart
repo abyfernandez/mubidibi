@@ -71,6 +71,7 @@ class _InputFieldState extends State<InputField> {
             children: <Widget>[
               Expanded(
                 child: TextFormField(
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
                   style: TextStyle(
                     color: Colors.black,
                   ),
@@ -108,6 +109,12 @@ class _InputFieldState extends State<InputField> {
                     ),
                     contentPadding: EdgeInsets.only(left: 15),
                   ),
+                  validator: (value) {
+                    if (value.isEmpty || value == null) {
+                      return 'This field is required';
+                    }
+                    return null;
+                  },
                 ),
               ),
               GestureDetector(

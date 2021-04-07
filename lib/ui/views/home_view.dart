@@ -96,7 +96,7 @@ class _HomeViewState extends State<HomeView>
           items: <Bubble>[
             // Floating action menu item
             Bubble(
-              title: "Movie",
+              title: "Pelikula",
               iconColor: Colors.white,
               bubbleColor: Colors.lightBlue,
               icon: Icons.add,
@@ -155,14 +155,14 @@ class _HomeViewState extends State<HomeView>
                   SliverToBoxAdapter(
                     child: ContentList(
                       key: PageStorageKey('myFavorites'),
-                      title: 'Favorites',
+                      title: 'Mga Favorite',
                       contentList: snapshot.data,
                     ),
                   ),
                   SliverToBoxAdapter(
                     child: ContentList(
                       key: PageStorageKey('movies'),
-                      title: 'Movies',
+                      title: 'Mga Pelikula',
                       contentList: snapshot.data,
                     ),
                   ),
@@ -191,7 +191,7 @@ class _HomeViewState extends State<HomeView>
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.search_outlined),
-              label: 'Search',
+              label: 'Maghanap',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.account_circle_outlined),

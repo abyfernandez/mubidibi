@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -24,6 +25,8 @@ import 'full_photo.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'home_view.dart';
+import 'package:mubidibi/globals.dart' as Config;
+import 'package:modal_progress_hud/modal_progress_hud.dart';
 
 class MovieView extends StatefulWidget {
   final Movie movie;
@@ -53,6 +56,9 @@ class _MovieViewState extends State<MovieView>
   var currentUser;
   var userReview;
 
+  // Local State Variable/s
+  bool _saving = false;
+
   // variables needed for adding reviews
   final reviewController = TextEditingController();
 
@@ -64,7 +70,6 @@ class _MovieViewState extends State<MovieView>
     setState(() {
       crewEdit = crew;
     });
-
     return crew;
   }
 
@@ -272,6 +277,8 @@ class _MovieViewState extends State<MovieView>
   Widget build(BuildContext context) {
     final _scaffoldKey = GlobalKey<ScaffoldState>();
     num _rating;
+    MediaQueryData queryData;
+    queryData = MediaQuery.of(context);
 
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
@@ -320,22 +327,31 @@ class _MovieViewState extends State<MovieView>
                     description:
                         "Are you sure that you want to delete this movie?");
                 if (response.confirmed == true) {
-                  // _navigationService.pop();
                   var model = MovieViewModel();
+
+                  _saving = true;
+
                   var deleteRes =
                       await model.deleteMovie(id: movie.movieId.toString());
-                  if (deleteRes.statusCode == 200) {
+                  if (deleteRes != 0) {
                     // show success snackbar
                     _scaffoldKey.currentState.showSnackBar(mySnackBar(
                         context, 'Movie deleted successfully.', Colors.green));
+
+                    _saving = false;
+
                     // redirect to homepage
+
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => HomeView(),
                       ),
                     );
+                    // Navigator.popAndPushNamed(context, HomeViewRoute);
                   } else {
+                    _saving = false;
+
                     _scaffoldKey.currentState.showSnackBar(mySnackBar(context,
                         'Something went wrong. Try again.', Colors.red));
                   }
@@ -361,477 +377,428 @@ class _MovieViewState extends State<MovieView>
           iconData: Icons.settings,
           backGroundColor: Colors.lightBlue,
         ),
-        body: ListView(
-          children: <Widget>[
-            Stack(
-              children: <Widget>[
-                Container(
-                  height: 400,
-                  decoration: new BoxDecoration(
-                    image: new DecorationImage(
-                      image: new NetworkImage(widget.movie.poster),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      new BackdropFilter(
-                        filter: new ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
-                        child: new Container(
-                          decoration: new BoxDecoration(
-                              color: Colors.black.withOpacity(0.3)),
-                        ),
+        body: ModalProgressHUD(
+          inAsyncCall: _saving,
+          child: ListView(
+            children: <Widget>[
+              Stack(
+                children: <Widget>[
+                  Container(
+                    height: (queryData.size.height / 2) + 60,
+                    // height: 400,
+                    decoration: new BoxDecoration(
+                      image: new DecorationImage(
+                        image: CachedNetworkImageProvider(
+                            widget.movie.poster ?? Config.imgNotFound),
+                        fit: BoxFit.cover,
                       ),
-                      GestureDetector(
-                        child: Center(
-                          child: Image.network(
-                            widget.movie.poster,
-                            height: 350,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        new BackdropFilter(
+                          filter:
+                              new ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
+                          child: new Container(
+                            decoration: new BoxDecoration(
+                                color: Colors.black.withOpacity(0.3)),
                           ),
                         ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  FullPhoto(url: widget.movie.poster),
+                        GestureDetector(
+                          child: Center(
+                            child: CachedNetworkImage(
+                              placeholder: (context, url) => Container(
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Theme.of(context).accentColor),
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Material(
+                                child: Image.network(
+                                  Config.imgNotFound,
+                                  height: 350,
+                                  width: 250,
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.center,
+                                ),
+                              ),
+                              imageUrl:
+                                  widget.movie.poster ?? Config.imgNotFound,
+                              width: 250,
+                              height: 350,
+                              fit: BoxFit.cover,
                             ),
-                          );
-                        },
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullPhoto(
+                                    url: widget.movie.poster ??
+                                        Config.imgNotFound),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      IconButton(
+                        padding: EdgeInsets.only(left: 30.0),
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(Icons.arrow_back),
+                        iconSize: 30.0,
+                        color: Colors.white,
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.only(right: 20.0),
+                        onPressed: () => print('Add to Favorites'),
+                        icon: Icon(Icons.add),
+                        iconSize: 30.0,
+                        color: Colors.white,
                       ),
                     ],
                   ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ],
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
+                child: Column(
                   children: <Widget>[
-                    IconButton(
-                      padding: EdgeInsets.only(left: 30.0),
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(Icons.arrow_back),
-                      iconSize: 30.0,
-                      color: Colors.white,
+                    Center(
+                      child: Text(
+                        widget.movie.title.toUpperCase(),
+                        style: TextStyle(
+                            fontSize: 25.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    IconButton(
-                      padding: EdgeInsets.only(right: 20.0),
-                      onPressed: () => print('Add to Favorites'),
-                      icon: Icon(Icons.add),
-                      iconSize: 30.0,
-                      color: Colors.white,
+                    widget.movie.genre.isNotEmpty
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                                Text(
+                                  widget.movie.genre.reduce(
+                                      (curr, next) => curr + ", " + next),
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontStyle: FontStyle.italic),
+                                ),
+                              ])
+                        : Container(),
+                    Text(
+                      'OVERALL RATING HERE',
+                      style: TextStyle(fontSize: 20.0),
+                    ),
+                    SizedBox(height: 25),
+                    SizedBox(
+                      height: 15,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: <Widget>[
+                        Column(
+                          children: <Widget>[
+                            Text(
+                              'Petsa ng Paglabas',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 2.0),
+                            Text(
+                              movie.releaseDate != null ||
+                                      movie.releaseDate.trim() != ''
+                                  ? DateFormat("MMM. d, y").format(
+                                      DateTime.parse(movie.releaseDate),
+                                    )
+                                  : '-',
+                              style: TextStyle(
+                                fontSize: 16.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          children: <Widget>[
+                            Text(
+                              'Runtime',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 2.0),
+                            Text(
+                              movie.runningTime != null ||
+                                      movie.runningTime != 0
+                                  ? movie.runningTime.toString() + " minuto"
+                                  : '-',
+                              style: TextStyle(
+                                fontSize: 16.0,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
-              child: Column(
-                children: <Widget>[
-                  Center(
-                    child: Text(
-                      widget.movie.title.toUpperCase(),
-                      style: TextStyle(
-                          fontSize: 25.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Text(
-                      widget.movie.genre
-                          .reduce((curr, next) => curr + ", " + next),
-                      style:
-                          TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-                    ),
-                  ]),
-                  Text(
-                    '⭐ ⭐ ⭐ ⭐',
-                    style: TextStyle(fontSize: 20.0),
-                  ),
-                  SizedBox(height: 25),
-                  SizedBox(
-                    height: 15,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <Widget>[
-                      Column(
-                        children: <Widget>[
-                          Text(
-                            'Date Released',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 2.0),
-                          Text(
-                            DateFormat("MMM. d, y").format(
-                              DateTime.parse(widget.movie.releaseDate),
-                            ),
-                            style: TextStyle(
-                              fontSize: 16.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Column(
-                        children: <Widget>[
-                          Text(
-                            'Running Time',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 2.0),
-                          Text(
-                            movie.runningTime.toString() + " mins.",
-                            style: TextStyle(
-                              fontSize: 16.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
               ),
-            ),
-            SizedBox(height: 15),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: Text(
-                'Synopsis',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18.0,
-                ),
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 40.0),
-              child: Text(
-                widget.movie.synopsis,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 16.0,
-                ),
-              ),
-            ),
-            SizedBox(height: 15),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: ContentScroll(
-                crew: crewEdit != null
-                    ? crewEdit[1].map((director) => director).toList()
-                    : [],
-                title: 'Directors',
-                imageHeight: 120.0,
-                imageWidth: 100.0,
-              ),
-            ),
-            // Padding(
-            //   padding: EdgeInsets.symmetric(horizontal: 20.0),
-            //   child: Text("Directors",
-            //       style: TextStyle(
-            //         fontSize: 18,
-            //         fontWeight: FontWeight.bold,
-            //       )),
-            // ),
-            // Container(
-            //   padding: EdgeInsets.symmetric(horizontal: 40.0),
-            //   alignment: Alignment.topLeft,
-            //   child: FutureBuilder(
-            //       future: crew,
-            //       builder: (BuildContext context, AsyncSnapshot snapshot) {
-            //         if (snapshot.connectionState == ConnectionState.done) {
-            //           if (snapshot.data[0].isEmpty)
-            //             return Column(
-            //               children: [
-            //                 Text(
-            //                   "No records found.",
-            //                   style: TextStyle(fontSize: 16),
-            //                 ),
-            //               ],
-            //             );
-            //           else {
-            //             return Column(
-            //                 children: snapshot.data[0]
-            //                     .map<Widget>(
-            //                       (director) => new Row(
-            //                         children: [
-            //                           new Icon(Icons.fiber_manual_record,
-            //                               size: 16),
-            //                           SizedBox(
-            //                             width: 5,
-            //                           ),
-            //                           new Text(
-            //                             director.firstName +
-            //                                 " " +
-            //                                 director.lastName,
-            //                             style: TextStyle(fontSize: 16),
-            //                           ),
-            //                         ],
-            //                       ),
-            //                     )
-            //                     .toList());
-            //           }
-            //         } else {
-            //           return Container();
-            //         }
-            //       }),
-            // ),
-            SizedBox(height: 15),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: ContentScroll(
-                crew: crewEdit != null
-                    ? crewEdit[1].map((writer) => writer).toList()
-                    : [],
-                title: 'Writers',
-                imageHeight: 120.0,
-                imageWidth: 100.0,
-              ),
-            ),
-            // Padding(
-            //   padding: EdgeInsets.symmetric(horizontal: 20.0),
-            //   child: Text("Writers",
-            //       style: TextStyle(
-            //         fontSize: 18,
-            //         fontWeight: FontWeight.bold,
-            //       )),
-            // ),
-            // Container(
-            //   padding: EdgeInsets.symmetric(horizontal: 40.0),
-            //   alignment: Alignment.topLeft,
-            //   child: FutureBuilder(
-            //       future: crew,
-            //       builder: (BuildContext context, AsyncSnapshot snapshot) {
-            //         if (snapshot.connectionState == ConnectionState.done) {
-            //           if (snapshot.data[1].isEmpty)
-            //             return Column(
-            //               children: [
-            //                 Text(
-            //                   "No records found.",
-            //                   style: TextStyle(fontSize: 16),
-            //                 ),
-            //               ],
-            //             );
-            //           else {
-            //             return Column(
-            //                 children: snapshot.data[1]
-            //                     .map<Widget>(
-            //                       (writer) => new Row(
-            //                         children: [
-            //                           new Icon(Icons.fiber_manual_record,
-            //                               size: 16),
-            //                           SizedBox(
-            //                             width: 5,
-            //                           ),
-            //                           new Text(
-            //                             writer.firstName +
-            //                                 " " +
-            //                                 writer.lastName,
-            //                             style: TextStyle(fontSize: 16),
-            //                           ),
-            //                         ],
-            //                       ),
-            //                     )
-            //                     .toList());
-            //           }
-            //         } else {
-            //           return Container();
-            //         }
-            //       }),
-            // ),
-            SizedBox(height: 15),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: ContentScroll(
-                crew: crewEdit != null
-                    ? crewEdit[2].map((actors) => actors).toList()
-                    : [],
-                title: 'Actors',
-                imageHeight: 120.0,
-                imageWidth: 100.0,
-              ),
-            ),
-            SizedBox(height: 15),
-
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20.0),
-              child: Text("Reviews",
+              SizedBox(height: 15),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text(
+                  'Buod',
                   style: TextStyle(
-                    fontSize: 18,
+                    color: Colors.black,
                     fontWeight: FontWeight.bold,
-                  )),
-            ),
-            SizedBox(height: 15),
-
-            // Add Review Text Area
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  !model.busy &&
-                          (model.reviews
-                                      .where((review) =>
-                                          review.userId == currentUser.userId)
-                                      .length !=
-                                  0 &&
-                              model.isEditing == false)
-                      ? checkReview(model.reviews)
-                      : Container(
-                          decoration: BoxDecoration(
-                            color: Color.fromRGBO(240, 240, 240, 1),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: 10,
-                                  ),
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 10),
-                                    child: Row(
-                                      children: [
-                                        Text("Your rating: ",
-                                            style: TextStyle(fontSize: 16)),
-                                        RatingBar.builder(
-                                          direction: Axis.horizontal,
-                                          allowHalfRating: true,
-                                          itemCount: 5,
-                                          itemSize: 25,
-                                          unratedColor:
-                                              Color.fromRGBO(192, 192, 192, 1),
-                                          itemPadding: EdgeInsets.symmetric(
-                                              horizontal: 2.0),
-                                          itemBuilder: (context, _) => Icon(
-                                            Icons.star,
-                                            color: Colors.amber,
-                                          ),
-                                          onRatingUpdate: (rating) {
-                                            _rating = rating;
-                                          },
-                                          updateOnDrag: true,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 10),
-                              Padding(
-                                padding: EdgeInsets.only(left: 10),
-                                child: Text("Your review:",
-                                    style: TextStyle(fontSize: 16)),
-                              ),
-                              SizedBox(height: 5),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: TextFormField(
-                                  controller: reviewController,
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                  ),
-                                  maxLines: null,
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: Colors.white,
-                                    hintText: "Write here...",
-                                    hintStyle: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 16,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(5),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(5),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(5),
-                                      borderSide: BorderSide(color: Colors.red),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              Container(
-                                padding: EdgeInsets.only(left: 20),
-                                alignment: Alignment.centerLeft,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5)),
-                                child: ButtonTheme(
-                                  padding: EdgeInsets.symmetric(
-                                      vertical: 6.0,
-                                      horizontal:
-                                          10.0), //adds padding inside the button
-                                  materialTapTargetSize: MaterialTapTargetSize
-                                      .shrinkWrap, //limits the touch area to the button area
-                                  minWidth: 0, //wraps child's width
-                                  height: 0,
-                                  child: FlatButton(
-                                    color: Colors.lightBlue,
-                                    onPressed: () {
-                                      print(_rating);
-                                      // submit post and save into db
-                                      var model = ReviewViewModel();
-                                      final response = model.addReview(
-                                          movieId: movie.movieId.toString(),
-                                          userId: currentUser.userId.toString(),
-                                          rating: _rating.toString(),
-                                          review: reviewController.text);
-
-                                      if (response != null) {
-                                        // show success snackbar
-                                        _scaffoldKey.currentState.showSnackBar(
-                                            mySnackBar(
-                                                context,
-                                                'Your review has been posted.',
-                                                Colors.green));
-                                      } else {
-                                        // show error snackbar
-                                        _scaffoldKey.currentState.showSnackBar(
-                                            mySnackBar(
-                                                context,
-                                                'Something went wrong. Please try again later.',
-                                                Colors.green));
-                                      }
-                                    },
-                                    child: Text(
-                                      "POST",
-                                      style: TextStyle(
-                                          fontSize: 14, color: Colors.white),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                            ],
-                          )),
-                ],
+                    fontSize: 18.0,
+                  ),
+                ),
               ),
-            ),
-            // display other reviews for this movie
-            Padding(
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 40.0),
+                child: Text(
+                  widget.movie.synopsis,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+              crewEdit != null && crewEdit[0].length != 0
+                  ? SizedBox(height: 15)
+                  : Container(),
+              crewEdit != null && crewEdit[0].length != 0
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: ContentScroll(
+                        crew: crewEdit != null
+                            ? crewEdit[0].map((director) => director).toList()
+                            : [],
+                        title: 'Mga Direktor',
+                        imageHeight: 130.0,
+                        imageWidth: 110.0,
+                      ),
+                    )
+                  : Container(),
+              crewEdit != null && crewEdit[1].length != 0
+                  ? SizedBox(height: 15)
+                  : Container(),
+              crewEdit != null && crewEdit[1].length != 0
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: ContentScroll(
+                        crew: crewEdit != null
+                            ? crewEdit[1].map((writer) => writer).toList()
+                            : [],
+                        title: 'Mga Manunulat',
+                        imageHeight: 130.0,
+                        imageWidth: 110.0,
+                      ),
+                    )
+                  : Container(),
+
+              crewEdit != null && crewEdit[2].length != 0
+                  ? SizedBox(height: 15)
+                  : Container(),
+              crewEdit != null && crewEdit[2].length != 0
+                  ? Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      child: ContentScroll(
+                        crew: crewEdit != null
+                            ? crewEdit[2].map((actors) => actors).toList()
+                            : [],
+                        title: 'Mga Aktor',
+                        imageHeight: 130.0,
+                        imageWidth: 110.0,
+                      ),
+                    )
+                  : Container(),
+              SizedBox(height: 15),
+
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.0),
+                child: Text("Mga Review",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    )),
+              ),
+              SizedBox(height: 15),
+
+              // Add Review Text Area
+              Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: !model.busy && model.reviews.isNotEmpty
-                    ? displayReviews(model.reviews)
-                    : Container()),
-            SizedBox(height: 25),
-          ],
+                child: Column(
+                  children: [
+                    !model.busy &&
+                            (model.reviews
+                                        .where((review) =>
+                                            review.userId == currentUser.userId)
+                                        .length !=
+                                    0 &&
+                                model.isEditing == false)
+                        ? checkReview(model.reviews)
+                        : Container(
+                            decoration: BoxDecoration(
+                              color: Color.fromRGBO(240, 240, 240, 1),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 10,
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.only(top: 10),
+                                      child: Row(
+                                        children: [
+                                          Text("Rating: ",
+                                              style: TextStyle(fontSize: 16)),
+                                          RatingBar.builder(
+                                            direction: Axis.horizontal,
+                                            allowHalfRating: true,
+                                            itemCount: 5,
+                                            itemSize: 25,
+                                            unratedColor: Color.fromRGBO(
+                                                192, 192, 192, 1),
+                                            itemPadding: EdgeInsets.symmetric(
+                                                horizontal: 2.0),
+                                            itemBuilder: (context, _) => Icon(
+                                              Icons.star,
+                                              color: Colors.amber,
+                                            ),
+                                            onRatingUpdate: (rating) {
+                                              _rating = rating;
+                                            },
+                                            updateOnDrag: true,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 10),
+                                Padding(
+                                  padding: EdgeInsets.only(left: 10),
+                                  child: Text("Review:",
+                                      style: TextStyle(fontSize: 16)),
+                                ),
+                                SizedBox(height: 5),
+                                Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 20),
+                                  child: TextFormField(
+                                    controller: reviewController,
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                    ),
+                                    maxLines: null,
+                                    decoration: InputDecoration(
+                                      filled: true,
+                                      fillColor: Colors.white,
+                                      hintText: "I-type ang iyong review...",
+                                      hintStyle: TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 16,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(5),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(5),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(5),
+                                        borderSide:
+                                            BorderSide(color: Colors.red),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 10),
+                                Container(
+                                  padding: EdgeInsets.only(left: 20),
+                                  alignment: Alignment.centerLeft,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5)),
+                                  child: ButtonTheme(
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 6.0,
+                                        horizontal:
+                                            10.0), //adds padding inside the button
+                                    materialTapTargetSize: MaterialTapTargetSize
+                                        .shrinkWrap, //limits the touch area to the button area
+                                    minWidth: 0, //wraps child's width
+                                    height: 0,
+                                    child: FlatButton(
+                                      color: Colors.lightBlue,
+                                      onPressed: () {
+                                        // submit post and save into db
+                                        var model = ReviewViewModel();
+                                        final response = model.addReview(
+                                            movieId: movie.movieId.toString(),
+                                            userId:
+                                                currentUser.userId.toString(),
+                                            rating: _rating.toString(),
+                                            review: reviewController.text);
+
+                                        if (response != null) {
+                                          // show success snackbar
+                                          _scaffoldKey.currentState
+                                              .showSnackBar(mySnackBar(
+                                                  context,
+                                                  'Your review has been posted.',
+                                                  Colors.green));
+                                        } else {
+                                          // show error snackbar
+                                          _scaffoldKey.currentState
+                                              .showSnackBar(mySnackBar(
+                                                  context,
+                                                  'Something went wrong. Please try again later.',
+                                                  Colors.green));
+                                        }
+                                      },
+                                      child: Text(
+                                        "POST",
+                                        style: TextStyle(
+                                            fontSize: 14, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 10),
+                              ],
+                            )),
+                  ],
+                ),
+              ),
+              // display other reviews for this movie
+              Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: !model.busy && model.reviews.isNotEmpty
+                      ? displayReviews(model.reviews)
+                      : Container()),
+              SizedBox(height: 25),
+            ],
+          ),
         ),
       ),
     );

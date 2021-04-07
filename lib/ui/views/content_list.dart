@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'package:mubidibi/globals.dart' as Config;
 
 import '../../locator.dart';
 
@@ -90,7 +92,11 @@ class ContentList extends StatelessWidget {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(5),
                           image: DecorationImage(
-                            image: NetworkImage(content.poster),
+                            image: CachedNetworkImageProvider(
+                              content.poster != null
+                                  ? content.poster
+                                  : Config.imgNotFound,
+                            ),
                             fit: BoxFit.cover,
                           ),
                         ),

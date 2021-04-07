@@ -29,6 +29,6 @@ Widget mySnackBar(BuildContext context, String message, Color bgColor) {
         style:
             Theme.of(context).textTheme.subtitle1.apply(color: Colors.white)),
     backgroundColor: bgColor,
-    duration: Duration(milliseconds: 3000),
+    duration: Duration(milliseconds: 2000),
   );
 }

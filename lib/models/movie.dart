@@ -13,6 +13,7 @@ class Movie {
   final num runningTime;
   final String poster;
   final List<dynamic> genre;
+  final List<String> screenshot;
   final String releaseDate;
   final String addedBy;
 
@@ -23,18 +24,22 @@ class Movie {
     this.runningTime,
     this.poster,
     this.genre,
+    this.screenshot,
     this.releaseDate,
     this.addedBy,
   });
 
-  factory Movie.fromJson(Map<dynamic, dynamic> json) {
+  factory Movie.fromJson(Map<String, dynamic> json) {
     return Movie(
       movieId: json['id'],
       title: json['title'],
       synopsis: json['synopsis'],
-      runningTime: json['running_time'],
+      runningTime: json['runtime'],
       poster: json['poster'],
       genre: json['genre'],
+      screenshot: json['screenshot'] == null
+          ? null
+          : List<String>.from(json["screenshot"].map((x) => x)),
       releaseDate: json['release_date'],
       addedBy: json['added_by'],
     );
@@ -44,9 +49,10 @@ class Movie {
         "id": movieId,
         "title": title,
         "synopsis": synopsis,
-        "running_time": runningTime,
+        "runtime": runningTime,
         "poster": poster,
         "genre": genre,
+        "screenshot": screenshot,
         "release_date": releaseDate,
         "added_by": addedBy,
       };

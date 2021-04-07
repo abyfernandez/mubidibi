@@ -137,7 +137,7 @@ class ContentScroll extends StatelessWidget {
             : Column(
                 children: [
                   Text(
-                    "No record found.",
+                    "Walang record.",
                     style: TextStyle(fontSize: 16),
                   ),
                 ],
