@@ -49,6 +49,11 @@ class _AddMovieState extends State<AddMovie> {
   List<DropdownMenuItem> genreItems = [];
   var selectedValue;
 
+  // FOR DYNAMIC WIDGET ACTOR
+  List<ActorWidget> dynamicList = [];
+  List<int> actors = [];
+  List<List<String>> roles = [];
+
   // MOVIE FIELD VARIABLES
   DateTime _date;
   final titleController = TextEditingController();
@@ -73,7 +78,6 @@ class _AddMovieState extends State<AddMovie> {
   List<int> filmGenres = []; // Genre(s)
   List<int> directors = []; // Director(s)
   List<int> writers = []; // Writer(s)
-  List<int> actors = []; // Actors
   List<DropdownMenuItem> crewItems = [];
   List<Crew> crewList = [];
 
@@ -241,6 +245,18 @@ class _AddMovieState extends State<AddMovie> {
           )
           .toList(),
     );
+  }
+
+  addActor() {
+    // if (actors.length != 0) {
+    //   floatingIcon = new Icon(Icons.add);
+
+    //   // Product = [];
+    //   // Price = [];
+    //   // dynamicList = [];
+    // }
+    setState(() {});
+    dynamicList.add(new ActorWidget(crewItems));
   }
 
   List<GlobalKey<FormState>> _formKeys = [
@@ -906,56 +922,59 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               ),
               SizedBox(height: 10),
-              Text('Mga Aktor:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              SizedBox(
-                height: 10,
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: SearchableDropdown.single(
-                  selectedValueWidgetFn: (item) => Chip(
-                    label: Text(
-                      item,
-                      style: TextStyle(
-                        fontSize: 14,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Mga Aktor:',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Container(
+                    child: FlatButton(
+                      color: Color.fromRGBO(192, 192, 192, 1),
+                      onPressed: addActor,
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_add_alt_1_outlined),
+                          Text(" Dagdagan")
+                        ],
                       ),
                     ),
-                    backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-                    deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-                    padding: EdgeInsets.all(7),
                   ),
-                  style: TextStyle(
-                    color: Colors.black,
-                  ),
-                  menuBackgroundColor: Colors.white,
-                  underline: Container(),
-                  items: crewItems,
-                  value: selectedValue,
-                  hint: Padding(
-                    padding: const EdgeInsets.all(12.0),
-                    child: Text("Aktor",
-                        style: TextStyle(color: Colors.black, fontSize: 16)),
-                  ),
-                  searchHint:
-                      Text("Search Any", style: TextStyle(color: Colors.white)),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedValue = value;
-                    });
-                  },
-                  isExpanded: true,
-                ),
+                ],
               ),
               SizedBox(
                 height: 10,
               ),
-              Container(
-                color: Color.fromRGBO(240, 240, 240, 1),
-                child: ChipsInput(onChanged: (List<String> roles) {}),
+              Column(
+                children: [
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: dynamicList.length,
+                    itemBuilder: (_, index) => Column(children: [
+                      dynamicList[index],
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Container(
+                        alignment: Alignment.centerRight,
+                        child: FlatButton(
+                          color: Color.fromRGBO(240, 240, 240, 1),
+                          child: Text("Remove"),
+                          onPressed: () {
+                            print(index);
+                            setState(() {
+                              dynamicList.removeAt(index);
+                            });
+                          },
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Divider(height: 1, thickness: 2),
+                    ]),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1213,9 +1232,81 @@ class _AddMovieState extends State<AddMovie> {
   }
 }
 
-// // Dynamic Widget (Adding Actors and their respective roles)
+// Dynamic Widget (Adding Actors and their respective roles)
 
-// class ActorWidget extends StatelessWidget  {
+class ActorWidget extends StatefulWidget {
+  final List<DropdownMenuItem> crewItems;
 
-//   @
-// }
+  ActorWidget(this.crewItems);
+
+  @override
+  ActorWidgetState createState() => ActorWidgetState(crewItems);
+}
+
+class ActorWidgetState extends State<ActorWidget> {
+  final List<DropdownMenuItem> crewItems;
+
+  ActorWidgetState(this.crewItems);
+
+  var selectedValue;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      child: Column(children: [
+        SizedBox(
+          height: 10,
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Color.fromRGBO(240, 240, 240, 1),
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: SearchableDropdown.single(
+            selectedValueWidgetFn: (item) => Chip(
+              label: Text(
+                item,
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+              ),
+              backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+              deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+              padding: EdgeInsets.all(7),
+            ),
+            style: TextStyle(
+              color: Colors.black,
+            ),
+            menuBackgroundColor: Colors.white,
+            underline: Container(),
+            items: crewItems,
+            value: selectedValue,
+            hint: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Text("Aktor",
+                  style: TextStyle(color: Colors.black, fontSize: 16)),
+            ),
+            searchHint:
+                Text("Search Any", style: TextStyle(color: Colors.white)),
+            onChanged: (value) {
+              setState(() {
+                selectedValue = value;
+              });
+            },
+            isExpanded: true,
+          ),
+        ),
+        SizedBox(
+          height: 10,
+        ),
+        Container(
+          color: Color.fromRGBO(240, 240, 240, 1),
+          child: ChipsInput(onChanged: (List<String> roles) {}),
+        ),
+        SizedBox(height: 5),
+        Text("Pindutin ang 'ENTER' para ma-save ang role."),
+        SizedBox(height: 10),
+      ]),
+    );
+  }
+}
