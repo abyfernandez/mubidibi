@@ -36,7 +36,7 @@ exports.crew = app => {
       );
 
       var actor = await client.query(
-        "SELECT * from crew where id in (SELECT actor_id FROM movie_actor where movie_id = $1)", [parseInt(req.params.id)]
+        "SELECT crew.*, movie_actor.role from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (SELECT actor_id FROM movie_actor where movie_id = $1)", [parseInt(req.params.id)]
       );
 
       crew.push(director.rows);

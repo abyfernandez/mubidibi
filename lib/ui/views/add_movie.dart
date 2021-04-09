@@ -10,15 +10,18 @@ import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/ui/widgets/chips_input.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
-import 'package:mubidibi/ui/shared/list_items.dart';
 import 'package:searchable_dropdown/searchable_dropdown.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:http/http.dart' as http;
+import 'package:mubidibi/globals.dart' as Config;
+import 'dart:convert';
 
 // TO DO: FIX UI (e.g. INPUT FORM FIELDS)
 
@@ -42,6 +45,9 @@ class _AddMovieState extends State<AddMovie> {
   // Local State Variable/s
   bool _saving = false;
   int movieId;
+  List<dynamic> genres = [];
+  List<DropdownMenuItem> genreItems = [];
+  var selectedValue;
 
   // MOVIE FIELD VARIABLES
   DateTime _date;
@@ -49,6 +55,7 @@ class _AddMovieState extends State<AddMovie> {
   final synopsisController = TextEditingController();
   final runtimeController = TextEditingController();
   final dateController = TextEditingController();
+  final roleController = TextEditingController();
 
   File imageFile; // for uploading poster w/ image picker
   final picker = ImagePicker();
@@ -66,6 +73,7 @@ class _AddMovieState extends State<AddMovie> {
   List<int> filmGenres = []; // Genre(s)
   List<int> directors = []; // Director(s)
   List<int> writers = []; // Writer(s)
+  List<int> actors = []; // Actors
   List<DropdownMenuItem> crewItems = [];
   List<Crew> crewList = [];
 
@@ -78,13 +86,24 @@ class _AddMovieState extends State<AddMovie> {
     "Review"
   ];
 
-  final List<DropdownMenuItem> genreItems =
-      genres.map<DropdownMenuItem<String>>((String value) {
-    return DropdownMenuItem<String>(
-      value: value,
-      child: Text(value),
-    );
-  }).toList();
+  List<String> genreFromJson(String str) =>
+      List<String>.from(json.decode(str).map((x) => x['genre']));
+
+  // fetch genre from API
+  void fetchGenres() async {
+    final response = await http.get(Config.api + 'genres/');
+
+    if (response.statusCode == 200) {
+      // map json to Genre type
+      genres = genreFromJson(response.body);
+    }
+    genreItems = genres.map<DropdownMenuItem<String>>((dynamic value) {
+      return DropdownMenuItem<String>(
+        value: value,
+        child: Text(value),
+      );
+    }).toList();
+  }
 
   // function for calling viewmodel's getAllCrew method
   void fetchCrew() async {
@@ -105,7 +124,7 @@ class _AddMovieState extends State<AddMovie> {
   Future<Null> _selectDate(BuildContext context) async {
     DateTime _datePicker = await showDatePicker(
         context: context,
-        initialDate: _date == null ? DateTime.now() : _date,
+        initialDate: _date == null ? DateTime.now() : '',
         firstDate: DateTime(1900),
         lastDate: DateTime(2030),
         initialDatePickerMode: DatePickerMode.day,
@@ -116,7 +135,7 @@ class _AddMovieState extends State<AddMovie> {
     if (_datePicker != null && _datePicker != _date) {
       setState(() {
         _date = _datePicker;
-        dateController.text = DateFormat("MMM. d, y").format(_date);
+        dateController.text = DateFormat("MMM. d, y").format(_date) ?? '';
       });
     }
   }
@@ -235,6 +254,7 @@ class _AddMovieState extends State<AddMovie> {
   @override
   void initState() {
     fetchCrew();
+    fetchGenres();
     super.initState();
   }
 
@@ -255,7 +275,7 @@ class _AddMovieState extends State<AddMovie> {
             ? DateTime.parse(movie?.releaseDate)
             : null;
         synopsisController.text = movie?.synopsis ?? '';
-        runtimeController.text = movie.runningTime.toString() ?? '';
+        runtimeController.text = movie?.runningTime?.toString() ?? '';
 
         // TO DO: IMAGE EDIT
         imageURI = movie?.poster ?? '';
@@ -322,7 +342,7 @@ class _AddMovieState extends State<AddMovie> {
                             type: MyStepperType.vertical,
                             currentStep: currentStep,
                             onStepTapped: (step) async {
-                              if (step == 0) {
+                              if (currentStep == 0) {
                                 // first step
                                 setState(() {
                                   if (_formKeys[currentStep]
@@ -382,7 +402,8 @@ class _AddMovieState extends State<AddMovie> {
                                   final response = await model.addMovie(
                                       title: titleController.text,
                                       synopsis: synopsisController.text,
-                                      releaseDate: _date.toIso8601String(),
+                                      releaseDate:
+                                          _date.toIso8601String() ?? '',
                                       runningTime: runtimeController.text,
                                       poster: imageFile,
                                       imageURI: imageURI,
@@ -483,6 +504,7 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(height: 10),
               // MOVIE TITLE
               TextFormField(
+                // autofocus: true,
                 controller: titleController,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 style: TextStyle(
@@ -557,6 +579,7 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(height: 10),
               // RUNNING TIME
               TextFormField(
+                // autofocus: true,
                 controller: runtimeController,
                 keyboardType: TextInputType.number,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -585,6 +608,7 @@ class _AddMovieState extends State<AddMovie> {
                 height: 10,
               ),
               TextFormField(
+                // autofocus: true,
                 controller: synopsisController,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 style: TextStyle(
@@ -752,8 +776,14 @@ class _AddMovieState extends State<AddMovie> {
       case 2:
         return Container(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 10),
+              Text('Mga Direktor:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              SizedBox(
+                height: 10,
+              ),
               Container(
                 decoration: BoxDecoration(
                   color: Color.fromRGBO(240, 240, 240, 1),
@@ -766,7 +796,7 @@ class _AddMovieState extends State<AddMovie> {
                         label: Text(
                           item,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                         backgroundColor: Color.fromRGBO(220, 220, 220, 1),
@@ -790,7 +820,7 @@ class _AddMovieState extends State<AddMovie> {
                       selectedItems: directors,
                       hint: Padding(
                         padding: const EdgeInsets.all(12.0),
-                        child: Text("Director *",
+                        child: Text("Direktor",
                             style:
                                 TextStyle(color: Colors.black, fontSize: 16)),
                       ),
@@ -812,6 +842,11 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               ),
               SizedBox(height: 10),
+              Text('Mga Manunulat:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              SizedBox(
+                height: 10,
+              ),
               Container(
                 decoration: BoxDecoration(
                   color: Color.fromRGBO(240, 240, 240, 1),
@@ -824,7 +859,7 @@ class _AddMovieState extends State<AddMovie> {
                         label: Text(
                           item,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                         backgroundColor: Color.fromRGBO(220, 220, 220, 1),
@@ -849,7 +884,7 @@ class _AddMovieState extends State<AddMovie> {
                       selectedItems: writers,
                       hint: Padding(
                         padding: const EdgeInsets.all(12.0),
-                        child: Text("Writer *",
+                        child: Text("Manunulat",
                             style:
                                 TextStyle(color: Colors.black, fontSize: 16)),
                       ),
@@ -869,7 +904,59 @@ class _AddMovieState extends State<AddMovie> {
                     ),
                   ],
                 ),
-              )
+              ),
+              SizedBox(height: 10),
+              Text('Mga Aktor:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: SearchableDropdown.single(
+                  selectedValueWidgetFn: (item) => Chip(
+                    label: Text(
+                      item,
+                      style: TextStyle(
+                        fontSize: 14,
+                      ),
+                    ),
+                    backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+                    deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+                    padding: EdgeInsets.all(7),
+                  ),
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                  menuBackgroundColor: Colors.white,
+                  underline: Container(),
+                  items: crewItems,
+                  value: selectedValue,
+                  hint: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Text("Aktor",
+                        style: TextStyle(color: Colors.black, fontSize: 16)),
+                  ),
+                  searchHint:
+                      Text("Search Any", style: TextStyle(color: Colors.white)),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedValue = value;
+                    });
+                  },
+                  isExpanded: true,
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                child: ChipsInput(onChanged: (List<String> roles) {}),
+              ),
             ],
           ),
         );
@@ -892,7 +979,7 @@ class _AddMovieState extends State<AddMovie> {
                         label: Text(
                           item,
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                         backgroundColor: Color.fromRGBO(220, 220, 220, 1),
@@ -1125,3 +1212,10 @@ class _AddMovieState extends State<AddMovie> {
     return null;
   }
 }
+
+// // Dynamic Widget (Adding Actors and their respective roles)
+
+// class ActorWidget extends StatelessWidget  {
+
+//   @
+// }

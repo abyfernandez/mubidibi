@@ -399,6 +399,25 @@ exports.movie = app => {
       );
     }
   });
+
+  // GET GENRES
+  app.get('/mubidibi/genres/', async (req, res) => {
+    app.pg.connect(onConnect)
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err)
+
+      client.query(
+        'select distinct unnest(genre) as genre from movie',
+        function onResult(err, result) {
+          console.log(result);
+          release()
+          if (result) res.send(JSON.stringify(result.rows));
+          else res.send(err);
+        }
+      )
+    }
+  })
 }
 
 

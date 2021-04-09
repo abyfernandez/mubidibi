@@ -153,5 +153,6 @@ class MovieViewModel extends BaseModel {
     if (response.statusCode == 200) {
       return (json.decode(response.body));
     }
+    return 0;
   }
 }

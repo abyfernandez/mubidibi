@@ -15,6 +15,20 @@ class ContentScroll extends StatelessWidget {
     this.imageWidth,
   });
 
+  String dislayRoles(crew) {
+    var role = '';
+    for (var i = 0; i < crew.role.length; i++) {
+      role = role + crew.role[i];
+      if (i != crew.role.length - 1) {
+        role = role + ', ';
+      }
+      if (i == (crew.role.length - 2)) {
+        role = role + 'at ';
+      }
+    }
+    return role;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -110,11 +124,16 @@ class ContentScroll extends StatelessWidget {
                                             crew[index].lastName
                                         : crew[index].lastName) +
                                     " " +
-                                    (title == "Actors" ? "bilang " : ""),
+                                    (title == "Mga Aktor"
+                                        ? "bilang " + dislayRoles(crew[index])
+                                        : ""),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
                                 ),
+                                softWrap: true,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(5.0),

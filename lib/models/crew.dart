@@ -8,32 +8,40 @@ String crewToJson(List<Crew> data) =>
 
 class Crew {
   final int crewId;
+  final String prefix;
   final String firstName;
   final String middleName;
   final String lastName;
+  final String suffix;
   final String birthday;
   final String birthplace;
   final String displayPic;
   final List<String> photos;
   final String description;
+  final List<String> role;
 
   Crew(
       {this.crewId,
+      this.prefix,
       this.firstName,
       this.middleName,
       this.lastName,
+      this.suffix,
       this.birthday,
       this.birthplace,
       this.displayPic,
       this.photos,
-      this.description});
+      this.description,
+      this.role});
 
   factory Crew.fromJson(Map<String, dynamic> json) {
     return Crew(
       crewId: json['id'],
+      prefix: json['prefix'],
       firstName: json['first_name'],
       middleName: json['middle_name'],
       lastName: json['last_name'],
+      suffix: json['suffix'],
       birthday: json['birthday'],
       birthplace: json['birthplace'],
       displayPic: json['display_pic'],
@@ -41,18 +49,24 @@ class Crew {
           ? null
           : List<String>.from(json["photos"].map((x) => x)),
       description: json['description'],
+      role: json["role"] == null
+          ? null
+          : List<String>.from(json["role"].map((x) => x)),
     );
   }
 
   Map<String, dynamic> toJson() => {
         "id": crewId,
+        "prefix": prefix,
         "first_name": firstName,
         "middle_name": middleName,
         "last_name": lastName,
+        "suffix": suffix,
         "birthday": birthday,
         "birthplace": birthplace,
         "display_pic": displayPic,
         "photos": photos,
-        "description": description
+        "description": description,
+        "role": role,
       };
 }
