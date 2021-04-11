@@ -25,6 +25,12 @@ import 'dart:convert';
 
 // TO DO: FIX UI (e.g. INPUT FORM FIELDS)
 
+// FOR DYNAMIC WIDGET ACTOR
+List<ActorWidget> dynamicList;
+List<int> actors = [];
+List<List<String>> roles = [];
+var size;
+
 class AddMovie extends StatefulWidget {
   final Movie movie;
   final List<List<Crew>> crewEdit;
@@ -48,11 +54,6 @@ class _AddMovieState extends State<AddMovie> {
   List<dynamic> genres = [];
   List<DropdownMenuItem> genreItems = [];
   var selectedValue;
-
-  // FOR DYNAMIC WIDGET ACTOR
-  List<ActorWidget> dynamicList = [];
-  List<int> actors = [];
-  List<List<String>> roles = [];
 
   // MOVIE FIELD VARIABLES
   DateTime _date;
@@ -248,15 +249,12 @@ class _AddMovieState extends State<AddMovie> {
   }
 
   addActor() {
-    // if (actors.length != 0) {
-    //   floatingIcon = new Icon(Icons.add);
+    setState(() {
+      size =
+          dynamicList.length + 1; // pass the index of the widget to the class
+    });
 
-    //   // Product = [];
-    //   // Price = [];
-    //   // dynamicList = [];
-    // }
-    setState(() {});
-    dynamicList.add(new ActorWidget(crewItems));
+    dynamicList.add(new ActorWidget(crewItems, crewList, size));
   }
 
   List<GlobalKey<FormState>> _formKeys = [
@@ -929,28 +927,47 @@ class _AddMovieState extends State<AddMovie> {
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   Container(
-                    child: FlatButton(
-                      color: Color.fromRGBO(192, 192, 192, 1),
-                      onPressed: addActor,
-                      child: Row(
-                        children: [
-                          Icon(Icons.person_add_alt_1_outlined),
-                          Text(" Dagdagan")
-                        ],
-                      ),
-                    ),
+                    child: dynamicList.isNotEmpty
+                        ? FlatButton(
+                            color: Color.fromRGBO(192, 192, 192, 1),
+                            onPressed: addActor,
+                            child: Row(
+                              children: [
+                                Icon(Icons.person_add_alt_1_outlined),
+                                Text(" Dagdagan")
+                              ],
+                            ),
+                          )
+                        : null,
                   ),
                 ],
               ),
               SizedBox(
                 height: 10,
               ),
+              Container(
+                width: 140,
+                child: dynamicList.isEmpty
+                    ? FlatButton(
+                        color: Color.fromRGBO(192, 192, 192, 1),
+                        onPressed: addActor,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add_alt_1_outlined),
+                            Text(" Dagdagan")
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
               Column(
                 children: [
                   ListView.builder(
                     shrinkWrap: true,
                     itemCount: dynamicList.length,
-                    itemBuilder: (_, index) => Column(children: [
+                    itemBuilder: (_, index) =>
+                        Column(key: UniqueKey(), children: [
+                      Text(dynamicList.length.toString()),
                       dynamicList[index],
                       SizedBox(
                         height: 10,
@@ -961,10 +978,14 @@ class _AddMovieState extends State<AddMovie> {
                           color: Color.fromRGBO(240, 240, 240, 1),
                           child: Text("Remove"),
                           onPressed: () {
-                            print(index);
+                            print("ind: $index");
                             setState(() {
                               dynamicList.removeAt(index);
+                              actors.removeAt(index);
+                              roles.removeAt(index);
                             });
+                            print('actor: $actors[index]');
+                            print('roles: $roles[index]');
                           },
                         ),
                       ),
@@ -1236,17 +1257,21 @@ class _AddMovieState extends State<AddMovie> {
 
 class ActorWidget extends StatefulWidget {
   final List<DropdownMenuItem> crewItems;
+  final List<Crew> crewList;
+  final size;
 
-  ActorWidget(this.crewItems);
+  ActorWidget(this.crewItems, this.crewList, this.size);
 
   @override
-  ActorWidgetState createState() => ActorWidgetState(crewItems);
+  ActorWidgetState createState() => ActorWidgetState(crewItems, crewList, size);
 }
 
 class ActorWidgetState extends State<ActorWidget> {
   final List<DropdownMenuItem> crewItems;
+  final List<Crew> crewList;
+  final size;
 
-  ActorWidgetState(this.crewItems);
+  ActorWidgetState(this.crewItems, this.crewList, this.size);
 
   var selectedValue;
 
@@ -1289,9 +1314,17 @@ class ActorWidgetState extends State<ActorWidget> {
             searchHint:
                 Text("Search Any", style: TextStyle(color: Colors.white)),
             onChanged: (value) {
-              setState(() {
-                selectedValue = value;
-              });
+              var index = crewItems.indexWhere((actor) => actor.value == value);
+              var id = crewList[index].crewId;
+
+              print('index: $size');
+              if (size > actors.length || actors.length == 0) {
+                // if actors list is empty or the widget's index is larger than the size of the actors list, it means that the data hasnt been added to the list
+                actors.add(id);
+              } else {
+                actors[size - 1] =
+                    id; // replace the value in the list if it alreaddy exists.
+              }
             },
             isExpanded: true,
           ),
@@ -1301,7 +1334,14 @@ class ActorWidgetState extends State<ActorWidget> {
         ),
         Container(
           color: Color.fromRGBO(240, 240, 240, 1),
-          child: ChipsInput(onChanged: (List<String> roles) {}),
+          child: ChipsInput(onChanged: (List<String> ganap) {
+            if (size > roles.length || roles.length == 0) {
+              roles.add(ganap); // add
+            } else {
+              roles[size - 1] = ganap; // replace
+            }
+            print('ROL: $roles');
+          }),
         ),
         SizedBox(height: 5),
         Text("Pindutin ang 'ENTER' para ma-save ang role."),
