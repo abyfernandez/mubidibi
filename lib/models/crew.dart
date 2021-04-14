@@ -14,6 +14,7 @@ class Crew {
   final String lastName;
   final String suffix;
   final String birthday;
+  final bool isAlive;
   final String birthplace;
   final String displayPic;
   final List<String> photos;
@@ -28,6 +29,7 @@ class Crew {
       this.lastName,
       this.suffix,
       this.birthday,
+      this.isAlive,
       this.birthplace,
       this.displayPic,
       this.photos,
@@ -43,6 +45,7 @@ class Crew {
       lastName: json['last_name'],
       suffix: json['suffix'],
       birthday: json['birthday'],
+      isAlive: json['is_alive'],
       birthplace: json['birthplace'],
       displayPic: json['display_pic'],
       photos: json["photos"] == null
@@ -63,6 +66,7 @@ class Crew {
         "last_name": lastName,
         "suffix": suffix,
         "birthday": birthday,
+        "is_alive": isAlive,
         "birthplace": birthplace,
         "display_pic": displayPic,
         "photos": photos,

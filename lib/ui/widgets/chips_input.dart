@@ -17,6 +17,13 @@ class _ChipsInputState extends State<ChipsInput> {
   final _roles = Set<String>();
 
   @override
+  void initState() {
+    // TODO: implement initState
+    widget.onChanged(_roles.toList(growable: false));
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var chipsChildren = _roles.map<Widget>((role) {
       return InputChip(
@@ -30,7 +37,6 @@ class _ChipsInputState extends State<ChipsInput> {
 
     chipsChildren.add(
       TextField(
-        autofocus: true,
         controller: _textController,
         decoration: InputDecoration(
             border: InputBorder.none,

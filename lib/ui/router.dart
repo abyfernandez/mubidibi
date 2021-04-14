@@ -1,5 +1,6 @@
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
@@ -48,6 +49,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: AddMovie(movie: movie, crewEdit: crewEdit),
+      );
+    case CrewViewRoute:
+      var crew = settings.arguments as Crew;
+      var crewEdit = settings.arguments as List<List<Crew>>;
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: CrewView(crew: crew, crewEdit: crewEdit),
       );
     default:
       return MaterialPageRoute(

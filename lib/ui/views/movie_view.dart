@@ -585,6 +585,7 @@ class _MovieViewState extends State<MovieView>
                   ? Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.0),
                       child: ContentScroll(
+                        crewEdit: crewEdit,
                         crew: crewEdit != null
                             ? crewEdit[0].map((director) => director).toList()
                             : [],
@@ -601,6 +602,7 @@ class _MovieViewState extends State<MovieView>
                   ? Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.0),
                       child: ContentScroll(
+                        crewEdit: crewEdit,
                         crew: crewEdit != null
                             ? crewEdit[1].map((writer) => writer).toList()
                             : [],
@@ -618,6 +620,7 @@ class _MovieViewState extends State<MovieView>
                   ? Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.0),
                       child: ContentScroll(
+                        crewEdit: crewEdit,
                         crew: crewEdit != null
                             ? crewEdit[2].map((actors) => actors).toList()
                             : [],

@@ -26,6 +26,7 @@ class MyApp extends StatelessWidget {
       navigatorKey: locator<NavigationService>().navigationKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        fontFamily: 'Poppins',
         primaryColor: Colors.lightBlue,
         backgroundColor: Colors.white,
         // backgroundColor: Color.fromARGB(255, 26, 27, 30),

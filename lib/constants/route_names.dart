@@ -6,3 +6,4 @@ const String SignUpViewRoute = "SignUpFirstPage";
 const String HomeViewRoute = "HomeView";
 const String MovieViewRoute = "MovieView";
 const String AddMovieRoute = "AddMovie";
+const String CrewViewRoute = "CrewView";

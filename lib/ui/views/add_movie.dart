@@ -26,7 +26,7 @@ import 'dart:convert';
 // TO DO: FIX UI (e.g. INPUT FORM FIELDS)
 
 // FOR DYNAMIC WIDGET ACTOR
-List<ActorWidget> dynamicList;
+List<ActorWidget> dynamicList = [];
 List<int> actors = [];
 List<List<String>> roles = [];
 var size;
@@ -252,9 +252,12 @@ class _AddMovieState extends State<AddMovie> {
     setState(() {
       size =
           dynamicList.length + 1; // pass the index of the widget to the class
+      dynamicList.add(new ActorWidget(
+          key: ObjectKey(size),
+          crewItems: crewItems,
+          crewList: crewList,
+          size: size));
     });
-
-    dynamicList.add(new ActorWidget(crewItems, crewList, size));
   }
 
   List<GlobalKey<FormState>> _formKeys = [
@@ -965,9 +968,7 @@ class _AddMovieState extends State<AddMovie> {
                   ListView.builder(
                     shrinkWrap: true,
                     itemCount: dynamicList.length,
-                    itemBuilder: (_, index) =>
-                        Column(key: UniqueKey(), children: [
-                      Text(dynamicList.length.toString()),
+                    itemBuilder: (_, index) => Column(children: [
                       dynamicList[index],
                       SizedBox(
                         height: 10,
@@ -978,12 +979,17 @@ class _AddMovieState extends State<AddMovie> {
                           color: Color.fromRGBO(240, 240, 240, 1),
                           child: Text("Remove"),
                           onPressed: () {
-                            print("ind: $index");
-                            setState(() {
-                              dynamicList.removeAt(index);
-                              actors.removeAt(index);
-                              roles.removeAt(index);
-                            });
+                            if (actors.length == 0 && roles.length == 0) {
+                              setState(() {
+                                dynamicList.removeAt(index);
+                              });
+                            } else {
+                              setState(() {
+                                dynamicList.removeAt(index);
+                                actors.removeAt(index);
+                                roles.removeAt(index);
+                              });
+                            }
                             print('actor: $actors[index]');
                             print('roles: $roles[index]');
                           },
@@ -1260,19 +1266,18 @@ class ActorWidget extends StatefulWidget {
   final List<Crew> crewList;
   final size;
 
-  ActorWidget(this.crewItems, this.crewList, this.size);
+  const ActorWidget({
+    Key key,
+    this.crewItems,
+    this.crewList,
+    this.size,
+  }) : super(key: key);
 
   @override
-  ActorWidgetState createState() => ActorWidgetState(crewItems, crewList, size);
+  ActorWidgetState createState() => ActorWidgetState();
 }
 
 class ActorWidgetState extends State<ActorWidget> {
-  final List<DropdownMenuItem> crewItems;
-  final List<Crew> crewList;
-  final size;
-
-  ActorWidgetState(this.crewItems, this.crewList, this.size);
-
   var selectedValue;
 
   @override
@@ -1304,7 +1309,7 @@ class ActorWidgetState extends State<ActorWidget> {
             ),
             menuBackgroundColor: Colors.white,
             underline: Container(),
-            items: crewItems,
+            items: widget.crewItems,
             value: selectedValue,
             hint: Padding(
               padding: const EdgeInsets.all(12.0),
@@ -1314,16 +1319,16 @@ class ActorWidgetState extends State<ActorWidget> {
             searchHint:
                 Text("Search Any", style: TextStyle(color: Colors.white)),
             onChanged: (value) {
-              var index = crewItems.indexWhere((actor) => actor.value == value);
-              var id = crewList[index].crewId;
+              var index =
+                  widget.crewItems.indexWhere((actor) => actor.value == value);
+              var id = widget.crewList[index].crewId;
 
-              print('index: $size');
-              if (size > actors.length || actors.length == 0) {
+              if (widget.size > actors.length || actors.length == 0) {
                 // if actors list is empty or the widget's index is larger than the size of the actors list, it means that the data hasnt been added to the list
                 actors.add(id);
               } else {
-                actors[size - 1] =
-                    id; // replace the value in the list if it alreaddy exists.
+                actors[widget.size - 1] =
+                    id; // replace the value in the list if it already exists.
               }
             },
             isExpanded: true,
@@ -1334,18 +1339,25 @@ class ActorWidgetState extends State<ActorWidget> {
         ),
         Container(
           color: Color.fromRGBO(240, 240, 240, 1),
-          child: ChipsInput(onChanged: (List<String> ganap) {
-            if (size > roles.length || roles.length == 0) {
-              roles.add(ganap); // add
-            } else {
-              roles[size - 1] = ganap; // replace
-            }
-            print('ROL: $roles');
-          }),
+          child: ChipsInput(
+              key: ObjectKey(widget.size),
+              onChanged: (List<String> ganap) {
+                if (widget.size > roles.length || roles.length == 0) {
+                  roles.add(ganap); // add
+                } else {
+                  roles[widget.size - 1] = ganap; // replace
+                }
+                print('ROL: $roles');
+              }),
         ),
         SizedBox(height: 5),
         Text("Pindutin ang 'ENTER' para ma-save ang role."),
         SizedBox(height: 10),
+        Wrap(
+          children: roles.map((r) {
+            return Text(r.toString());
+          }).toList(),
+        ),
       ]),
     );
   }

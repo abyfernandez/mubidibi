@@ -1,14 +1,18 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/ui/views/crew_view.dart';
+import 'package:mubidibi/globals.dart' as Config;
 
 class ContentScroll extends StatelessWidget {
+  final List<List<Crew>> crewEdit;
   final List<Crew> crew;
   final String title;
   final double imageHeight;
   final double imageWidth;
 
   ContentScroll({
+    this.crewEdit,
     this.crew,
     this.title,
     this.imageHeight,
@@ -68,86 +72,100 @@ class ContentScroll extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   itemCount: crew.length,
                   itemBuilder: (BuildContext context, int index) {
-                    return Container(
-                      margin: EdgeInsets.symmetric(
-                        horizontal: 5.0,
-                      ),
-                      width: imageWidth,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5.0),
-                      ),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(5.0),
-                            child: CachedNetworkImage(
-                              placeholder: (context, url) => Container(
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  height: 1,
-                                  width: 1,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        Theme.of(context).accentColor),
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) => Material(
-                                child: Image.network(
-                                  'https://res.cloudinary.com/mubidibi-sp/image/upload/v1617686120/img_not_found/user-icon_zphbbd.png',
-                                  width: imageWidth,
-                                  height: imageHeight,
-                                  fit: BoxFit.cover,
-                                  alignment: Alignment.topCenter,
-                                ),
-                              ),
-                              imageUrl: crew[index].displayPic ??
-                                  'https://res.cloudinary.com/mubidibi-sp/image/upload/v1617686120/img_not_found/user-icon_zphbbd.png',
-                              width: imageWidth,
-                              height: imageHeight,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.topCenter,
+                    return GestureDetector(
+                      // Show Movie Details
+                      onTap: () => {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CrewView(
+                              crew: crew[index],
+                              crewEdit: crewEdit,
                             ),
                           ),
-                          Positioned(
-                            bottom: 2,
-                            left: 2,
-                            right: 2,
-                            child: Container(
-                              alignment: Alignment.bottomLeft,
-                              child: Text(
-                                crew[index].firstName +
-                                    " " +
-                                    (crew[index].middleName != null
-                                        ? crew[index].middleName +
-                                            " " +
-                                            crew[index].lastName
-                                        : crew[index].lastName) +
-                                    " " +
-                                    (title == "Mga Aktor"
-                                        ? "bilang " + dislayRoles(crew[index])
-                                        : ""),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                                softWrap: true,
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(5.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black54,
-                                    offset: Offset(0.0, 4.0),
-                                    blurRadius: 6.0,
+                        ),
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(
+                          horizontal: 5.0,
+                        ),
+                        width: imageWidth,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.0),
+                        ),
+                        child: Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(5.0),
+                              child: CachedNetworkImage(
+                                placeholder: (context, url) => Container(
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    height: 1,
+                                    width: 1,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Theme.of(context).accentColor),
+                                    ),
                                   ),
-                                ],
+                                ),
+                                errorWidget: (context, url, error) => Material(
+                                  child: Image.network(
+                                    Config.userNotFound,
+                                    width: imageWidth,
+                                    height: imageHeight,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.topCenter,
+                                  ),
+                                ),
+                                imageUrl: crew[index].displayPic ??
+                                    Config.userNotFound,
+                                width: imageWidth,
+                                height: imageHeight,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
                               ),
                             ),
-                          ),
-                        ],
+                            Positioned(
+                              bottom: 2,
+                              left: 2,
+                              right: 2,
+                              child: Container(
+                                alignment: Alignment.bottomLeft,
+                                child: Text(
+                                  crew[index].firstName +
+                                      " " +
+                                      (crew[index].middleName != null
+                                          ? crew[index].middleName +
+                                              " " +
+                                              crew[index].lastName
+                                          : crew[index].lastName) +
+                                      " " +
+                                      (title == "Mga Aktor"
+                                          ? "bilang " + dislayRoles(crew[index])
+                                          : ""),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                  softWrap: true,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5.0),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black54,
+                                      offset: Offset(0.0, 4.0),
+                                      blurRadius: 6.0,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },
