@@ -12,12 +12,16 @@ import 'package:mubidibi/ui/shared/list_items.dart';
 import 'package:dio/dio.dart';
 
 class MovieViewModel extends BaseModel {
+  final List<Movie> movies = [];
+
   // Function: GET ALL MOVIES
   Future<List<Movie>> getAllMovies() async {
     setBusy(true);
     final response = await http.get(Config.api + 'movies/');
     setBusy(false);
     if (response.statusCode == 200) {
+      movies.addAll(movieFromJson(response.body));
+      notifyListeners();
       return movieFromJson(response.body);
     } else {
       throw Exception('Failed to load movies');

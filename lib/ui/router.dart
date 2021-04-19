@@ -1,11 +1,13 @@
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
+import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/ui/views/login_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/ui/views/search_view.dart';
 import 'package:mubidibi/ui/views/signin_category_view.dart';
 import 'package:mubidibi/ui/views/signup_view.dart';
 import 'package:mubidibi/ui/views/startup_view.dart';
@@ -33,6 +35,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         routeName: settings.name,
         viewToShow: SignUpFirstPage(),
       );
+    case DashboardViewRoute:
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: DashboardView(),
+      );
     case HomeViewRoute:
       return _getPageRoute(
         routeName: settings.name,
@@ -56,6 +63,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: CrewView(crew: crew, crewEdit: crewEdit),
+      );
+    case SearchViewRoute:
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: SearchView(),
       );
     default:
       return MaterialPageRoute(

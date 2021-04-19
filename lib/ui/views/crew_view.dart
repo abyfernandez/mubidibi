@@ -55,52 +55,57 @@ class _CrewViewState extends State<CrewView>
 
   Widget displayRoles() {
     return Wrap(
-        children: roles.map((role) {
-      return Container(
-          margin: EdgeInsets.only(right: 5),
-          child: Chip(
-            labelPadding: EdgeInsets.only(left: 2, right: 2),
-            label: Text(role, style: TextStyle(fontSize: 12)),
-            backgroundColor: Color.fromRGBO(176, 224, 230, 1),
-          ));
-    }).toList());
+        children: roles != null
+            ? roles.map((role) {
+                return Container(
+                    margin: EdgeInsets.only(right: 5),
+                    child: Chip(
+                      labelPadding: EdgeInsets.only(left: 2, right: 2),
+                      label: Text(role, style: TextStyle(fontSize: 12)),
+                      backgroundColor: Color.fromRGBO(176, 224, 230, 1),
+                    ));
+              }).toList()
+            : []);
   }
 
   Widget displayPhotos() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-          children: crew.photos.map((pic) {
-        return Container(
-          height: 250,
-          width: 230,
-          margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-          decoration:
-              BoxDecoration(borderRadius: BorderRadius.circular(5), boxShadow: [
-            BoxShadow(
-              color: Colors.grey,
-              blurRadius: 7,
-            )
-          ]),
-          child: GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        FullPhoto(url: pic ?? Config.imgNotFound),
-                  ),
-                );
-              },
-              child: Image.network(
-                pic,
-                height: 250,
-                width: 230,
-                alignment: Alignment.topCenter,
-                fit: BoxFit.cover,
-              )),
-        );
-      }).toList()),
+          children: crew.photos != null
+              ? crew.photos.map((pic) {
+                  return Container(
+                    height: 250,
+                    width: 230,
+                    margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey,
+                            blurRadius: 7,
+                          )
+                        ]),
+                    child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  FullPhoto(url: pic ?? Config.imgNotFound),
+                            ),
+                          );
+                        },
+                        child: Image.network(
+                          pic,
+                          height: 250,
+                          width: 230,
+                          alignment: Alignment.topCenter,
+                          fit: BoxFit.cover,
+                        )),
+                  );
+                }).toList()
+              : []),
     );
   }
 
@@ -113,25 +118,14 @@ class _CrewViewState extends State<CrewView>
       viewModel: CrewViewModel(),
       builder: (context, model, child) => Scaffold(
         appBar: AppBar(
-          // centerTitle: true,
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
-          // title: Text(
-          //   crew.firstName +
-          //       ' ' +
-          //       (crew.middleName != null
-          //           ? (crew.middleName + ' ' + crew.lastName)
-          //           : crew.lastName),
-          //   style: TextStyle(
-          //       fontSize: 20,
-          //       fontFamily: 'Poppins',
-          //       fontWeight: FontWeight.bold),
-          // ),
         ),
         body: ListView(
           children: <Widget>[
             SizedBox(height: 30),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Container(
@@ -182,7 +176,6 @@ class _CrewViewState extends State<CrewView>
                 ),
                 Container(
                   width: 200,
-                  alignment: Alignment.topLeft,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
@@ -247,10 +240,14 @@ class _CrewViewState extends State<CrewView>
                   ),
                   SizedBox(height: 10),
                   crew.description != null
-                      ? Text(crew.description, style: TextStyle(fontSize: 16))
+                      ? Text(
+                          crew.description,
+                          style: TextStyle(fontSize: 16),
+                          textAlign: TextAlign.justify,
+                        )
                       : Center(
                           child: Text(
-                            'No decription found.',
+                            'No description found.',
                             style: TextStyle(
                               fontSize: 16,
                               fontStyle: FontStyle.italic,
@@ -259,24 +256,32 @@ class _CrewViewState extends State<CrewView>
                           ),
                         ),
                   SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Photos",
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      GestureDetector(
-                        child: Text('See All',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
-                        onTap: () {},
-                      ),
-                      SizedBox(height: 10),
-                    ],
-                  ),
-                  displayPhotos()
+                  crew.photos != null
+                      ? Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Photos",
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                // TO DO: MAKE A PAGE TO VIEW ALL PHOTOS / IMAGE VIEWER (FOR MULTIPLE IMAGES)
+                                GestureDetector(
+                                  child: Text('See All',
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold)),
+                                  onTap: () {},
+                                ),
+                              ],
+                            ),
+                            displayPhotos()
+                          ],
+                        )
+                      : Container(),
                 ],
               ),
             ),

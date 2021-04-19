@@ -157,7 +157,7 @@ class ContentScroll extends StatelessWidget {
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black54,
-                                      offset: Offset(0.0, 4.0),
+                                      offset: Offset(0.0, 0.0),
                                       blurRadius: 6.0,
                                     ),
                                   ],

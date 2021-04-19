@@ -7,7 +7,6 @@ class User {
   final String suffix;
   final String birthday;
   final bool isAdmin;
-  // final String photoUrl;
 
   User({
     this.userId,

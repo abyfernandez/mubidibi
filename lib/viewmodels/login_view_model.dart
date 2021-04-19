@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
 
 import 'base_model.dart';
@@ -63,7 +64,6 @@ class LoginViewModel extends BaseModel {
       // }
 
       if (result) {
-        // TO DO: sync user profile here
         await _navigationService.navigateTo(HomeViewRoute);
       } else {
         await _authenticationService.signOut();

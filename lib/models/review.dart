@@ -10,22 +10,28 @@ class Review {
   final int reviewId;
   final int movieId;
   final String userId;
+  final String prefix;
   final String firstName;
   final String middleName;
   final String lastName;
+  final String suffix;
   final num rating;
   final String review;
+  final bool isApproved;
   final String addedAt;
 
   Review(
       {this.reviewId,
       this.movieId,
       this.userId,
+      this.prefix,
       this.firstName,
       this.middleName,
       this.lastName,
+      this.suffix,
       this.rating,
       this.review,
+      this.isApproved,
       this.addedAt});
 
   factory Review.fromJson(Map<String, dynamic> json) {
@@ -33,12 +39,15 @@ class Review {
       reviewId: json['id'],
       movieId: json['movie_id'],
       userId: json['account_id'],
+      prefix: json['prefix'],
       firstName: json['first_name'],
       middleName: json['middle_name'],
       lastName: json['last_name'],
-      rating: json['rating'],
+      suffix: json['suffix'],
+      rating: json['rating'].toDouble(),
       review: json['review'],
-      addedAt: json['added_at'],
+      isApproved: json['is_approved'],
+      addedAt: json['created_at'],
     );
   }
 

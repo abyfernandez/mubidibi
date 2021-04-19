@@ -16,7 +16,9 @@ class SignUpViewModel extends BaseModel {
     @required String email,
     @required String password,
     @required firstName,
+    @required middleName,
     @required lastName,
+    @required suffix,
     @required birthday,
   }) async {
     setBusy(true);
@@ -25,7 +27,9 @@ class SignUpViewModel extends BaseModel {
       email: email,
       password: password,
       firstName: firstName,
+      middleName: middleName,
       lastName: lastName,
+      suffix: suffix,
       birthday: birthday,
     );
 

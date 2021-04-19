@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// import 'package:flutter_chips_input/flutter_chips_input.dart';
+// import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
@@ -119,7 +121,7 @@ class _AddMovieState extends State<AddMovie> {
     crewItems = crewList.map<DropdownMenuItem<dynamic>>((Crew value) {
       String name = value.firstName + " " + value.lastName;
       return DropdownMenuItem<dynamic>(
-        key: Key(value.crewId.toString()),
+        key: ValueKey(value.crewId),
         value: name,
         child: Text(name),
       );
@@ -129,7 +131,7 @@ class _AddMovieState extends State<AddMovie> {
   Future<Null> _selectDate(BuildContext context) async {
     DateTime _datePicker = await showDatePicker(
         context: context,
-        initialDate: _date == null ? DateTime.now() : '',
+        initialDate: _date == null ? DateTime.now() : _date,
         firstDate: DateTime(1900),
         lastDate: DateTime(2030),
         initialDatePickerMode: DatePickerMode.day,
@@ -796,213 +798,325 @@ class _AddMovieState extends State<AddMovie> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 10),
-              Text('Mga Direktor:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              // Text('Mga Direktor:',
+              //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 10,
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Column(
-                  children: <Widget>[
-                    SearchableDropdown.multiple(
-                      selectedValueWidgetFn: (item) => InputChip(
-                        label: Text(
-                          item,
-                          style: TextStyle(
-                            fontSize: 14,
-                          ),
-                        ),
-                        backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-                        deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-                        padding: EdgeInsets.all(7),
-                        onPressed: () {},
-                        onDeleted: () {
-                          setState(() {
-                            var index = crewItems.indexWhere(
-                                (director) => director.value == item);
-                            directors.removeWhere((item) => item == index);
-                          });
-                        },
-                      ),
-                      key: UniqueKey(),
-                      style: TextStyle(
-                        color: Colors.black,
-                      ),
-                      underline: Container(),
-                      items: crewItems,
-                      selectedItems: directors,
-                      hint: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Text("Direktor",
-                            style:
-                                TextStyle(color: Colors.black, fontSize: 16)),
-                      ),
-                      searchHint: Text("Search Any",
-                          style: TextStyle(color: Colors.white)),
-                      onChanged: (value) {
-                        setState(() {
-                          directors = value;
-                        });
-                      },
-                      closeButton: (directors) {
-                        return (directors.isNotEmpty
-                            ? "Save ${directors.length == 1 ? '"' + crewItems[directors.first].value.toString() + '"' : '(' + directors.length.toString() + ')'}"
-                            : "Save without selection");
-                      },
-                      isExpanded: true,
-                    ),
-                  ],
-                ),
+              // Container(
+              //   decoration: BoxDecoration(
+              //     color: Color.fromRGBO(240, 240, 240, 1),
+              //     borderRadius: BorderRadius.circular(5),
+              //   ),
+              //   child: Column(
+              //     children: <Widget>[
+              //       SearchableDropdown.multiple(
+              //         selectedValueWidgetFn: (item) => InputChip(
+              //           label: Text(
+              //             item,
+              //             style: TextStyle(
+              //               fontSize: 14,
+              //             ),
+              //           ),
+              //           backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+              //           deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+              //           padding: EdgeInsets.all(7),
+              //           onPressed: () {},
+              //           onDeleted: () {
+              //             setState(() {
+              //               var index = crewItems.indexWhere(
+              //                   (director) => director.value == item);
+              //               directors.removeWhere((item) => item == index);
+              //             });
+              //           },
+              //         ),
+              //         key: UniqueKey(),
+              //         style: TextStyle(
+              //           color: Colors.black,
+              //         ),
+              //         underline: Container(),
+              //         items: crewItems,
+              //         selectedItems: directors,
+              //         hint: Padding(
+              //           padding: const EdgeInsets.all(12.0),
+              //           child: Text("Direktor",
+              //               style:
+              //                   TextStyle(color: Colors.black, fontSize: 16)),
+              //         ),
+              //         searchHint: Text("Search Any",
+              //             style: TextStyle(color: Colors.white)),
+              //         onChanged: (value) {
+              //           setState(() {
+              //             directors = value;
+              //           });
+              //         },
+              //         closeButton: (directors) {
+              //           return (directors.isNotEmpty
+              //               ? "Save ${directors.length == 1 ? '"' + crewItems[directors.first].value.toString() + '"' : '(' + directors.length.toString() + ')'}"
+              //               : "Save without selection");
+              //         },
+              //         isExpanded: true,
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // FormBuilderChipsInput(
+              ChipsInput(
+                key: UniqueKey(),
+                decoration: InputDecoration(labelText: 'Mga Direktor'),
+                // name: 'directors',
+                onChanged: (values) {
+                  setState(() {
+                    directors = values.map<int>((item) {
+                      var index = crewItems.indexWhere(
+                          (director) => director.value == item.value);
+                      return index;
+                    }).toList();
+                  });
+                },
+                findSuggestions: (String query) {
+                  if (query.isNotEmpty) {
+                    var lowercaseQuery = query.toLowerCase();
+                    return crewItems.where((c) {
+                      return c.value
+                          .toLowerCase()
+                          .contains(query.toLowerCase());
+                    }).toList(growable: false)
+                      ..sort((a, b) => a.value
+                          .toLowerCase()
+                          .indexOf(lowercaseQuery)
+                          .compareTo(
+                              b.value.toLowerCase().indexOf(lowercaseQuery)));
+                  } else {
+                    return const [];
+                  }
+                },
+                chipBuilder: (context, state, item) {
+                  return InputChip(
+                    key: ObjectKey(item),
+                    label: Text(item.value),
+                    onDeleted: () {
+                      var index = crewItems
+                          .indexWhere((writer) => writer.value == item);
+                      setState(() {
+                        writers.removeWhere((item) => item == index);
+                      });
+                      return state.deleteChip(item);
+                    },
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, item) {
+                  return ListTile(
+                      key: ObjectKey(item),
+                      title: Text(item.value),
+                      onTap: () {
+                        return state.selectSuggestion(item);
+                      });
+                },
               ),
               SizedBox(height: 10),
-              Text('Mga Manunulat:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              SizedBox(
-                height: 10,
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Column(
-                  children: <Widget>[
-                    SearchableDropdown.multiple(
-                      selectedValueWidgetFn: (item) => InputChip(
-                        label: Text(
-                          item,
-                          style: TextStyle(
-                            fontSize: 14,
-                          ),
-                        ),
-                        backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-                        deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-                        padding: EdgeInsets.all(7),
-                        onPressed: () {},
-                        onDeleted: () {
-                          setState(() {
-                            var index = crewItems
-                                .indexWhere((writer) => writer.value == item);
-                            writers.removeWhere((item) => item == index);
-                          });
-                        },
-                      ),
-                      key: UniqueKey(),
-                      style: TextStyle(
-                        color: Colors.black,
-                      ),
-                      menuBackgroundColor: Colors.white,
-                      underline: Container(),
-                      items: crewItems,
-                      selectedItems: writers,
-                      hint: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Text("Manunulat",
-                            style:
-                                TextStyle(color: Colors.black, fontSize: 16)),
-                      ),
-                      searchHint: Text("Search Any",
-                          style: TextStyle(color: Colors.white)),
-                      onChanged: (value) {
-                        setState(() {
-                          writers = value;
-                        });
-                      },
-                      closeButton: (writers) {
-                        return (writers.isNotEmpty
-                            ? "Save ${writers.length == 1 ? '"' + crewItems[writers.first].value.toString() + '"' : '(' + writers.length.toString() + ')'}"
-                            : "Save without selection");
-                      },
-                      isExpanded: true,
-                    ),
-                  ],
-                ),
+              // Text('Mga Manunulat:',
+              //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              // SizedBox(
+              //   height: 10,
+              // ),
+              // Container(
+              //   decoration: BoxDecoration(
+              //     color: Color.fromRGBO(240, 240, 240, 1),
+              //     borderRadius: BorderRadius.circular(5),
+              //   ),
+              //   child: Column(
+              //     children: <Widget>[
+              //       SearchableDropdown.multiple(
+              //         selectedValueWidgetFn: (item) => InputChip(
+              //           label: Text(
+              //             item,
+              //             style: TextStyle(
+              //               fontSize: 14,
+              //             ),
+              //           ),
+              //           backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+              //           deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+              //           padding: EdgeInsets.all(7),
+              //           onPressed: () {},
+              //           onDeleted: () {
+              //             setState(() {
+              //               var index = crewItems
+              //                   .indexWhere((writer) => writer.value == item);
+              //               writers.removeWhere((item) => item == index);
+              //             });
+              //           },
+              //         ),
+              //         key: UniqueKey(),
+              //         style: TextStyle(
+              //           color: Colors.black,
+              //         ),
+              //         menuBackgroundColor: Colors.white,
+              //         underline: Container(),
+              //         items: crewItems,
+              //         selectedItems: writers,
+              //         hint: Padding(
+              //           padding: const EdgeInsets.all(12.0),
+              //           child: Text("Manunulat",
+              //               style:
+              //                   TextStyle(color: Colors.black, fontSize: 16)),
+              //         ),
+              //         searchHint: Text("Search Any",
+              //             style: TextStyle(color: Colors.white)),
+              //         onChanged: (value) {
+              //           setState(() {
+              //             writers = value;
+              //           });
+              //         },
+              //         closeButton: (writers) {
+              //           return (writers.isNotEmpty
+              //               ? "Save ${writers.length == 1 ? '"' + crewItems[writers.first].value.toString() + '"' : '(' + writers.length.toString() + ')'}"
+              //               : "Save without selection");
+              //         },
+              //         isExpanded: true,
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // FormBuilderChipsInput(
+              ChipsInput(
+                focusNode: new FocusNode(),
+                key: UniqueKey(),
+                decoration: InputDecoration(labelText: 'Mga Manunulat'),
+                // name: 'writers',
+                onChanged: (values) {
+                  setState(() {
+                    writers = values.map<int>((item) {
+                      var index = crewItems
+                          .indexWhere((writer) => writer.value == item.value);
+                      return index;
+                    }).toList();
+                  });
+                },
+                findSuggestions: (String query) {
+                  if (query.isNotEmpty) {
+                    var lowercaseQuery = query.toLowerCase();
+                    return crewItems.where((c) {
+                      return c.value
+                          .toLowerCase()
+                          .contains(query.toLowerCase());
+                    }).toList(growable: false)
+                      ..sort((a, b) => a.value
+                          .toLowerCase()
+                          .indexOf(lowercaseQuery)
+                          .compareTo(
+                              b.value.toLowerCase().indexOf(lowercaseQuery)));
+                  } else {
+                    return const [];
+                  }
+                },
+                chipBuilder: (context, state, item) {
+                  return InputChip(
+                    key: ObjectKey(item),
+                    label: Text(item.value),
+                    onDeleted: () {
+                      var index = crewItems
+                          .indexWhere((writer) => writer.value == item);
+                      setState(() {
+                        writers.removeWhere((item) => item == index);
+                      });
+
+                      return state.deleteChip(item);
+                    },
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, item) {
+                  return ListTile(
+                      key: ObjectKey(item),
+                      title: Text(item.value),
+                      onTap: () {
+                        return state.selectSuggestion(item);
+                      });
+                },
               ),
               SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Mga Aktor:',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Container(
-                    child: dynamicList.isNotEmpty
-                        ? FlatButton(
-                            color: Color.fromRGBO(192, 192, 192, 1),
-                            onPressed: addActor,
-                            child: Row(
-                              children: [
-                                Icon(Icons.person_add_alt_1_outlined),
-                                Text(" Dagdagan")
-                              ],
-                            ),
-                          )
-                        : null,
-                  ),
-                ],
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              Container(
-                width: 140,
-                child: dynamicList.isEmpty
-                    ? FlatButton(
-                        color: Color.fromRGBO(192, 192, 192, 1),
-                        onPressed: addActor,
-                        child: Row(
-                          children: [
-                            Icon(Icons.person_add_alt_1_outlined),
-                            Text(" Dagdagan")
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
-              Column(
-                children: [
-                  ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: dynamicList.length,
-                    itemBuilder: (_, index) => Column(children: [
-                      dynamicList[index],
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Container(
-                        alignment: Alignment.centerRight,
-                        child: FlatButton(
-                          color: Color.fromRGBO(240, 240, 240, 1),
-                          child: Text("Remove"),
-                          onPressed: () {
-                            if (actors.length == 0 && roles.length == 0) {
-                              setState(() {
-                                dynamicList.removeAt(index);
-                              });
-                            } else {
-                              setState(() {
-                                dynamicList.removeAt(index);
-                                actors.removeAt(index);
-                                roles.removeAt(index);
-                              });
-                            }
-                            print('actor: $actors[index]');
-                            print('roles: $roles[index]');
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Divider(height: 1, thickness: 2),
-                    ]),
-                  ),
-                ],
-              ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //   children: [
+              //     Text('Mga Aktor:',
+              //         style:
+              //             TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              //     Container(
+              //       child: dynamicList.isNotEmpty
+              //           ? FlatButton(
+              //               color: Color.fromRGBO(192, 192, 192, 1),
+              //               onPressed: addActor,
+              //               child: Row(
+              //                 children: [
+              //                   Icon(Icons.person_add_alt_1_outlined),
+              //                   Text(" Dagdagan")
+              //                 ],
+              //               ),
+              //             )
+              //           : null,
+              //     ),
+              //   ],
+              // ),
+              // SizedBox(
+              //   height: 10,
+              // ),
+              // Container(
+              //   width: 140,
+              //   child: dynamicList.isEmpty
+              //       ? FlatButton(
+              //           color: Color.fromRGBO(192, 192, 192, 1),
+              //           onPressed: addActor,
+              //           child: Row(
+              //             children: [
+              //               Icon(Icons.person_add_alt_1_outlined),
+              //               Text(" Dagdagan")
+              //             ],
+              //           ),
+              //         )
+              //       : null,
+              // ),
+              // Column(
+              //   children: [
+              //     ListView.builder(
+              //       shrinkWrap: true,
+              //       itemCount: dynamicList.length,
+              //       itemBuilder: (_, index) => Column(children: [
+              //         dynamicList[index],
+              //         SizedBox(
+              //           height: 10,
+              //         ),
+              //         Container(
+              //           alignment: Alignment.centerRight,
+              //           child: FlatButton(
+              //             color: Color.fromRGBO(240, 240, 240, 1),
+              //             child: Text("Remove"),
+              //             onPressed: () {
+              //               if (actors.length == 0 && roles.length == 0) {
+              //                 setState(() {
+              //                   dynamicList.removeAt(index);
+              //                 });
+              //               } else {
+              //                 setState(() {
+              //                   dynamicList.removeAt(index);
+              //                   actors.removeAt(index);
+              //                   roles.removeAt(index);
+              //                 });
+              //               }
+              //               print('actor: $actors[index]');
+              //               print('roles: $roles[index]');
+              //             },
+              //           ),
+              //         ),
+              //         SizedBox(
+              //           height: 10,
+              //         ),
+              //         Divider(height: 1, thickness: 2),
+              //       ]),
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         );

@@ -18,7 +18,9 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
   var emailController = TextEditingController();
   var passwordController = TextEditingController();
   var firstNameController = TextEditingController();
+  var middleNameController = TextEditingController();
   var lastNameController = TextEditingController();
+  var suffixController = TextEditingController();
   var birthdayController = TextEditingController();
 
   // we update the value of this variable so that we can manipulate the 'next' button
@@ -31,6 +33,7 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
     } else {
       _isButtonDisabled = true;
     }
+    print(_isButtonDisabled);
     return _isButtonDisabled;
   }
 
@@ -43,7 +46,9 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
             emailController,
             passwordController,
             firstNameController,
+            middleNameController,
             lastNameController,
+            suffixController,
             birthdayController
           ],
         ),
@@ -52,8 +57,10 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
     emailController = result[0];
     passwordController = result[1];
     firstNameController = result[2];
-    lastNameController = result[3];
-    birthdayController = result[4];
+    middleNameController = result[3];
+    lastNameController = result[4];
+    suffixController = result[5];
+    birthdayController = result[6];
   }
 
   @override
@@ -77,7 +84,7 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
           backgroundColor: Colors.white,
           elevation: 0,
           iconTheme: IconThemeData(
-            color: Colors.lightBlue, //change your color here
+            color: Colors.black, //change your color here
           ),
         ),
         backgroundColor: Colors.white,
@@ -117,11 +124,14 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                           height: 30,
                         ),
                         // Email Address Form Field
+                        // TO DO: BEFORE PROCEEDING TO NEXT PAGE, VALIDTE EMAIL FIRST
                         InputField(
                           controller: emailController,
                           placeholder: "Email Address",
                           onChanged: (val) {
-                            isButtonDisabled();
+                            setState(() {
+                              isButtonDisabled();
+                            });
                           },
                         ),
                         SizedBox(height: 20.0),
@@ -131,7 +141,9 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                           placeholder: "Password",
                           password: true,
                           onChanged: (val) {
-                            isButtonDisabled();
+                            setState(() {
+                              isButtonDisabled();
+                            });
                           },
                         ),
                         Container(
@@ -189,18 +201,20 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
   var emailController;
   var passwordController;
   var firstNameController;
+  var middleNameController;
   var lastNameController;
+  var suffixController;
   var birthdayController;
-  DateTime _birthday = DateTime.now();
+  DateTime _birthday;
 
   final NavigationService _navigationService = locator<NavigationService>();
 
   bool _isButtonDisabled = true;
 
   bool isButtonDisabled() {
+    // middle name, birthday and suffix are not required
     if (firstNameController.text.trim() != "" &&
-        lastNameController.text.trim() != "" &&
-        birthdayController.text.trim() != "") {
+        lastNameController.text.trim() != "") {
       _isButtonDisabled = false;
     } else {
       _isButtonDisabled = true;
@@ -212,25 +226,21 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
   Future<Null> _selectDate(BuildContext context) async {
     DateTime _datePicker = await showDatePicker(
         context: context,
-        initialDate: _birthday,
+        initialDate: _birthday == null ? DateTime.now() : _birthday,
         firstDate: DateTime(1900),
         lastDate: DateTime(2030),
         initialDatePickerMode: DatePickerMode.day,
         builder: (BuildContext context, Widget child) {
-          return Theme(
-            data: ThemeData(
-              primarySwatch: Colors.lightBlue,
-              primaryColor: Colors.lightBlue,
-              accentColor: Colors.white,
-            ),
-            child: child,
-          );
+          return child;
         });
 
     if (_datePicker != null && _datePicker != _birthday) {
       setState(() {
         _birthday = _datePicker;
+        birthdayController.text =
+            DateFormat("MMM. d, y").format(_birthday) ?? '';
       });
+      print(_birthday);
     }
   }
 
@@ -240,12 +250,14 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
     emailController = previousFields[0];
     passwordController = previousFields[1];
     firstNameController = previousFields[2];
-    lastNameController = previousFields[3];
-    birthdayController = previousFields[4];
+    middleNameController = previousFields[3];
+    lastNameController = previousFields[4];
+    suffixController = previousFields[5];
+    birthdayController = previousFields[6];
 
+    // middle name, birthday and suffix are not required
     if (firstNameController.text.trim() != "" &&
-        lastNameController.text.trim() != "" &&
-        birthdayController.text.trim() != "") {
+        lastNameController.text.trim() != "") {
       _isButtonDisabled = false;
     } else {
       _isButtonDisabled = true;
@@ -254,6 +266,9 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
 
   @override
   Widget build(BuildContext context) {
+    MediaQueryData queryData;
+    queryData = MediaQuery.of(context);
+
     return ViewModelProvider<SignUpViewModel>.withConsumer(
       viewModel: SignUpViewModel(),
       builder: (context, model, child) => Scaffold(
@@ -301,9 +316,23 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                         // First Name Form Field
                         InputField(
                           controller: firstNameController,
-                          placeholder: "First Name",
+                          placeholder: "First Name *",
                           onChanged: (val) {
-                            isButtonDisabled();
+                            setState(() {
+                              isButtonDisabled();
+                            });
+                          },
+                        ),
+                        SizedBox(height: 20.0),
+
+                        // Middle Name Form Field
+                        InputField(
+                          controller: middleNameController,
+                          placeholder: "Middle Name",
+                          onChanged: (val) {
+                            setState(() {
+                              isButtonDisabled();
+                            });
                           },
                         ),
                         SizedBox(height: 20.0),
@@ -311,32 +340,127 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                         // Last Name Form Field
                         InputField(
                           controller: lastNameController,
-                          placeholder: "Last Name",
+                          placeholder: "Last Name *",
                           onChanged: (val) {
-                            isButtonDisabled();
+                            setState(() {
+                              isButtonDisabled();
+                            });
                           },
                         ),
                         SizedBox(height: 20.0),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Suffix Form Field
+                            Container(
+                              alignment: Alignment.centerLeft,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(color: Colors.black),
+                              ),
+                              height: 60.0,
+                              width: (queryData.size.width / 2) - 50,
+                              child: TextFormField(
+                                controller: suffixController,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                style: TextStyle(
+                                  color: Colors.black,
+                                ),
+                                onChanged: (val) {
+                                  setState(() {
+                                    isButtonDisabled();
+                                  });
+                                },
+                                decoration: InputDecoration(
+                                  hintText: "Suffix",
+                                  hintStyle: TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                  border: InputBorder.none,
+                                  labelText: "Suffix",
+                                  labelStyle: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                  contentPadding: EdgeInsets.only(left: 15),
+                                ),
 
-                        // Birthday Form Field
-                        // TO DO: Change to DatePicker field
-                        InputField(
-                          controller: birthdayController,
-                          textInputType: TextInputType.datetime,
-                          placeholder: "Birthday",
-                          onChanged: (val) {
-                            isButtonDisabled();
-                          },
+                                // field is not required
+                                // validator: (value) {
+                                //   if (value.isEmpty || value == null) {
+                                //     return 'This field is required';
+                                //   }
+                                //   return null;
+                                // },
+                              ),
+                            ),
+
+                            Container(
+                              alignment: Alignment.centerLeft,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5),
+                                border: Border.all(color: Colors.black),
+                              ),
+                              height: 60.0,
+                              width: (queryData.size.width / 2) - 50,
+                              child: TextFormField(
+                                controller: birthdayController,
+                                readOnly: true,
+                                onTap: () {
+                                  _selectDate(context);
+                                },
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                style: TextStyle(
+                                  color: Colors.black,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: _birthday != null
+                                      ? DateFormat("MMM. d, y")
+                                          .format(_birthday)
+                                      : "Birthday",
+                                  hintStyle: TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                  border: InputBorder.none,
+                                  labelText: "Birthday",
+                                  labelStyle: TextStyle(
+                                    color: Colors.black,
+                                  ),
+                                  contentPadding: EdgeInsets.only(left: 15),
+                                ),
+
+                                // field is not required
+                                // validator: (value) {
+                                //   if (value.isEmpty || value == null) {
+                                //     return 'This field is required';
+                                //   }
+                                //   return null;
+                                // },
+                              ),
+                            ),
+
+                            // Birthday Form Field
+                            // Container(
+                            //   width: 100,
+                            //   child: InputField(
+                            //     controller: birthdayController,
+                            //     isReadOnly: true,
+                            //     onTap: () {
+                            //       _selectDate(context);
+                            //     },
+                            //     placeholder: "Birthday",
+                            //     hintText: _birthday != null
+                            //         ? DateFormat("MMM. d, y").format(_birthday)
+                            //         : "Birthday",
+                            //   ),
+                            // ),
+                          ],
                         ),
-                        // InputField(
-                        //   controller: birthdayController,
-                        //   isReadOnly: true,
-                        //   onTap: () {
-                        //     _selectDate(context);
-                        //   },
-                        //   placeholder: "Birthday",
-                        //   hintText: DateFormat("MMM. d, y").format(_birthday),
-                        // ),
+                        SizedBox(
+                          height: 10,
+                        ),
+
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -358,7 +482,9 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                                   emailController,
                                   passwordController,
                                   firstNameController,
+                                  middleNameController,
                                   lastNameController,
+                                  suffixController,
                                   birthdayController
                                 ]);
                               },
@@ -402,26 +528,18 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
 
   // Submit your data
   void submitData() {
-    // newUser.addAll(widget.previousFields);
-    // newUser.addAll([
-    //   firstNameController.text,
-    //   lastNameController.text,
-    //   birthdayController.text,
-    // ]);
+    // create authenticated user in firebase using email address and password.
+    // after creating user, save the remaining fields with the firebase user id in postgresql db
+    // if adding to postgres db fails, delete the authenticated account from firebase
 
-    // created this array because i noticed that when u click the submit button multiple times it just appends the new data from the 2nd page
-    List<String> newUser = [];
-    newUser.addAll([
-      emailController.text,
-      passwordController.text,
-      firstNameController.text,
-      lastNameController.text,
-      birthdayController.text,
-    ]);
-
-    // TO DO: Save to database
-    print(newUser);
-    // var model = SignUpViewModel();
-    // var
+    var model = SignUpViewModel();
+    model.signUp(
+        email: emailController.text,
+        password: passwordController.text,
+        firstName: firstNameController.text,
+        middleName: middleNameController?.text ?? null,
+        lastName: lastNameController.text,
+        suffix: suffixController?.text ?? null,
+        birthday: _birthday != null ? _birthday.toIso8601String() : null);
   }
 }

@@ -52,7 +52,7 @@ class _ContentHeaderMobile extends StatelessWidget {
             boxShadow: [
               BoxShadow(
                 color: Colors.black54,
-                offset: Offset(0.0, 4.0),
+                offset: Offset(0.0, 0.0),
                 blurRadius: 2.0,
               ),
             ],
@@ -74,6 +74,7 @@ class _ContentHeaderMobile extends StatelessWidget {
             image: DecorationImage(
               image: NetworkImage(featuredContent.poster ?? Config.imgNotFound),
               fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
             ),
           ),
         ),

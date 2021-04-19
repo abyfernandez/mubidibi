@@ -49,11 +49,11 @@ class Crew {
       birthplace: json['birthplace'],
       displayPic: json['display_pic'],
       photos: json["photos"] == null
-          ? null
+          ? []
           : List<String>.from(json["photos"].map((x) => x)),
       description: json['description'],
       role: json["role"] == null
-          ? null
+          ? []
           : List<String>.from(json["role"].map((x) => x)),
     );
   }

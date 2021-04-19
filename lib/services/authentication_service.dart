@@ -41,7 +41,6 @@ class AuthenticationService {
       assert(user.uid == currentUser.uid);
 
       await _populateCurrentUser(currentUser); // populate the user information
-      print('CURRENT USER: $_currentUser.toJson()');
 
       return _currentUser != null;
     } catch (e) {
@@ -70,25 +69,51 @@ class AuthenticationService {
 
   // Function: SIGN UP -- sign up using provided Email and Password
   Future signUpWithEmail({
-    // TO DO: complete user profile before saving to firestore
-
-    // @required User user,
     @required String email,
     @required String password,
     @required String firstName,
+    @required String middleName,
     @required String lastName,
+    @required String suffix,
     @required String birthday,
   }) async {
     try {
       var authResult = await _firebaseAuth.createUserWithEmailAndPassword(
           email: email, password: password);
-      await _firestoreService.createUser(User(
-        userId: authResult.user.uid,
-        firstName: firstName,
-        lastName: lastName,
-      ));
 
-      return authResult.user != null;
+      // after creating user in firebase, create user in postgres db with the data provided.
+
+      var response = await http.post(
+        Config.api + 'sign-up/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'userId': authResult.user.uid,
+          'firstName': firstName,
+          'middleName': middleName,
+          'lastName': lastName,
+          'suffix': suffix,
+          'birthday': birthday,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final FirebaseUser user = authResult.user;
+
+        assert(!user.isAnonymous);
+        assert(await user.getIdToken() != null);
+
+        final FirebaseUser currentUser = await _firebaseAuth.currentUser();
+        assert(user.uid == currentUser.uid);
+
+        await _populateCurrentUser(
+            currentUser); // populate the user information
+
+        return _currentUser != null;
+      } else {
+        return currentUser == null;
+      }
     } catch (e) {
       return e.message;
     }

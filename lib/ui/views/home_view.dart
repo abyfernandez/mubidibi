@@ -1,16 +1,14 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:mubidibi/services/navigation_service.dart';
+import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/locator.dart';
-import 'package:mubidibi/constants/route_names.dart';
+import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/my_drawer.dart';
-import 'package:mubidibi/ui/widgets/content_header.dart';
+import 'package:mubidibi/ui/views/search_view.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
-import 'package:mubidibi/ui/views/content_list.dart';
-import 'package:mubidibi/models/movie.dart';
-import 'package:floating_action_bubble/floating_action_bubble.dart';
 
 class HomeView extends StatefulWidget {
   HomeView({Key key}) : super(key: key);
@@ -19,207 +17,99 @@ class HomeView extends StatefulWidget {
   _HomeViewState createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView>
-    with SingleTickerProviderStateMixin {
-  final NavigationService _navigationService = locator<NavigationService>();
+class _HomeViewState extends State<HomeView> {
+  final DialogService _dialogService = locator<DialogService>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  int pageIndex = 0;
 
-  int _selectedIndex = 0;
-  Future<List<Movie>> movies;
-  ScrollController _scrollController;
-  var index;
-  Animation<double> _animation;
-  AnimationController _animationController;
-  IconData FABIcon = Icons.add;
+  // Initialize Pages
+  final SearchView _searchView = SearchView();
+  final DashboardView _dashboardView = DashboardView();
 
-  void _onItemTapped(int index) async {
-    if (_selectedIndex == 0 && index == 0) {
-      print("Home");
-    } else if (_selectedIndex != 0 && index == 0) {
-      await _navigationService.navigateTo(HomeViewRoute);
-    } else if (_selectedIndex == 1 && index == 1) {
-      print("Search");
-    } else if (_selectedIndex != 1 && index == 1) {
-      print("Search");
-    } else if (_selectedIndex == 2 && index == 2) {
-      print("View Profile");
-    } else if (_selectedIndex != 2 && index == 2) {
-      print("View Profile");
+  Widget _showPage = DashboardView();
+
+  Widget _pageChooser(int page) {
+    switch (page) {
+      case 0:
+        return DashboardView();
+        break;
+      case 1:
+        return _searchView;
+        break;
+      case 2:
+        return Container();
+        break;
+      default:
+        return Container(
+          child: Center(
+            child: Text('No page found.'),
+          ),
+        );
     }
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  // function for calling viewmodel's getAllCrew method
-  Future<List<Movie>> fetchMovies() async {
-    var model = MovieViewModel();
-    return model.getAllMovies();
-  }
-
-  @override
-  void initState() {
-    movies = fetchMovies();
-    movies.then((m) {
-      var rand = new Random();
-      index = rand.nextInt(m.length);
-    });
-
-    _animationController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 260),
-    );
-
-    final curvedAnimation =
-        CurvedAnimation(curve: Curves.easeInOut, parent: _animationController);
-    _animation = Tween<double>(begin: 0, end: 1).animate(curvedAnimation);
-
-    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
-    return ViewModelProvider<MovieViewModel>.withConsumer(
-      viewModel: MovieViewModel(),
-      builder: (context, model, child) => Scaffold(
-        extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          title: Text("mubidibi",
-              style: TextStyle(color: Colors.lightBlue, letterSpacing: 1.5)),
-          backgroundColor: Colors.transparent,
-          iconTheme: IconThemeData(color: Colors.white),
-          automaticallyImplyLeading: false,
+    return Scaffold(
+      key: _scaffoldKey,
+      body: Center(child: _showPage),
+      // WillPopScope(
+      //   onWillPop: pageIndex == 0 && !isDrawerOpen
+      //       ? onBackPress
+      //       : () => Future.value(false),
+      //   child: Container(
+      //     color: Colors.white,
+      //     child: Center(
+      //       child: _showPage,
+      //     ),
+      //   ),
+      // ),
+      backgroundColor: Colors.white,
+      endDrawer: Theme(
+        data: Theme.of(context).copyWith(
+          canvasColor: Colors.white, //desired color
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        floatingActionButton: FloatingActionBubble(
-          // Menu items
-          items: <Bubble>[
-            // Floating action menu item
-            Bubble(
-              title: "Pelikula",
-              iconColor: Colors.white,
-              bubbleColor: Colors.lightBlue,
-              icon: Icons.add,
-              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-              onPress: () async {
-                await _navigationService.navigateTo(AddMovieRoute);
-                _animationController.reverse();
-              },
-            ),
-            //Floating action menu item
-            Bubble(
-              title: "Crew",
-              iconColor: Colors.white,
-              bubbleColor: Colors.lightBlue,
-              icon: Icons.add,
-              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-              onPress: () async {
-                _animationController.reverse();
-              },
-            ),
-          ],
-
-          // animation controller
-          animation: _animation,
-
-          // On pressed change animation state
-          onPress: () => {
-            _animationController.isCompleted
-                ? _animationController.reverse()
-                : _animationController.forward(),
-            setState(() {
-              FABIcon = FABIcon == Icons.add ? Icons.close : Icons.add;
-            })
-          },
-
-          // Floating Action button Icon color
-          iconColor: Colors.white,
-
-          // Flaoting Action button Icon
-          iconData: FABIcon,
-          backGroundColor: Colors.lightBlue,
-        ),
-        body: FutureBuilder(
-          future: movies,
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: ContentHeader(featuredContent: snapshot.data[index]),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(height: 10),
-                  ),
-                  SliverToBoxAdapter(
-                    child: ContentList(
-                      key: PageStorageKey('myFavorites'),
-                      title: 'Mga Favorite',
-                      contentList: snapshot.data,
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: ContentList(
-                      key: PageStorageKey('movies'),
-                      title: 'Mga Pelikula',
-                      contentList: snapshot.data,
-                    ),
-                  ),
-                ],
-              );
-            } else {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-          },
-        ),
+        child: MyDrawer(),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
-        endDrawer: Theme(
-          data: Theme.of(context).copyWith(
-            canvasColor: Colors.white, //desired color
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
           ),
-          child: MyDrawer(),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          backgroundColor: Colors.white,
-          items: const <BottomNavigationBarItem>[
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.search_outlined),
-              label: 'Maghanap',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle_outlined),
-              label: 'Account',
-            ),
-          ],
-          currentIndex: _selectedIndex,
-          selectedItemColor: Colors.black,
-          onTap: _onItemTapped,
-          selectedFontSize: 14,
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search_outlined),
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_outlined),
+            label: 'Notifications',
+          ),
+        ],
+        currentIndex: pageIndex,
+        selectedItemColor: Colors.lightBlue,
+        onTap: (index) {
+          setState(() {
+            pageIndex = index;
+            _showPage = _pageChooser(index);
+          });
+        },
+        selectedFontSize: 14,
       ),
     );
   }
+
+  Future<bool> onBackPress() async {
+    var dialogResponse = await _dialogService.showConfirmationDialog(
+        title: "Exit App",
+        description: "Are you sure you want to exit the app?",
+        confirmationTitle: 'Yes',
+        cancelTitle: 'No');
+    if (dialogResponse.confirmed) {
+      exit(0);
+    }
+    return Future.value(false);
+  }
 }
-
-// Floating Action Button
-// class MyFAB extends StatelessWidget {
-//   final NavigationService _navigationService = locator<NavigationService>();
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return FloatingActionButton(
-//       child: Icon(Icons.keyboard_arrow_up, color: Colors.white, size: 35),
-//       backgroundColor: Colors.blue,
-//       onPressed: () async {
-//         await _navigationService.navigateTo(AddMovieRoute);
-//       },
-//     );
-//   }
-// }
