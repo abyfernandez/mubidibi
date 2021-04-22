@@ -8,7 +8,7 @@ exports.review = app => {
     console.log(req.params.movie_id, typeof (req.params.movie_id, parseInt(req.params.movie_id)))
 
     async function onConnect(err, client, release) {
-      const { rows } = await client.query("SELECT movie_review.*, account.prefix, account.first_name, account.middle_name, account.last_name, account.suffix FROM movie_review LEFT JOIN account ON movie_review.account_id = account.id WHERE movie_review.movie_id = $1 ORDER BY movie_review.created_at DESC", [parseInt(req.params.movie_id)]);
+      const { rows } = await client.query("SELECT review.*, account.first_name, account.middle_name, account.last_name, account.suffix FROM review LEFT JOIN account ON review.account_id = account.id WHERE review.movie_id = $1 ORDER BY review.created_at DESC", [parseInt(req.params.movie_id)]);
       release();
       res.send(err || JSON.stringify(rows));
     }

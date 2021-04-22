@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -56,6 +57,7 @@ class _MovieViewState extends State<MovieView>
   final DialogService _dialogService = locator<DialogService>();
   var currentUser;
   var userReview;
+  double overallRating = 0.0;
 
   // Local State Variable/s
   bool _saving = false;
@@ -100,101 +102,144 @@ class _MovieViewState extends State<MovieView>
       userReview =
           reviews.singleWhere((review) => review.userId == currentUser.userId);
 
-      return Column(
-        children: [
-          Card(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15.0),
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            Container(
+              margin: EdgeInsets.only(left: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // TO DO: fix -- arrow images not rendering
+                  Image.network(
+                    'https://res.cloudinary.com/mubidibi-sp/image/upload/v1619075331/images/up-arrow_aouhte.png',
+                    height: 15,
+                    width: 20,
+                    color: Color.fromRGBO(192, 192, 192, 1),
+                  ),
+                  Text('1455'),
+                  Image.network(
+                    'https://res.cloudinary.com/mubidibi-sp/image/upload/v1619075332/images/down-arrow_lb8dht.png',
+                    height: 15,
+                    width: 20,
+                    color: Color.fromRGBO(192, 192, 192, 1),
+                  ),
+                ],
+              ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                ListTile(
-                  // leading: Icon(Icons.account_circle, size: 45),
-                  title: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          // TO DO: fix text overflows
-                          Text(
-                            userReview.firstName +
-                                " " +
-                                (userReview.middleName != null
-                                    ? userReview.middleName +
+            Expanded(
+              child: Column(
+                children: [
+                  Card(
+                    shadowColor: Colors.transparent,
+                    margin: EdgeInsets.zero,
+                    clipBehavior: Clip.none,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        ListTile(
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  // TO DO: fix text overflows
+                                  Text(
+                                    userReview.firstName +
                                         " " +
-                                        userReview.lastName
-                                    : userReview.lastName) +
-                                (userReview.suffix != null
-                                    ? " " + userReview.suffix
-                                    : ""),
-                            style: TextStyle(fontSize: 14),
+                                        (userReview.middleName != null
+                                            ? userReview.middleName +
+                                                " " +
+                                                userReview.lastName
+                                            : userReview.lastName) +
+                                        (userReview.suffix != null
+                                            ? " " + userReview.suffix
+                                            : ""),
+                                    style: TextStyle(fontSize: 14),
+                                  ),
+                                  SizedBox(
+                                    width: 10,
+                                  ),
+                                  Text(
+                                    timeAgo(userReview.addedAt) + " ago" ?? ' ',
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
+                                    maxLines: 1,
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                margin: EdgeInsets.zero,
+                                padding: EdgeInsets.zero,
+                                color: Colors.blue,
+                                child: PopupMenuButton(
+                                  padding: EdgeInsets.zero,
+                                  itemBuilder: (BuildContext context) => [
+                                    PopupMenuItem(
+                                        child: Text('Edit'), value: 'edit'),
+                                    PopupMenuItem(
+                                        child: Text('Delete'), value: 'delete'),
+                                  ],
+                                  onSelected: (route) {
+                                    print(route);
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
-                          SizedBox(
-                            width: 10,
+                          subtitle: IgnorePointer(
+                            ignoring: true,
+                            child: userReview.rating != 0.00
+                                ? RatingBar.builder(
+                                    direction: Axis.horizontal,
+                                    allowHalfRating: true,
+                                    itemCount: 5,
+                                    itemSize: 20,
+                                    initialRating: userReview.rating,
+                                    unratedColor:
+                                        Color.fromRGBO(192, 192, 192, 1),
+                                    itemBuilder: (context, _) => Icon(
+                                      Icons.star,
+                                      color: Colors.amber,
+                                    ),
+                                    onRatingUpdate: (rating) {},
+                                    updateOnDrag: true,
+                                  )
+                                : Text("No rating",
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontStyle: FontStyle.italic)),
                           ),
-                          Text(
-                            timeAgo(userReview.addedAt) + " ago" ?? ' ',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: true,
-                            maxLines: 1,
-                          ),
-                        ],
-                      ),
-                      Container(
-                        margin: EdgeInsets.zero,
-                        padding: EdgeInsets.zero,
-                        color: Colors.blue,
-                        child: PopupMenuButton(
-                          padding: EdgeInsets.zero,
-                          itemBuilder: (BuildContext context) => [
-                            PopupMenuItem(child: Text('Edit'), value: 'edit'),
-                            PopupMenuItem(
-                                child: Text('Delete'), value: 'delete'),
-                          ],
-                          onSelected: (route) {
-                            print(route);
-                          },
                         ),
-                      ),
-                    ],
+                        Container(
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          child: Column(
+                            children: [
+                              Text(
+                                userReview.review,
+                                style: TextStyle(fontSize: 15),
+                                // textAlign: TextAlign.justify,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  subtitle: IgnorePointer(
-                    ignoring: true,
-                    child: userReview.rating != 0.00
-                        ? RatingBar.builder(
-                            direction: Axis.horizontal,
-                            allowHalfRating: true,
-                            itemCount: 5,
-                            itemSize: 20,
-                            initialRating: userReview.rating,
-                            unratedColor: Color.fromRGBO(192, 192, 192, 1),
-                            itemBuilder: (context, _) => Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                            ),
-                            onRatingUpdate: (rating) {},
-                            updateOnDrag: true,
-                          )
-                        : Text("No rating",
-                            style: TextStyle(
-                                fontSize: 14, fontStyle: FontStyle.italic)),
-                  ),
-                ),
-                Container(
-                  alignment: Alignment.centerLeft,
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: Text(
-                    userReview.review,
-                    style: TextStyle(fontSize: 15),
-                    textAlign: TextAlign.justify,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       );
     } else {
       return Container();
@@ -205,79 +250,156 @@ class _MovieViewState extends State<MovieView>
     var userReviews =
         reviews.where((review) => review.userId != currentUser.userId).toList();
 
-    return Column(
-        children: userReviews
-            .map(
-              (review) => Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          Container(
+            margin: EdgeInsets.only(left: 10),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.network(
+                  'https://res.cloudinary.com/mubidibi-sp/image/upload/v1619075331/images/up-arrow_aouhte.png',
+                  height: 15,
+                  width: 20,
+                  color: Color.fromRGBO(192, 192, 192, 1),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    ListTile(
-                      // leading: Icon(Icons.account_circle, size: 45),
-                      title: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                              review.firstName +
-                                  " " +
-                                  (review.middleName != null
-                                      ? review.middleName +
-                                          " " +
-                                          review.lastName
-                                      : review.lastName) +
-                                  (review.suffix != null
-                                      ? " " + review.suffix
-                                      : ""),
-                              style: TextStyle(fontSize: 14)),
-                          SizedBox(
-                            width: 10,
+                Text('1455'),
+                Image.network(
+                  'https://res.cloudinary.com/mubidibi-sp/image/upload/v1619075332/images/down-arrow_lb8dht.png',
+                  height: 15,
+                  width: 20,
+                  color: Color.fromRGBO(192, 192, 192, 1),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              children: userReviews
+                  .map(
+                    (review) => Card(
+                      shadowColor: Colors.transparent,
+                      margin: EdgeInsets.zero,
+                      clipBehavior: Clip.none,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          ListTile(
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                    review.firstName +
+                                        " " +
+                                        (review.middleName != null
+                                            ? review.middleName +
+                                                " " +
+                                                review.lastName
+                                            : review.lastName) +
+                                        (review.suffix != null
+                                            ? " " + review.suffix
+                                            : ""),
+                                    style: TextStyle(fontSize: 14)),
+                                SizedBox(
+                                  width: 10,
+                                ),
+                                Text(
+                                  timeAgo(review.addedAt) + " ago" ?? ' ',
+                                  style: TextStyle(
+                                      color: Colors.grey, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            subtitle: IgnorePointer(
+                              ignoring: true,
+                              child: review.rating != 0.00
+                                  ? RatingBar.builder(
+                                      direction: Axis.horizontal,
+                                      allowHalfRating: true,
+                                      itemCount: 5,
+                                      itemSize: 20,
+                                      initialRating: review.rating.toDouble(),
+                                      unratedColor:
+                                          Color.fromRGBO(192, 192, 192, 1),
+                                      itemBuilder: (context, _) => Icon(
+                                        Icons.star,
+                                        color: Colors.amber,
+                                      ),
+                                      onRatingUpdate: (rating) {},
+                                      updateOnDrag: true,
+                                    )
+                                  : Text("No rating",
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontStyle: FontStyle.italic)),
+                            ),
                           ),
-                          Text(
-                            timeAgo(review.addedAt) + " ago" ?? ' ',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          Container(
+                            alignment: Alignment.centerLeft,
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            child: Text(
+                              review.review,
+                              style: TextStyle(fontSize: 15),
+                              // textAlign: TextAlign.justify,
+                            ),
                           ),
                         ],
                       ),
-                      subtitle: IgnorePointer(
-                        ignoring: true,
-                        child: review.rating != 0.00
-                            ? RatingBar.builder(
-                                direction: Axis.horizontal,
-                                allowHalfRating: true,
-                                itemCount: 5,
-                                itemSize: 20,
-                                initialRating: review.rating.toDouble(),
-                                unratedColor: Color.fromRGBO(192, 192, 192, 1),
-                                itemBuilder: (context, _) => Icon(
-                                  Icons.star,
-                                  color: Colors.amber,
-                                ),
-                                onRatingUpdate: (rating) {},
-                                updateOnDrag: true,
-                              )
-                            : Text("No rating",
-                                style: TextStyle(
-                                    fontSize: 14, fontStyle: FontStyle.italic)),
-                      ),
                     ),
-                    Container(
-                      alignment: Alignment.centerLeft,
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      child: Text(
-                        review.review,
-                        style: TextStyle(fontSize: 15),
-                        textAlign: TextAlign.justify,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            )
-            .toList());
+                  )
+                  .toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget computeOverallRating(List<Review> reviews) {
+    var rating = 0.0;
+    for (var i = 0; i < reviews.length; i++) {
+      rating += reviews[i].rating;
+    }
+    rating = rating != 0 ? rating / reviews.length : 0.0;
+
+    // TO DO: accurate display of overall rating
+    return IgnorePointer(
+        ignoring: true,
+        child: RatingBar.builder(
+          direction: Axis.horizontal,
+          allowHalfRating: true,
+          itemCount: 5,
+          itemSize: 25,
+          initialRating: rating,
+          unratedColor: Color.fromRGBO(192, 192, 192, 1),
+          itemBuilder: (context, _) => Icon(
+            Icons.star,
+            color: Colors.amber,
+          ),
+          onRatingUpdate: (rating) {},
+          updateOnDrag: true,
+        ));
+  }
+
+  String displayRuntime() {
+    var hours = 0;
+    var minutes = 0;
+
+    if (movie.runningTime != null || movie.runningTime != 0) {
+      hours = movie.runningTime ~/ 60; // integer division
+      minutes = movie.runningTime % 60; // modulo division
+
+      return (hours != 0 ? hours.toString() + ' oras ' : '') +
+          (minutes != 0 ? minutes.toString() + ' minuto' : '');
+    }
+    return '-';
   }
 
   @override
@@ -306,106 +428,104 @@ class _MovieViewState extends State<MovieView>
     num _rating;
     // MediaQueryData queryData;
     // queryData = MediaQuery.of(context);
-
+    //
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
       onModelReady: (model) {
-        print(movie.movieId.toString());
         model.getAllReviews(movieId: movie.movieId.toString());
-
-        print(model.reviews.length);
       },
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
-        // extendBodyBehindAppBar: true,
-        // resizeToAvoidBottomPadding: false,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        floatingActionButton: FloatingActionBubble(
-          // Menu items
-          items: <Bubble>[
-            // Floating action menu item
-            Bubble(
-              title: "Edit",
-              iconColor: Colors.white,
-              bubbleColor: Colors.lightBlue,
-              icon: Icons.edit_outlined,
-              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-              onPress: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        AddMovie(movie: movie, crewEdit: crewEdit),
-                  ),
-                );
-                _animationController.reverse();
-              },
-            ),
-            //Floating action menu item
-            Bubble(
-              title: "Delete",
-              iconColor: Colors.white,
-              bubbleColor: Colors.lightBlue,
-              icon: Icons.delete,
-              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-              onPress: () async {
-                _animationController.reverse();
+        floatingActionButton: Visibility(
+          visible: currentUser.isAdmin,
+          child: FloatingActionBubble(
+            // Menu items
+            items: <Bubble>[
+              // Floating action menu item
+              Bubble(
+                title: "Edit",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.edit_outlined,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddMovie(movie: movie),
+                    ),
+                  );
+                  _animationController.reverse();
+                },
+              ),
+              //Floating action menu item
+              Bubble(
+                title: "Delete",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.delete,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  _animationController.reverse();
 
-                var response = await _dialogService.showConfirmationDialog(
-                    title: "Confirm Deletion",
-                    cancelTitle: "No",
-                    confirmationTitle: "Yes",
-                    description:
-                        "Are you sure that you want to delete this movie?");
-                if (response.confirmed == true) {
-                  var model = MovieViewModel();
+                  // TO DO: if user is an admin, they can soft delete movies
+                  var response = await _dialogService.showConfirmationDialog(
+                      title: "Confirm Deletion",
+                      cancelTitle: "No",
+                      confirmationTitle: "Yes",
+                      description:
+                          "Are you sure that you want to delete this movie?");
+                  if (response.confirmed == true) {
+                    var model = MovieViewModel();
 
-                  _saving = true;
+                    _saving = true;
 
-                  var deleteRes =
-                      await model.deleteMovie(id: movie.movieId.toString());
-                  if (deleteRes != 0) {
-                    // show success snackbar
-                    _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                        context, 'Movie deleted successfully.', Colors.green));
+                    var deleteRes =
+                        await model.deleteMovie(id: movie.movieId.toString());
+                    if (deleteRes != 0) {
+                      // show success snackbar
+                      _scaffoldKey.currentState.showSnackBar(mySnackBar(context,
+                          'Movie deleted successfully.', Colors.green));
 
-                    _saving = false;
+                      _saving = false;
 
-                    // redirect to homepage
+                      // redirect to homepage
 
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => HomeView(),
-                      ),
-                    );
-                  } else {
-                    _saving = false;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HomeView(),
+                        ),
+                      );
+                    } else {
+                      _saving = false;
 
-                    _scaffoldKey.currentState.showSnackBar(mySnackBar(context,
-                        'Something went wrong. Try again.', Colors.red));
+                      _scaffoldKey.currentState.showSnackBar(mySnackBar(context,
+                          'Something went wrong. Try again.', Colors.red));
+                    }
                   }
-                }
-              },
-            ),
-          ],
+                },
+              ),
+            ],
 
-          // animation controller
-          animation: _animation,
+            // animation controller
+            animation: _animation,
 
-          // On pressed change animation state
-          onPress: () => {
-            _animationController.isCompleted
-                ? _animationController.reverse()
-                : _animationController.forward(),
-          },
+            // On pressed change animation state
+            onPress: () => {
+              _animationController.isCompleted
+                  ? _animationController.reverse()
+                  : _animationController.forward(),
+            },
 
-          // Floating Action button Icon color
-          iconColor: Colors.white,
+            // Floating Action button Icon color
+            iconColor: Colors.white,
 
-          // Flaoting Action button Icon
-          iconData: Icons.settings,
-          backGroundColor: Colors.lightBlue,
+            // Flaoting Action button Icon
+            iconData: Icons.settings,
+            backGroundColor: Colors.lightBlue,
+          ),
         ),
         body: ModalProgressHUD(
           inAsyncCall: _saving,
@@ -526,10 +646,7 @@ class _MovieViewState extends State<MovieView>
                                 ),
                               ])
                         : Container(),
-                    Text(
-                      'OVERALL RATING HERE',
-                      style: TextStyle(fontSize: 20.0),
-                    ),
+                    computeOverallRating(model.reviews),
                     SizedBox(height: 25),
                     SizedBox(
                       height: 15,
@@ -573,10 +690,7 @@ class _MovieViewState extends State<MovieView>
                             ),
                             SizedBox(height: 2.0),
                             Text(
-                              movie.runningTime != null ||
-                                      movie.runningTime != 0
-                                  ? movie.runningTime.toString() + " minuto"
-                                  : '-',
+                              displayRuntime(),
                               style: TextStyle(
                                 fontSize: 16.0,
                               ),
@@ -603,7 +717,7 @@ class _MovieViewState extends State<MovieView>
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 40.0),
                 child: Text(
-                  widget.movie.synopsis,
+                  "     " + widget.movie.synopsis,
                   textAlign: TextAlign.justify,
                   style: TextStyle(
                     color: Colors.black,
@@ -847,6 +961,7 @@ class _MovieViewState extends State<MovieView>
                   ],
                 ),
               ),
+              SizedBox(height: 15),
               // display other reviews for this movie
               Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20),

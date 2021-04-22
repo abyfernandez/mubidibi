@@ -44,7 +44,7 @@ class Review {
       middleName: json['middle_name'],
       lastName: json['last_name'],
       suffix: json['suffix'],
-      rating: json['rating'].toDouble(),
+      rating: json['rating'] != null ? double.parse(json['rating']) : 0.0,
       review: json['review'],
       isApproved: json['is_approved'],
       addedAt: json['created_at'],

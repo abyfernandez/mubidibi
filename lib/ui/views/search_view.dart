@@ -4,10 +4,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
+import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/globals.dart' as Config;
@@ -23,18 +26,31 @@ class _SearchViewState extends State<SearchView> {
   final NavigationService _navigationService = locator<NavigationService>();
   final searchController = TextEditingController();
 
-  List<Movie> queryResult = [];
+  List<Movie> movieQueryResult = [];
+  List<Crew> crewQueryResult = [];
   List<Movie> movies = [];
+  List<Crew> crew = [];
   bool noResult = false;
+  String _searchBy = 'Pelikula';
 
   void fetchMovies() async {
     var model = MovieViewModel();
     movies = await model.getAllMovies();
   }
 
+  void fetchCrew() async {
+    var model = CrewViewModel();
+    crew = await model.getAllCrew();
+  }
+
+  // void fetchAllCrew() async {
+  //   var model =
+  // }
+
   @override
   void initState() {
     fetchMovies();
+    fetchCrew();
     super.initState();
   }
 
@@ -56,6 +72,7 @@ class _SearchViewState extends State<SearchView> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(height: 5),
                     Row(
                       children: [
                         Expanded(
@@ -81,7 +98,7 @@ class _SearchViewState extends State<SearchView> {
                                     decoration: InputDecoration(
                                       contentPadding:
                                           EdgeInsets.symmetric(vertical: 5),
-                                      hintText: 'Search',
+                                      hintText: 'Maghanap',
                                       border: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(5),
                                         borderSide: BorderSide.none,
@@ -96,30 +113,108 @@ class _SearchViewState extends State<SearchView> {
                                       parsedQuery = query.split(' ');
 
                                       // TO DO: MORE ACCURATE SEARCHES
-                                      searchController.text.trim() != ""
-                                          ? setState(() {
-                                              queryResult =
-                                                  movies.where((movie) {
-                                                return movie.title.contains(
-                                                  new RegExp(query.trimRight(),
-                                                      caseSensitive: false),
-                                                );
-                                              }).toList();
-                                              noResult = false;
-                                            })
-                                          : setState(() {
-                                              queryResult = [];
-                                            });
+
+                                      if (_searchBy == "Pelikula") {
+                                        searchController.text.trim() != ""
+                                            ? setState(() {
+                                                movieQueryResult =
+                                                    movies.where((movie) {
+                                                  return movie.title.contains(
+                                                    new RegExp(
+                                                        query.trimRight(),
+                                                        caseSensitive: false),
+                                                  );
+                                                }).toList();
+                                                noResult = false;
+                                              })
+                                            : setState(() {
+                                                movieQueryResult = [];
+                                              });
+                                      } else {
+                                        // search by Crew name
+                                        searchController.text.trim() != ""
+                                            ? setState(() {
+                                                crewQueryResult =
+                                                    crew.where((c) {
+                                                  return (c.firstName.contains(
+                                                    new RegExp(
+                                                        query.trimRight(),
+                                                        caseSensitive: false),
+                                                  ));
+                                                }).toList();
+                                                noResult = false;
+                                              })
+                                            : setState(() {
+                                                crewQueryResult = [];
+                                              });
+                                      }
                                     },
                                     onFieldSubmitted: (query) {
-                                      if (queryResult.isEmpty) {
+                                      if (_searchBy == "Pelikula" &&
+                                          movieQueryResult.isEmpty) {
                                         setState(() {
                                           noResult = true;
                                         });
-                                      }
+                                      } else if (_searchBy == "Crew" &&
+                                          crewQueryResult.isEmpty) {}
                                     },
                                   ),
                                 ),
+                                Container(
+                                    height: 25,
+                                    child: VerticalDivider(
+                                        color: Colors.grey[850])),
+                                DropdownButton(
+                                  value: _searchBy,
+                                  underline: Container(),
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: 'Pelikula',
+                                      child: Text('Pelikula'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'Crew',
+                                      child: Text('Crew'),
+                                    ),
+                                  ],
+                                  onChanged: (choice) {
+                                    setState(() {
+                                      _searchBy = choice;
+
+                                      if (searchController.text.trim() != "" &&
+                                          _searchBy == "Pelikula") {
+                                        movieQueryResult =
+                                            movies.where((movie) {
+                                          return movie.title.contains(
+                                            new RegExp(
+                                                searchController.text
+                                                    .trimRight(),
+                                                caseSensitive: false),
+                                          );
+                                        }).toList();
+                                        noResult = false;
+                                      } else if (searchController.text.trim() !=
+                                              "" &&
+                                          _searchBy == "Crew") {
+                                        crewQueryResult = crew.where((c) {
+                                          return c.firstName.contains(
+                                            new RegExp(
+                                                searchController.text
+                                                    .trimRight(),
+                                                caseSensitive: false),
+                                          );
+                                        }).toList();
+                                        noResult = false;
+                                      } else {
+                                        movieQueryResult = [];
+                                        crewQueryResult = [];
+                                      }
+                                    });
+                                  },
+                                ),
+                                // SizedBox(
+                                //   width: 15,
+                                // ),
                               ],
                             ),
                           ),
@@ -129,102 +224,209 @@ class _SearchViewState extends State<SearchView> {
                                 onTap: () {
                                   setState(() {
                                     searchController.text = "";
-                                    queryResult = [];
+                                    movieQueryResult = [];
+                                    crewQueryResult = [];
                                   });
                                 },
                                 child: Container(
+                                  margin: EdgeInsets.only(right: 5),
                                   child: Text('Cancel',
                                       style: TextStyle(fontSize: 15)),
                                 ),
                               )
                             : Container(),
-                        SizedBox(width: 15),
+                        // SizedBox(width: 15),
                       ],
                     ),
+                    // TO DO: Include name for crew, and change display for crew (maybe listview??)
                     Wrap(
-                        children: queryResult.length != 0
-                            ? queryResult
-                                .map(
-                                  (movie) => GestureDetector(
-                                    child: Container(
-                                      height: 210.0,
-                                      child: Stack(
-                                        children: [
-                                          Container(
-                                            alignment: Alignment.center,
-                                            margin: const EdgeInsets.symmetric(
-                                                horizontal: 8.0),
-                                            height: 200.0,
-                                            width: 120.0,
-                                            decoration: BoxDecoration(
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black54,
-                                                  offset: Offset(0.0, 0.0),
-                                                  blurRadius: 2.0,
+                        children: _searchBy == "Pelikula"
+                            ? movieQueryResult.length != 0
+                                ? movieQueryResult
+                                    .map(
+                                      (movie) => GestureDetector(
+                                        child: Container(
+                                          height: 210.0,
+                                          child: Stack(
+                                            children: [
+                                              Container(
+                                                alignment: Alignment.center,
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
+                                                height: 200.0,
+                                                width: 120.0,
+                                                decoration: BoxDecoration(
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black54,
+                                                      offset: Offset(0.0, 0.0),
+                                                      blurRadius: 2.0,
+                                                    ),
+                                                  ],
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
                                                 ),
-                                              ],
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                            ),
-                                            child: Text(
-                                              movie.title,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          Container(
-                                            margin: const EdgeInsets.symmetric(
-                                                horizontal: 8.0),
-                                            height: 200.0,
-                                            width: 120.0,
-                                            decoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                              image: DecorationImage(
-                                                image:
-                                                    CachedNetworkImageProvider(
-                                                  movie.poster != null
-                                                      ? movie.poster
-                                                      : Config.imgNotFound,
+                                                child: Text(
+                                                  movie.title,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
-                                                fit: BoxFit.cover,
                                               ),
-                                            ),
+                                              Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
+                                                height: 200.0,
+                                                width: 120.0,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  image: DecorationImage(
+                                                    image:
+                                                        CachedNetworkImageProvider(
+                                                      movie.poster != null
+                                                          ? movie.poster
+                                                          : Config.imgNotFound,
+                                                    ),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ],
+                                        ),
+                                        onTap: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    MovieView(movie: movie),
+                                              ));
+                                        },
                                       ),
-                                    ),
-                                    onTap: () {
-                                      Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                MovieView(movie: movie),
-                                          ));
-                                    },
-                                  ),
-                                )
-                                .toList()
-                            : [
-                                Container(
-                                  child: Center(
-                                      child: noResult == true
-                                          ? Text('No results found.',
-                                              style: TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: 18))
-                                          : Text('Search for a movie',
-                                              style: TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: 18))),
-                                  height: (screenSize.height / 3) * 2,
-                                )
-                              ]),
+                                    )
+                                    .toList()
+                                : [
+                                    Container(
+                                      child: Center(
+                                          child: noResult == true
+                                              ? Text('No results found.',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 18))
+                                              : Text(
+                                                  _searchBy == "Pelikula"
+                                                      ? 'Maghanap ng pelikula'
+                                                      : 'Maghanap ng crew',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 18))),
+                                      height: (screenSize.height / 3) * 2.5,
+                                    )
+                                  ]
+                            : crewQueryResult.length != 0
+                                ? crewQueryResult
+                                    .map(
+                                      (c) => GestureDetector(
+                                        child: Container(
+                                          height: 210.0,
+                                          child: Stack(
+                                            children: [
+                                              Container(
+                                                alignment: Alignment.center,
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
+                                                height: 200.0,
+                                                width: 120.0,
+                                                decoration: BoxDecoration(
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black54,
+                                                      offset: Offset(0.0, 0.0),
+                                                      blurRadius: 2.0,
+                                                    ),
+                                                  ],
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                ),
+                                                child: Text(
+                                                  c.firstName +
+                                                      (c.middleName != null
+                                                          ? " " +
+                                                              c.middleName +
+                                                              " "
+                                                          : " ") +
+                                                      c.lastName +
+                                                      (c.suffix != null
+                                                          ? " " + c.suffix
+                                                          : ""),
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                              Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
+                                                height: 200.0,
+                                                width: 120.0,
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  image: DecorationImage(
+                                                    image:
+                                                        CachedNetworkImageProvider(
+                                                      c.displayPic != null
+                                                          ? c.displayPic
+                                                          : Config.imgNotFound,
+                                                    ),
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => CrewView(
+                                                  crew: c,
+                                                ),
+                                              ));
+                                        },
+                                      ),
+                                    )
+                                    .toList()
+                                : [
+                                    Container(
+                                      child: Center(
+                                          child: noResult == true
+                                              ? Text('No results found.',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 18))
+                                              : Text(
+                                                  _searchBy == "Pelikula"
+                                                      ? 'Maghanap ng pelikula'
+                                                      : 'Maghanap ng crew',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 18))),
+                                      height: (screenSize.height / 3) * 2.5,
+                                    )
+                                  ]),
                   ],
                 ),
               ),

@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/constants/route_names.dart';
@@ -22,6 +23,8 @@ class DashboardView extends StatefulWidget {
 class _DashboardViewState extends State<DashboardView>
     with SingleTickerProviderStateMixin {
   final NavigationService _navigationService = locator<NavigationService>();
+  final AuthenticationService _authenticationService =
+      locator<AuthenticationService>();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   Future<List<Movie>> movies;
@@ -30,6 +33,7 @@ class _DashboardViewState extends State<DashboardView>
   Animation<double> _animation;
   AnimationController _animationController;
   IconData fabIcon = Icons.add;
+  var currentUser;
 
   List<DropdownMenuItem> _categories = [
     DropdownMenuItem<String>(
@@ -54,6 +58,7 @@ class _DashboardViewState extends State<DashboardView>
 
   @override
   void initState() {
+    currentUser = _authenticationService.currentUser;
     movies = fetchMovies();
     movies.then((m) {
       var rand = new Random();
@@ -75,6 +80,7 @@ class _DashboardViewState extends State<DashboardView>
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
+
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
       builder: (context, model, child) => Scaffold(
@@ -116,53 +122,56 @@ class _DashboardViewState extends State<DashboardView>
           ],
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        floatingActionButton: FloatingActionBubble(
-          // Menu items
-          items: <Bubble>[
-            // Floating action menu item
-            Bubble(
-              title: "Pelikula",
-              iconColor: Colors.white,
-              bubbleColor: Colors.lightBlue,
-              icon: Icons.add,
-              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-              onPress: () async {
-                await _navigationService.navigateTo(AddMovieRoute);
-                _animationController.reverse();
-              },
-            ),
-            //Floating action menu item
-            Bubble(
-              title: "Crew",
-              iconColor: Colors.white,
-              bubbleColor: Colors.lightBlue,
-              icon: Icons.add,
-              titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-              onPress: () async {
-                _animationController.reverse();
-              },
-            ),
-          ],
+        floatingActionButton: Visibility(
+          visible: currentUser.isAdmin,
+          child: FloatingActionBubble(
+            // Menu items
+            items: <Bubble>[
+              // Floating action menu item
+              Bubble(
+                title: "Pelikula",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.add,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  await _navigationService.navigateTo(AddMovieRoute);
+                  _animationController.reverse();
+                },
+              ),
+              //Floating action menu item
+              Bubble(
+                title: "Crew",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.add,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  _animationController.reverse();
+                },
+              ),
+            ],
 
-          // animation controller
-          animation: _animation,
+            // animation controller
+            animation: _animation,
 
-          // On pressed change animation state
-          onPress: () => {
-            _animationController.isCompleted
-                ? _animationController.reverse()
-                : _animationController.forward(),
-            setState(() {
-              fabIcon = fabIcon == Icons.add ? Icons.close : Icons.add;
-            })
-          },
+            // On pressed change animation state
+            onPress: () => {
+              _animationController.isCompleted
+                  ? _animationController.reverse()
+                  : _animationController.forward(),
+              setState(() {
+                fabIcon = fabIcon == Icons.add ? Icons.close : Icons.add;
+              })
+            },
 
-          // Floating Action button Icon color
-          iconColor: Colors.white,
+            // Floating Action button Icon color
+            iconColor: Colors.white,
 
-          // Floating Action button Icon
-          iconData: fabIcon,
-          backGroundColor: Colors.lightBlue,
+            // Floating Action button Icon
+            iconData: fabIcon,
+            backGroundColor: Colors.lightBlue,
+          ),
         ),
         body: FutureBuilder(
           future: movies,

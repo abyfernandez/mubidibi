@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_form_builder/flutter_form_builder.dart';
 // import 'package:flutter_chips_input/flutter_chips_input.dart';
-// import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
@@ -1167,8 +1167,8 @@ class _AddMovieState extends State<AddMovie> {
                             style:
                                 TextStyle(color: Colors.black, fontSize: 16)),
                       ),
-                      searchHint: Text("Select any",
-                          style: TextStyle(color: Colors.white)),
+                      searchHint:
+                          Text("Pumili", style: TextStyle(color: Colors.white)),
                       onChanged: (value) {
                         setState(() {
                           filmGenres = value;
@@ -1176,8 +1176,8 @@ class _AddMovieState extends State<AddMovie> {
                       },
                       closeButton: (filmGenres) {
                         return (filmGenres.isNotEmpty
-                            ? "Save ${filmGenres.length == 1 ? '"' + genreItems[filmGenres.first].value.toString() + '"' : '(' + filmGenres.length.toString() + ')'}"
-                            : "Save without selection");
+                            ? "I-save ang ${filmGenres.length == 1 ? '"' + genreItems[filmGenres.first].value.toString() + '"' : '(' + filmGenres.length.toString() + ')'}"
+                            : "Wag nalang");
                       },
                       isExpanded: true,
                     ),
@@ -1203,7 +1203,7 @@ class _AddMovieState extends State<AddMovie> {
                 children: [
                   Container(
                     alignment: Alignment.topLeft,
-                    child: Text("Title: ",
+                    child: Text("Pamagat: ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -1221,7 +1221,7 @@ class _AddMovieState extends State<AddMovie> {
                   SizedBox(height: 10),
                   Container(
                     alignment: Alignment.topLeft,
-                    child: Text("Release Date: ",
+                    child: Text("Petsa ng Paglabas: ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -1241,7 +1241,7 @@ class _AddMovieState extends State<AddMovie> {
                   SizedBox(height: 10),
                   Container(
                     alignment: Alignment.topLeft,
-                    child: Text("Synopsis: ",
+                    child: Text("Buod: ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -1282,7 +1282,7 @@ class _AddMovieState extends State<AddMovie> {
                   SizedBox(height: 10),
                   Container(
                     alignment: Alignment.topLeft,
-                    child: Text("Director/s: ",
+                    child: Text("Mga Direktor: ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -1311,7 +1311,7 @@ class _AddMovieState extends State<AddMovie> {
                   SizedBox(height: 10),
                   Container(
                     alignment: Alignment.topLeft,
-                    child: Text("Writer/s: ",
+                    child: Text("Mga Manunulat: ",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -1451,19 +1451,19 @@ class ActorWidgetState extends State<ActorWidget> {
         SizedBox(
           height: 10,
         ),
-        Container(
-          color: Color.fromRGBO(240, 240, 240, 1),
-          child: ChipsInput(
-              key: ObjectKey(widget.size),
-              onChanged: (List<String> ganap) {
-                if (widget.size > roles.length || roles.length == 0) {
-                  roles.add(ganap); // add
-                } else {
-                  roles[widget.size - 1] = ganap; // replace
-                }
-                print('ROL: $roles');
-              }),
-        ),
+        // Container(
+        //   color: Color.fromRGBO(240, 240, 240, 1),
+        //   child: ChipsInput(
+        //       key: ObjectKey(widget.size),
+        //       onChanged: (List<String> ganap) {
+        //         if (widget.size > roles.length || roles.length == 0) {
+        //           roles.add(ganap); // add
+        //         } else {
+        //           roles[widget.size - 1] = ganap; // replace
+        //         }
+        //         print('ROLE: $roles');
+        //       }),
+        // ),
         SizedBox(height: 5),
         Text("Pindutin ang 'ENTER' para ma-save ang role."),
         SizedBox(height: 10),

@@ -14,6 +14,7 @@ class Crew {
   final String lastName;
   final String suffix;
   final String birthday;
+  final String deathdate;
   final bool isAlive;
   final String birthplace;
   final String displayPic;
@@ -29,6 +30,7 @@ class Crew {
       this.lastName,
       this.suffix,
       this.birthday,
+      this.deathdate,
       this.isAlive,
       this.birthplace,
       this.displayPic,
@@ -45,6 +47,7 @@ class Crew {
       lastName: json['last_name'],
       suffix: json['suffix'],
       birthday: json['birthday'],
+      deathdate: json['deathdate'],
       isAlive: json['is_alive'],
       birthplace: json['birthplace'],
       displayPic: json['display_pic'],
@@ -66,6 +69,7 @@ class Crew {
         "last_name": lastName,
         "suffix": suffix,
         "birthday": birthday,
+        "deathdate": deathdate,
         "is_alive": isAlive,
         "birthplace": birthplace,
         "display_pic": displayPic,

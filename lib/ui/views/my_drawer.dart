@@ -4,6 +4,7 @@ import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/constants/route_names.dart';
+import 'package:mubidibi/globals.dart' as Config;
 
 class MyDrawer extends StatelessWidget {
   final NavigationService _navigationService = locator<NavigationService>();
@@ -39,13 +40,12 @@ class MyDrawer extends StatelessWidget {
                       (currentUser.firstName + " " + currentUser.lastName) ??
                           ' ',
                       style: TextStyle(
-                          // color: Colors.white,
-                          fontSize: 18,
-                          decoration: TextDecoration.underline)),
+                          fontSize: 18, decoration: TextDecoration.underline)),
                   onTap: () {
                     print("View Profile");
                   },
                 ),
+                // TO DO: Display currentUser's email address
                 accountEmail: Text(
                   '',
                   style: TextStyle(
@@ -54,16 +54,10 @@ class MyDrawer extends StatelessWidget {
                   ),
                 ),
                 currentAccountPicture: CircleAvatar(
-                  backgroundImage: NetworkImage(
-                    'https://lh3.googleusercontent.com/-cXXaVVq8nMM/AAAAAAAAAAI/AAAAAAAAAKI/_Y1WfBiSnRI/photo.jpg?sz=50',
-                  ),
+                  backgroundImage: NetworkImage(Config.userNotFound),
                   radius: 60,
-                  // backgroundColor: Color.fromRGBO(20, 20, 20, 1),
                 ),
               ),
-              // SizedBox(
-              //   height: 50,
-              // ),
               Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
               ListTile(
                 leading: Icon(

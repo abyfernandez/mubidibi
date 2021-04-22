@@ -52,17 +52,15 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case AddMovieRoute:
       var movie = settings.arguments as Movie;
-      var crewEdit = settings.arguments as List<List<Crew>>;
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: AddMovie(movie: movie, crewEdit: crewEdit),
+        viewToShow: AddMovie(movie: movie),
       );
     case CrewViewRoute:
       var crew = settings.arguments as Crew;
-      var crewEdit = settings.arguments as List<List<Crew>>;
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: CrewView(crew: crew, crewEdit: crewEdit),
+        viewToShow: CrewView(crew: crew),
       );
     case SearchViewRoute:
       return _getPageRoute(

@@ -8,48 +8,55 @@ import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:provider_architecture/viewmodel_provider.dart';
 import 'package:mubidibi/globals.dart' as Config;
-
 import 'full_photo.dart';
 
 class CrewView extends StatefulWidget {
   final Crew crew;
-  final List<List<Crew>> crewEdit;
 
-  CrewView({this.crew, this.crewEdit});
+  CrewView({this.crew});
 
   @override
-  _CrewViewState createState() => _CrewViewState(crew, crewEdit);
+  _CrewViewState createState() => _CrewViewState(crew);
 }
 
 class _CrewViewState extends State<CrewView>
     with SingleTickerProviderStateMixin {
   final Crew crew;
-  final List<List<Crew>> crewEdit;
 
-  _CrewViewState(this.crew, this.crewEdit);
+  _CrewViewState(this.crew);
 
+  List<List<Crew>> crewEdit;
   List<String> roles = [];
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    for (var i = 0; i < crewEdit.length; i++) {
-      for (var type in crewEdit[i]) {
-        if (crew.crewId == type.crewId) {
-          switch (i) {
-            case 0:
-              roles.add('Direktor');
-              break;
-            case 1:
-              roles.add('Manunulat');
-              break;
-            case 2:
-              roles.add('Aktor');
-              break;
+  void fetchCrew() async {
+    var model = CrewViewModel();
+    crewEdit = await model.getAllCrewTypes();
+
+    setState(() {
+      // TODO: implement initState
+      for (var i = 0; i < crewEdit.length; i++) {
+        for (var type in crewEdit[i]) {
+          if (crew.crewId == type.crewId) {
+            switch (i) {
+              case 0:
+                roles.add('Direktor');
+                break;
+              case 1:
+                roles.add('Manunulat');
+                break;
+              case 2:
+                roles.add('Aktor');
+                break;
+            }
           }
         }
       }
-    }
+    });
+  }
+
+  @override
+  void initState() {
+    fetchCrew();
     super.initState();
   }
 
@@ -121,13 +128,73 @@ class _CrewViewState extends State<CrewView>
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
         ),
+        extendBodyBehindAppBar: true,
         body: ListView(
           children: <Widget>[
-            SizedBox(height: 30),
+            SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
+                Container(
+                  width: 200,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        crew.firstName +
+                            ' ' +
+                            (crew.middleName != null
+                                ? (crew.middleName + ' ' + crew.lastName)
+                                : crew.lastName) +
+                            (crew.suffix != null ? ' ' + crew.suffix : ''),
+                        softWrap: true,
+                        overflow: TextOverflow.fade,
+                        style: TextStyle(
+                          fontSize: 25,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+
+                      // display( roles (crew types)
+                      displayRoles(),
+                      SizedBox(height: 10),
+                      Wrap(
+                        direction: Axis.vertical,
+                        children: [
+                          Text(
+                            "Born:   " +
+                                (crew.birthday != null
+                                    ? DateFormat('MMM. d, y')
+                                        .format(DateTime.parse(crew.birthday))
+                                    : '-'),
+                            style: TextStyle(fontSize: 16),
+                            softWrap: true,
+                            overflow: TextOverflow.fade,
+                          ),
+                          crew.isAlive == false
+                              ? Text(
+                                  'Died:   ' +
+                                      (crew.deathdate != null
+                                          ? DateFormat('MMM. d, y').format(
+                                              DateTime.parse(crew.deathdate))
+                                          : '-'),
+                                  style: TextStyle(fontSize: 16),
+                                  softWrap: true,
+                                  overflow: TextOverflow.fade)
+                              : Container(),
+                        ],
+                      ),
+                      Text(
+                        "Birthplace:   " +
+                            (crew.birthplace != null ? crew.birthplace : '-'),
+                        style: TextStyle(fontSize: 16),
+                        softWrap: true,
+                        overflow: TextOverflow.fade,
+                      ),
+                    ],
+                  ),
+                ),
                 Container(
                   height: 200,
                   decoration: BoxDecoration(
@@ -174,31 +241,6 @@ class _CrewViewState extends State<CrewView>
                     },
                   ),
                 ),
-                Container(
-                  width: 200,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        crew.firstName +
-                            ' ' +
-                            (crew.middleName != null
-                                ? (crew.middleName + ' ' + crew.lastName)
-                                : crew.lastName) +
-                            (crew.suffix != null ? ' ' + crew.suffix : ''),
-                        softWrap: true,
-                        overflow: TextOverflow.fade,
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-
-                      // display( roles (crew types)
-                      displayRoles()
-                    ],
-                  ),
-                ),
               ],
             ),
             SizedBox(height: 10),
@@ -207,30 +249,6 @@ class _CrewViewState extends State<CrewView>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "About",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Text(
-                          "Birthdate:   " +
-                              (crew.birthday != null
-                                  ? DateFormat('MMMM d, y')
-                                      .format(DateTime.parse(crew.birthday))
-                                  : '-'),
-                          style: TextStyle(fontSize: 16)),
-                      Text(crew.isAlive == false ? ' (Pumanaw na)' : '',
-                          style: TextStyle(
-                              fontSize: 16, fontStyle: FontStyle.italic))
-                    ],
-                  ),
-                  Text(
-                      "Birthplace:   " +
-                          (crew.birthplace != null ? crew.birthplace : '-'),
-                      style: TextStyle(fontSize: 16)),
-                  SizedBox(height: 10),
                   Text(
                     "Description",
                     style: TextStyle(
@@ -241,7 +259,7 @@ class _CrewViewState extends State<CrewView>
                   SizedBox(height: 10),
                   crew.description != null
                       ? Text(
-                          crew.description,
+                          "     " + crew.description,
                           style: TextStyle(fontSize: 16),
                           textAlign: TextAlign.justify,
                         )

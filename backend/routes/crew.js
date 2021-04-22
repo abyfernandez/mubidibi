@@ -17,6 +17,30 @@ exports.crew = app => {
     }
   });
 
+  // GET ALL CREW
+  app.get('/mubidibi/all-crew/', (req, res) => {
+    app.pg.connect(onConnect)
+
+    async function onConnect(err, client, release) {
+      if (err) return res.send(err)
+
+      var crew = [];
+
+      var directors = await client.query('select distinct(crew.*) from crew left join movie_director on crew.id = movie_director.director_id where id in (select distinct(director_id) from movie_director)');
+
+      var writers = await client.query('select distinct(crew.*) from crew left join movie_writer on crew.id = movie_writer.writer_id where id in (select distinct(writer_id) from movie_writer)');
+
+      var actors = await client.query('select distinct(crew.*) from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (select distinct(actor_id) from movie_actor)');
+
+      crew.push(directors.rows);
+      crew.push(writers.rows);
+      crew.push(actors.rows);
+
+      release();
+      res.send(err || JSON.stringify(crew));
+    }
+  });
+
   // GET CREW BY MOVIE ID
   app.get('/mubidibi/crew/:id', (req, res) => {
     app.pg.connect(onConnect);
@@ -45,9 +69,6 @@ exports.crew = app => {
 
       release();
       res.send(err || JSON.stringify(crew));
-      // res.send(err || crew);
     }
   });
 }
-
-

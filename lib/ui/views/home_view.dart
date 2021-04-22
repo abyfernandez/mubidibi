@@ -48,6 +48,8 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+  // TO DO: When drawer is open and home button is clicked, the page must return to the dashboard
+
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;

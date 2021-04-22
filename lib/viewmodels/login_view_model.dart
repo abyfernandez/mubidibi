@@ -18,7 +18,8 @@ class LoginViewModel extends BaseModel {
       locator<AuthenticationService>();
 
   // Function: LOG IN -- log in with Email and Password
-  Future login({@required String email, @required String password}) async {
+  Future<bool> login(
+      {@required String email, @required String password}) async {
     setBusy(true);
 
     var result = await _authenticationService.loginWithEmail(
@@ -28,18 +29,21 @@ class LoginViewModel extends BaseModel {
 
     if (result is bool) {
       if (result) {
-        _navigationService.navigateTo(HomeViewRoute);
+        // _navigationService.navigateTo(HomeViewRoute);
+        return true;
       } else {
         await _dialogService.showDialog(
           title: 'Login Failed',
           description: 'Couldn\'t login at this moment. Please try again later',
         );
+        return false;
       }
     } else {
       await _dialogService.showDialog(
         title: 'Login Failed',
         description: 'Please check your inputs and try again.',
       );
+      return false;
     }
   }
 
