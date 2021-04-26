@@ -84,6 +84,8 @@ class _LoginViewState extends State<LoginView> {
             ),
           ],
         ),
+
+        // TO DO: Close the keyboard when login button is clicked so it does not appear when the loading icon is shown
         body: ModalProgressHUD(
           inAsyncCall: _saving,
           child: AnnotatedRegion<SystemUiOverlayStyle>(

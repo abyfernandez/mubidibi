@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
-// import 'package:flutter_chips_input/flutter_chips_input.dart';
+import 'package:mubidibi/ui/widgets/searchable_dropdown.dart';
+// import 'package:flutter_chips_input/flutter_chips_input.dart'; -- working widget
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
@@ -12,11 +12,11 @@ import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
-import 'package:mubidibi/ui/widgets/chips_input.dart';
+import 'package:mubidibi/ui/widgets/chips_input.dart'; // test -- for roles and possibly genres
+import 'package:mubidibi/ui/widgets/input_chips.dart'; // test -- should be working
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
-import 'package:searchable_dropdown/searchable_dropdown.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
@@ -274,6 +274,7 @@ class _AddMovieState extends State<AddMovie> {
   void initState() {
     fetchCrew();
     fetchGenres();
+
     super.initState();
   }
 
@@ -522,149 +523,192 @@ class _AddMovieState extends State<AddMovie> {
             children: [
               SizedBox(height: 10),
               // MOVIE TITLE
-              TextFormField(
-                // autofocus: true,
-                controller: titleController,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                style: TextStyle(
-                  color: Colors.black,
+              Container(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                child: TextFormField(
+                  textCapitalization: TextCapitalization.words,
+                  controller: titleController,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                  decoration: InputDecoration(
+                    // hintText: "Pamagat *",
+                    // hintStyle: TextStyle(
+                    //   color: Colors.black87,
+                    //   fontSize: 16,
+                    // ),
+                    labelText: "Pamagat *",
+                    contentPadding: EdgeInsets.all(10),
+
+                    // filled: true,
+                    // fillColor: Color.fromRGBO(240, 240, 240, 1),
+                    // enabledBorder: OutlineInputBorder(
+                    // borderRadius: BorderRadius.circular(5),
+                    // borderSide: BorderSide.none,
+                    // ),
+                    // focusedBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide.none,
+                    // ),
+                    // errorBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide(color: Colors.red),
+                    // ),
+                    // focusedErrorBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide(color: Colors.red),
+                    // ),
+                  ),
+                  validator: (value) {
+                    if (value.isEmpty || value == null) {
+                      return 'Required ang field na ito.';
+                    }
+                    return null;
+                  },
                 ),
-                decoration: InputDecoration(
-                  hintText: "Title *",
-                  hintStyle: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                  filled: true,
-                  fillColor: Color.fromRGBO(240, 240, 240, 1),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                ),
-                validator: (value) {
-                  if (value.isEmpty || value == null) {
-                    return 'Movie title is required';
-                  }
-                  return null;
-                },
               ),
               SizedBox(
                 height: 10,
               ),
-              TextFormField(
-                readOnly: true,
-                controller: dateController,
-                keyboardType: TextInputType.datetime,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                onTap: () {
-                  _selectDate(context);
-                },
-                style: TextStyle(
-                  color: Colors.black,
-                ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Color.fromRGBO(240, 240, 240, 1),
-                  hintText: _date != null
-                      ? DateFormat("MMM. d, y").format(_date)
-                      : "Release Date",
-                  hintStyle: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
+              Container(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                child: Stack(
+                  children: [
+                    TextFormField(
+                      readOnly: true,
+                      controller: dateController,
+                      keyboardType: TextInputType.datetime,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      onTap: () {
+                        _selectDate(context);
+                      },
+                      style: TextStyle(
+                        color: Colors.black,
+                      ),
+                      decoration: InputDecoration(
+                        // filled: true,
+                        // fillColor: Color.fromRGBO(240, 240, 240, 1),
+                        // hintText: _date != null
+                        //     ? DateFormat("MMM. d, y").format(_date)
+                        //     : "Release Date",
+
+                        // hintStyle: TextStyle(
+                        //   color: Colors.black87,
+                        //   fontSize: 16,
+                        // ),
+                        labelText: "Petsa ng Paglabas",
+                        contentPadding: EdgeInsets.all(10),
+                        // enabledBorder: OutlineInputBorder(
+                        //   borderRadius: BorderRadius.circular(5),
+                        //   borderSide: BorderSide.none,
+                        // ),
+                        // focusedBorder: OutlineInputBorder(
+                        //   borderRadius: BorderRadius.circular(5),
+                        //   borderSide: BorderSide.none,
+                        // ),
+                      ),
+                    ),
+                    _date != null
+                        ? PositionedDirectional(
+                            top: 10,
+                            end: 10,
+                            bottom: 10,
+                            child: GestureDetector(
+                              child: Icon(Icons.close_outlined,
+                                  color: Color.fromRGBO(150, 150, 150, 1)),
+                              onTap: () {
+                                print("Clear");
+                                setState(() {
+                                  _date = null;
+                                  dateController.text = "";
+                                });
+                              },
+                            ),
+                          )
+                        : Container(),
+                  ],
                 ),
               ),
               SizedBox(height: 10),
-              // RUNNING TIME
-              TextFormField(
-                // autofocus: true,
-                controller: runtimeController,
-                keyboardType: TextInputType.number,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                style: TextStyle(
-                  color: Colors.black,
-                ),
-                decoration: InputDecoration(
-                  hintText: "Running Time (in minutes)",
-                  hintStyle: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
+              // RUNTIME
+              Container(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                child: TextFormField(
+                  controller: runtimeController,
+                  keyboardType: TextInputType.number,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  style: TextStyle(
+                    color: Colors.black,
                   ),
-                  filled: true,
-                  fillColor: Color.fromRGBO(240, 240, 240, 1),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
+                  decoration: InputDecoration(
+                    // hintText: "Runtime (minuto)",
+                    // hintStyle: TextStyle(
+                    //   color: Colors.black87,
+                    //   fontSize: 16,
+                    // ),
+                    labelText: "Runtime (minuto)",
+                    contentPadding: EdgeInsets.all(10),
+                    // filled: true,
+                    // fillColor: Color.fromRGBO(240, 240, 240, 1),
+                    // enabledBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide.none,
+                    // ),
+                    // focusedBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide.none,
+                    // ),
                   ),
                 ),
               ),
               SizedBox(
                 height: 10,
               ),
-              TextFormField(
-                // autofocus: true,
-                controller: synopsisController,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                style: TextStyle(
-                  color: Colors.black,
+              Container(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                child: TextFormField(
+                  controller: synopsisController,
+                  textCapitalization: TextCapitalization.sentences,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                  maxLines: null, // 5
+                  decoration: InputDecoration(
+                    // filled: true,
+                    // fillColor: Color.fromRGBO(240, 240, 240, 1),
+                    // hintText: "Buod *",
+                    // hintStyle: TextStyle(
+                    //   color: Colors.black87,
+                    //   fontSize: 16,
+                    // ),
+                    labelText: "Buod *",
+                    contentPadding: EdgeInsets.all(10),
+                    // enabledBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide.none,
+                    // ),
+                    // focusedBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide.none,
+                    // ),
+                    // errorBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide(color: Colors.red),
+                    // ),
+                    // focusedErrorBorder: OutlineInputBorder(
+                    //   borderRadius: BorderRadius.circular(5),
+                    //   borderSide: BorderSide(color: Colors.red),
+                    // ),
+                  ),
+                  validator: (value) {
+                    if (value.isEmpty || value == null) {
+                      return 'Required ang field na ito.';
+                    }
+                    return null;
+                  },
                 ),
-                maxLines: 5,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Color.fromRGBO(240, 240, 240, 1),
-                  hintText: "Synopsis *",
-                  hintStyle: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide.none,
-                  ),
-                  errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                  focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: BorderSide(color: Colors.red),
-                  ),
-                ),
-                validator: (value) {
-                  if (value.isEmpty || value == null) {
-                    return 'Synopsis is required';
-                  }
-                  return null;
-                },
               ),
               SizedBox(
                 height: 10,
@@ -759,7 +803,7 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 15,
               ),
-              Text('Screenshots',
+              Text('Mga Screenshot',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 10,
@@ -798,8 +842,8 @@ class _AddMovieState extends State<AddMovie> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 10),
-              // Text('Mga Direktor:',
-              //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('Mga Direktor:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 10,
               ),
@@ -810,25 +854,27 @@ class _AddMovieState extends State<AddMovie> {
               //   ),
               //   child: Column(
               //     children: <Widget>[
-              //       SearchableDropdown.multiple(
-              //         selectedValueWidgetFn: (item) => InputChip(
-              //           label: Text(
-              //             item,
-              //             style: TextStyle(
-              //               fontSize: 14,
+              //       CSearchableDropdown.multiple(
+              //         selectedValueWidgetFn: (item) => Container(
+              //           margin: EdgeInsets.only(right: 5),
+              //           child: InputChip(
+              //             label: Text(
+              //               item,
+              //               style: TextStyle(
+              //                 fontSize: 12,
+              //               ),
               //             ),
+              //             backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+              //             deleteIconColor: Colors.black,
+              //             onPressed: () {},
+              //             onDeleted: () {
+              //               setState(() {
+              //                 var index = crewItems.indexWhere(
+              //                     (director) => director.value == item);
+              //                 directors.removeWhere((item) => item == index);
+              //               });
+              //             },
               //           ),
-              //           backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-              //           deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-              //           padding: EdgeInsets.all(7),
-              //           onPressed: () {},
-              //           onDeleted: () {
-              //             setState(() {
-              //               var index = crewItems.indexWhere(
-              //                   (director) => director.value == item);
-              //               directors.removeWhere((item) => item == index);
-              //             });
-              //           },
               //         ),
               //         key: UniqueKey(),
               //         style: TextStyle(
@@ -839,9 +885,11 @@ class _AddMovieState extends State<AddMovie> {
               //         selectedItems: directors,
               //         hint: Padding(
               //           padding: const EdgeInsets.all(12.0),
-              //           child: Text("Direktor",
-              //               style:
-              //                   TextStyle(color: Colors.black, fontSize: 16)),
+              //           child: Text("Pumili ng direktor",
+              //               style: TextStyle(
+              //                   color: Colors.black54,
+              //                   fontSize: 16,
+              //                   fontFamily: 'Poppins')),
               //         ),
               //         searchHint: Text("Search Any",
               //             style: TextStyle(color: Colors.white)),
@@ -860,67 +908,93 @@ class _AddMovieState extends State<AddMovie> {
               //     ],
               //   ),
               // ),
-              // FormBuilderChipsInput(
-              ChipsInput(
-                key: UniqueKey(),
-                decoration: InputDecoration(labelText: 'Mga Direktor'),
-                // name: 'directors',
-                onChanged: (values) {
-                  setState(() {
-                    directors = values.map<int>((item) {
-                      var index = crewItems.indexWhere(
-                          (director) => director.value == item.value);
-                      return index;
-                    }).toList();
-                  });
-                },
-                findSuggestions: (String query) {
-                  if (query.isNotEmpty) {
-                    var lowercaseQuery = query.toLowerCase();
-                    return crewItems.where((c) {
-                      return c.value
-                          .toLowerCase()
-                          .contains(query.toLowerCase());
-                    }).toList(growable: false)
-                      ..sort((a, b) => a.value
-                          .toLowerCase()
-                          .indexOf(lowercaseQuery)
-                          .compareTo(
-                              b.value.toLowerCase().indexOf(lowercaseQuery)));
-                  } else {
-                    return const [];
-                  }
-                },
-                chipBuilder: (context, state, item) {
-                  return InputChip(
-                    key: ObjectKey(item),
-                    label: Text(item.value),
-                    onDeleted: () {
-                      var index = crewItems
-                          .indexWhere((writer) => writer.value == item);
-                      setState(() {
-                        writers.removeWhere((item) => item == index);
-                      });
-                      return state.deleteChip(item);
-                    },
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  );
-                },
-                suggestionBuilder: (context, state, item) {
-                  return ListTile(
-                      key: ObjectKey(item),
-                      title: Text(item.value),
-                      onTap: () {
-                        return state.selectSuggestion(item);
-                      });
-                },
+
+              // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
+              Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: ChipsInput(
+                  keyboardAppearance: Brightness.dark,
+                  textCapitalization: TextCapitalization.words,
+                  enabled: true,
+                  textStyle:
+                      const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                  decoration: const InputDecoration(
+                    labelText: 'Pumili ng direktor',
+                    contentPadding: EdgeInsets.all(10),
+                  ),
+                  findSuggestions: (String query) {
+                    if (query.isNotEmpty) {
+                      var lowercaseQuery = query.toLowerCase();
+                      return crewList.where((item) {
+                        var fullName = item.firstName +
+                            " " +
+                            (item.middleName != null
+                                ? item.middleName + " "
+                                : "") +
+                            item.lastName +
+                            (item.suffix != null ? " " + item.suffix : "");
+                        // return item.firstName
+                        //         .toLowerCase()
+                        //         .contains(query.toLowerCase()) ||
+                        //     item.lastName
+                        //         .toLowerCase()
+                        //         .contains(query.toLowerCase());
+                        return fullName
+                            .toLowerCase()
+                            .contains(query.toLowerCase());
+                      }).toList(growable: false)
+                        ..sort((a, b) => a.firstName
+                            .toLowerCase()
+                            .indexOf(lowercaseQuery)
+                            .compareTo(b.firstName
+                                .toLowerCase()
+                                .indexOf(lowercaseQuery)));
+                    }
+                    return crewList;
+                  },
+                  onChanged: (data) {
+                    List<int> ids = [];
+                    for (var c in data) {
+                      ids.add(c.crewId);
+                    }
+
+                    directors = ids;
+                    print(directors);
+                  },
+                  chipBuilder: (context, state, c) {
+                    return InputChip(
+                      key: ObjectKey(c),
+                      label: Text(c.firstName +
+                          " " +
+                          (c.middleName != null ? c.middleName + " " : "") +
+                          c.lastName +
+                          (c.suffix != null ? " " + c.suffix : "")),
+                      onDeleted: () => state.deleteChip(c),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    );
+                  },
+                  suggestionBuilder: (context, state, c) {
+                    return ListTile(
+                      key: ObjectKey(c),
+                      title: Text(c.firstName +
+                          " " +
+                          (c.middleName != null ? c.middleName + " " : "") +
+                          c.lastName +
+                          (c.suffix != null ? " " + c.suffix : "")),
+                      onTap: () => state.selectSuggestion(c),
+                    );
+                  },
+                ),
               ),
               SizedBox(height: 10),
-              // Text('Mga Manunulat:',
-              //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              // SizedBox(
-              //   height: 10,
-              // ),
+              Text('Mga Manunulat:',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              SizedBox(
+                height: 10,
+              ),
               // Container(
               //   decoration: BoxDecoration(
               //     color: Color.fromRGBO(240, 240, 240, 1),
@@ -928,39 +1002,43 @@ class _AddMovieState extends State<AddMovie> {
               //   ),
               //   child: Column(
               //     children: <Widget>[
-              //       SearchableDropdown.multiple(
-              //         selectedValueWidgetFn: (item) => InputChip(
-              //           label: Text(
-              //             item,
-              //             style: TextStyle(
-              //               fontSize: 14,
+              //       CSearchableDropdown.multiple(
+              //         selectedValueWidgetFn: (item) => Container(
+              //           margin: EdgeInsets.only(right: 5),
+              //           child: InputChip(
+              //             label: Text(
+              //               item,
+              //               style: TextStyle(
+              //                 fontSize: 12,
+              //               ),
               //             ),
+              //             backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+              //             deleteIconColor: Colors.black,
+              //             padding: EdgeInsets.all(0),
+              //             onPressed: () {},
+              //             onDeleted: () {
+              //               setState(() {
+              //                 var index = crewItems
+              //                     .indexWhere((writer) => writer.value == item);
+              //                 writers.removeWhere((item) => item == index);
+              //               });
+              //             },
               //           ),
-              //           backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-              //           deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-              //           padding: EdgeInsets.all(7),
-              //           onPressed: () {},
-              //           onDeleted: () {
-              //             setState(() {
-              //               var index = crewItems
-              //                   .indexWhere((writer) => writer.value == item);
-              //               writers.removeWhere((item) => item == index);
-              //             });
-              //           },
               //         ),
               //         key: UniqueKey(),
               //         style: TextStyle(
               //           color: Colors.black,
               //         ),
-              //         menuBackgroundColor: Colors.white,
               //         underline: Container(),
               //         items: crewItems,
               //         selectedItems: writers,
               //         hint: Padding(
               //           padding: const EdgeInsets.all(12.0),
-              //           child: Text("Manunulat",
-              //               style:
-              //                   TextStyle(color: Colors.black, fontSize: 16)),
+              //           child: Text("Pumili ng manunulat",
+              //               style: TextStyle(
+              //                   color: Colors.black54,
+              //                   fontSize: 16,
+              //                   fontFamily: 'Poppins')),
               //         ),
               //         searchHint: Text("Search Any",
               //             style: TextStyle(color: Colors.white)),
@@ -979,144 +1057,163 @@ class _AddMovieState extends State<AddMovie> {
               //     ],
               //   ),
               // ),
-              // FormBuilderChipsInput(
-              ChipsInput(
-                focusNode: new FocusNode(),
-                key: UniqueKey(),
-                decoration: InputDecoration(labelText: 'Mga Manunulat'),
-                // name: 'writers',
-                onChanged: (values) {
-                  setState(() {
-                    writers = values.map<int>((item) {
-                      var index = crewItems
-                          .indexWhere((writer) => writer.value == item.value);
-                      return index;
-                    }).toList();
-                  });
-                },
-                findSuggestions: (String query) {
-                  if (query.isNotEmpty) {
-                    var lowercaseQuery = query.toLowerCase();
-                    return crewItems.where((c) {
-                      return c.value
-                          .toLowerCase()
-                          .contains(query.toLowerCase());
-                    }).toList(growable: false)
-                      ..sort((a, b) => a.value
-                          .toLowerCase()
-                          .indexOf(lowercaseQuery)
-                          .compareTo(
-                              b.value.toLowerCase().indexOf(lowercaseQuery)));
-                  } else {
-                    return const [];
-                  }
-                },
-                chipBuilder: (context, state, item) {
-                  return InputChip(
-                    key: ObjectKey(item),
-                    label: Text(item.value),
-                    onDeleted: () {
-                      var index = crewItems
-                          .indexWhere((writer) => writer.value == item);
-                      setState(() {
-                        writers.removeWhere((item) => item == index);
-                      });
 
-                      return state.deleteChip(item);
-                    },
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  );
-                },
-                suggestionBuilder: (context, state, item) {
-                  return ListTile(
-                      key: ObjectKey(item),
-                      title: Text(item.value),
-                      onTap: () {
-                        return state.selectSuggestion(item);
-                      });
-                },
+              // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
+              Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: ChipsInput(
+                  keyboardAppearance: Brightness.dark,
+                  textCapitalization: TextCapitalization.words,
+                  enabled: true,
+                  textStyle:
+                      const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                  decoration: const InputDecoration(
+                    labelText: 'Pumili ng manunulat',
+                    contentPadding: EdgeInsets.all(10),
+                  ),
+                  findSuggestions: (String query) {
+                    if (query.isNotEmpty) {
+                      var lowercaseQuery = query.toLowerCase();
+                      return crewList.where((item) {
+                        var fullName = item.firstName +
+                            " " +
+                            (item.middleName != null
+                                ? item.middleName + " "
+                                : "") +
+                            item.lastName +
+                            (item.suffix != null ? " " + item.suffix : "");
+                        return fullName
+                            .toLowerCase()
+                            .contains(query.toLowerCase());
+                      }).toList(growable: false)
+                        ..sort((a, b) => a.firstName
+                            .toLowerCase()
+                            .indexOf(lowercaseQuery)
+                            .compareTo(b.firstName
+                                .toLowerCase()
+                                .indexOf(lowercaseQuery)));
+                    }
+                    return crewList;
+                  },
+                  onChanged: (data) {
+                    List<int> ids = [];
+                    for (var c in data) {
+                      ids.add(c.crewId);
+                    }
+                    writers = ids;
+                    print(writers);
+                  },
+                  chipBuilder: (context, state, c) {
+                    return InputChip(
+                      key: ObjectKey(c),
+                      label: Text(c.firstName +
+                          " " +
+                          (c.middleName != null ? c.middleName + " " : "") +
+                          c.lastName +
+                          (c.suffix != null ? " " + c.suffix : "")),
+                      onDeleted: () => state.deleteChip(c),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    );
+                  },
+                  suggestionBuilder: (context, state, c) {
+                    return ListTile(
+                      key: ObjectKey(c),
+                      title: Text(c.firstName +
+                          " " +
+                          (c.middleName != null ? c.middleName + " " : "") +
+                          c.lastName +
+                          (c.suffix != null ? " " + c.suffix : "")),
+                      onTap: () => state.selectSuggestion(c),
+                    );
+                  },
+                ),
               ),
               SizedBox(height: 10),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //   children: [
-              //     Text('Mga Aktor:',
-              //         style:
-              //             TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              //     Container(
-              //       child: dynamicList.isNotEmpty
-              //           ? FlatButton(
-              //               color: Color.fromRGBO(192, 192, 192, 1),
-              //               onPressed: addActor,
-              //               child: Row(
-              //                 children: [
-              //                   Icon(Icons.person_add_alt_1_outlined),
-              //                   Text(" Dagdagan")
-              //                 ],
-              //               ),
-              //             )
-              //           : null,
-              //     ),
-              //   ],
-              // ),
-              // SizedBox(
-              //   height: 10,
-              // ),
-              // Container(
-              //   width: 140,
-              //   child: dynamicList.isEmpty
-              //       ? FlatButton(
-              //           color: Color.fromRGBO(192, 192, 192, 1),
-              //           onPressed: addActor,
-              //           child: Row(
-              //             children: [
-              //               Icon(Icons.person_add_alt_1_outlined),
-              //               Text(" Dagdagan")
-              //             ],
-              //           ),
-              //         )
-              //       : null,
-              // ),
-              // Column(
-              //   children: [
-              //     ListView.builder(
-              //       shrinkWrap: true,
-              //       itemCount: dynamicList.length,
-              //       itemBuilder: (_, index) => Column(children: [
-              //         dynamicList[index],
-              //         SizedBox(
-              //           height: 10,
-              //         ),
-              //         Container(
-              //           alignment: Alignment.centerRight,
-              //           child: FlatButton(
-              //             color: Color.fromRGBO(240, 240, 240, 1),
-              //             child: Text("Remove"),
-              //             onPressed: () {
-              //               if (actors.length == 0 && roles.length == 0) {
-              //                 setState(() {
-              //                   dynamicList.removeAt(index);
-              //                 });
-              //               } else {
-              //                 setState(() {
-              //                   dynamicList.removeAt(index);
-              //                   actors.removeAt(index);
-              //                   roles.removeAt(index);
-              //                 });
-              //               }
-              //               print('actor: $actors[index]');
-              //               print('roles: $roles[index]');
-              //             },
-              //           ),
-              //         ),
-              //         SizedBox(
-              //           height: 10,
-              //         ),
-              //         Divider(height: 1, thickness: 2),
-              //       ]),
-              //     ),
-              //   ],
-              // ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Mga Aktor:',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              Container(
+                width: 140,
+                child: dynamicList.isEmpty
+                    ? FlatButton(
+                        color: Color.fromRGBO(240, 240, 240, 1),
+                        onPressed: addActor,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add_alt_1_outlined),
+                            Text(" Dagdagan")
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
+              Column(
+                children: [
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: dynamicList.length,
+                    itemBuilder: (_, index) => Column(children: [
+                      dynamicList[index],
+                      Container(
+                        alignment: Alignment.centerRight,
+                        child: FlatButton(
+                          color: Color.fromRGBO(240, 240, 240, 1),
+                          child: Text("Remove"),
+                          onPressed: () {
+                            if (actors.length == 0 && roles.length == 0) {
+                              setState(() {
+                                dynamicList.removeAt(index);
+                              });
+                            } else {
+                              setState(() {
+                                dynamicList.removeAt(index);
+                                actors.removeAt(index);
+                                roles.removeAt(index);
+                              });
+                            }
+                            print('actor: $actors[index]');
+                            print('roles: $roles[index]');
+                          },
+                        ),
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Divider(height: 1, thickness: 2),
+                    ]),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                width: 140,
+                child: dynamicList.isNotEmpty
+                    ? FlatButton(
+                        color: Color.fromRGBO(192, 192, 192, 1),
+                        onPressed: addActor,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add_alt_1_outlined),
+                            Text(" Dagdagan")
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Divider(height: 1, thickness: 2),
             ],
           ),
         );
@@ -1124,9 +1221,6 @@ class _AddMovieState extends State<AddMovie> {
         return Container(
           child: Column(
             children: [
-              SizedBox(
-                height: 10,
-              ),
               Container(
                 decoration: BoxDecoration(
                   color: Color.fromRGBO(240, 240, 240, 1),
@@ -1134,7 +1228,7 @@ class _AddMovieState extends State<AddMovie> {
                 ),
                 child: Column(
                   children: <Widget>[
-                    SearchableDropdown.multiple(
+                    CSearchableDropdown.multiple(
                       selectedValueWidgetFn: (item) => InputChip(
                         label: Text(
                           item,
@@ -1167,8 +1261,8 @@ class _AddMovieState extends State<AddMovie> {
                             style:
                                 TextStyle(color: Colors.black, fontSize: 16)),
                       ),
-                      searchHint:
-                          Text("Pumili", style: TextStyle(color: Colors.white)),
+                      searchHint: Text("Pumili ng genre",
+                          style: TextStyle(color: Colors.white)),
                       onChanged: (value) {
                         setState(() {
                           filmGenres = value;
@@ -1406,64 +1500,132 @@ class ActorWidgetState extends State<ActorWidget> {
             color: Color.fromRGBO(240, 240, 240, 1),
             borderRadius: BorderRadius.circular(5),
           ),
-          child: SearchableDropdown.single(
-            selectedValueWidgetFn: (item) => Chip(
-              label: Text(
-                item,
-                style: TextStyle(
-                  fontSize: 14,
-                ),
-              ),
-              backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-              deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-              padding: EdgeInsets.all(7),
+          child: ChipsInput(
+            maxChips: 1,
+            keyboardAppearance: Brightness.dark,
+            textCapitalization: TextCapitalization.words,
+            enabled: true,
+            textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+            decoration: const InputDecoration(
+              labelText: 'Pumili ng aktor',
+              contentPadding: EdgeInsets.all(10),
             ),
-            style: TextStyle(
-              color: Colors.black,
-            ),
-            menuBackgroundColor: Colors.white,
-            underline: Container(),
-            items: widget.crewItems,
-            value: selectedValue,
-            hint: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Text("Aktor",
-                  style: TextStyle(color: Colors.black, fontSize: 16)),
-            ),
-            searchHint:
-                Text("Search Any", style: TextStyle(color: Colors.white)),
-            onChanged: (value) {
-              var index =
-                  widget.crewItems.indexWhere((actor) => actor.value == value);
-              var id = widget.crewList[index].crewId;
-
-              if (widget.size > actors.length || actors.length == 0) {
-                // if actors list is empty or the widget's index is larger than the size of the actors list, it means that the data hasnt been added to the list
-                actors.add(id);
-              } else {
-                actors[widget.size - 1] =
-                    id; // replace the value in the list if it already exists.
+            findSuggestions: (String query) {
+              if (query.isNotEmpty) {
+                var lowercaseQuery = query.toLowerCase();
+                return widget.crewList.where((item) {
+                  var fullName = item.firstName +
+                      " " +
+                      (item.middleName != null ? item.middleName + " " : "") +
+                      item.lastName +
+                      (item.suffix != null ? " " + item.suffix : "");
+                  return fullName.toLowerCase().contains(query.toLowerCase());
+                }).toList(growable: false)
+                  ..sort((a, b) => a.firstName
+                      .toLowerCase()
+                      .indexOf(lowercaseQuery)
+                      .compareTo(
+                          b.firstName.toLowerCase().indexOf(lowercaseQuery)));
               }
+              return widget.crewList;
             },
-            isExpanded: true,
+            onChanged: (data) {
+              List<int> ids = [];
+              for (var c in data) {
+                ids.add(c.crewId);
+              }
+              actors = ids;
+              print(actors);
+            },
+            chipBuilder: (context, state, c) {
+              return InputChip(
+                key: ObjectKey(c),
+                label: Text(c.firstName +
+                    " " +
+                    (c.middleName != null ? c.middleName + " " : "") +
+                    c.lastName +
+                    (c.suffix != null ? " " + c.suffix : "")),
+                onDeleted: () => state.deleteChip(c),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            },
+            suggestionBuilder: (context, state, c) {
+              return ListTile(
+                key: ObjectKey(c),
+                title: Text(c.firstName +
+                    " " +
+                    (c.middleName != null ? c.middleName + " " : "") +
+                    c.lastName +
+                    (c.suffix != null ? " " + c.suffix : "")),
+                onTap: () => state.selectSuggestion(c),
+              );
+            },
           ),
         ),
+
+        // Container(
+        //   decoration: BoxDecoration(
+        //     color: Color.fromRGBO(240, 240, 240, 1),
+        //     borderRadius: BorderRadius.circular(5),
+        //   ),
+        //   child: CSearchableDropdown.single(
+        //     selectedValueWidgetFn: (item) => Chip(
+        //       label: Text(
+        //         item,
+        //         style: TextStyle(
+        //           fontSize: 14,
+        //         ),
+        //       ),
+        //       backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+        //       deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+        //       padding: EdgeInsets.all(7),
+        //     ),
+        //     style: TextStyle(
+        //       color: Colors.black,
+        //     ),
+        //     menuBackgroundColor: Colors.white,
+        //     underline: Container(),
+        //     items: widget.crewItems,
+        //     value: selectedValue,
+        //     hint: Padding(
+        //       padding: const EdgeInsets.all(12.0),
+        //       child: Text("Aktor",
+        //           style: TextStyle(color: Colors.black, fontSize: 16)),
+        //     ),
+        //     searchHint:
+        //         Text("Search Any", style: TextStyle(color: Colors.white)),
+        //     onChanged: (value) {
+        //       var index =
+        //           widget.crewItems.indexWhere((actor) => actor.value == value);
+        //       var id = widget.crewList[index].crewId;
+
+        //       if (widget.size > actors.length || actors.length == 0) {
+        //         // if actors list is empty or the widget's index is larger than the size of the actors list, it means that the data hasnt been added to the list
+        //         actors.add(id);
+        //       } else {
+        //         actors[widget.size - 1] =
+        //             id; // replace the value in the list if it already exists.
+        //       }
+        //     },
+        //     isExpanded: true,
+        //   ),
+        // ),
         SizedBox(
           height: 10,
         ),
-        // Container(
-        //   color: Color.fromRGBO(240, 240, 240, 1),
-        //   child: ChipsInput(
-        //       key: ObjectKey(widget.size),
-        //       onChanged: (List<String> ganap) {
-        //         if (widget.size > roles.length || roles.length == 0) {
-        //           roles.add(ganap); // add
-        //         } else {
-        //           roles[widget.size - 1] = ganap; // replace
-        //         }
-        //         print('ROLE: $roles');
-        //       }),
-        // ),
+        Container(
+          color: Color.fromRGBO(240, 240, 240, 1),
+          child: CustomChipsInput(
+              key: ObjectKey(widget.size),
+              onChanged: (List<String> ganap) {
+                if (widget.size > roles.length || roles.length == 0) {
+                  roles.add(ganap); // add
+                } else {
+                  roles[widget.size - 1] = ganap; // replace
+                }
+                print('ROLE: $roles');
+              }),
+        ),
         SizedBox(height: 5),
         Text("Pindutin ang 'ENTER' para ma-save ang role."),
         SizedBox(height: 10),

@@ -78,9 +78,7 @@ class ContentScroll extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CrewView(
-                              crew: crew[index]
-                            ),
+                            builder: (_) => CrewView(crew: crew[index]),
                           ),
                         ),
                       },
@@ -126,9 +124,9 @@ class ContentScroll extends StatelessWidget {
                               ),
                             ),
                             Positioned(
-                              bottom: 2,
-                              left: 2,
-                              right: 2,
+                              bottom: 1,
+                              left: 1,
+                              right: 1,
                               child: Container(
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
@@ -149,15 +147,15 @@ class ContentScroll extends StatelessWidget {
                                   ),
                                   softWrap: true,
                                   overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
+                                  maxLines: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(5.0),
+                                  // borderRadius: BorderRadius.circular(5.0),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black54,
                                       offset: Offset(0.0, 0.0),
-                                      blurRadius: 6.0,
+                                      blurRadius: 4.0, // 6
                                     ),
                                   ],
                                 ),

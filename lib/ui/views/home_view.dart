@@ -56,6 +56,7 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       key: _scaffoldKey,
       body: Center(child: _showPage),
+      // TO DO: Show dialog box on back press
       // WillPopScope(
       //   onWillPop: pageIndex == 0 && !isDrawerOpen
       //       ? onBackPress
