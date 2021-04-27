@@ -8,7 +8,6 @@ String crewToJson(List<Crew> data) =>
 
 class Crew {
   final int crewId;
-  final String prefix;
   final String firstName;
   final String middleName;
   final String lastName;
@@ -24,7 +23,6 @@ class Crew {
 
   Crew(
       {this.crewId,
-      this.prefix,
       this.firstName,
       this.middleName,
       this.lastName,
@@ -41,7 +39,6 @@ class Crew {
   factory Crew.fromJson(Map<String, dynamic> json) {
     return Crew(
       crewId: json['id'],
-      prefix: json['prefix'],
       firstName: json['first_name'],
       middleName: json['middle_name'],
       lastName: json['last_name'],
@@ -63,7 +60,6 @@ class Crew {
 
   Map<String, dynamic> toJson() => {
         "id": crewId,
-        "prefix": prefix,
         "first_name": firstName,
         "middle_name": middleName,
         "last_name": lastName,

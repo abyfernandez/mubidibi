@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 import 'package:mubidibi/ui/widgets/searchable_dropdown.dart';
 // import 'package:flutter_chips_input/flutter_chips_input.dart'; -- working widget
 import 'package:image_picker/image_picker.dart';
@@ -56,6 +57,7 @@ class _AddMovieState extends State<AddMovie> {
   List<dynamic> genres = [];
   List<DropdownMenuItem> genreItems = [];
   var selectedValue;
+  String test;
 
   // MOVIE FIELD VARIABLES
   DateTime _date;
@@ -78,7 +80,7 @@ class _AddMovieState extends State<AddMovie> {
   final NavigationService _navigationService = locator<NavigationService>();
   final DialogService _dialogService = locator<DialogService>();
 
-  List<int> filmGenres = []; // Genre(s)
+  List<String> filmGenres = []; // Genre(s) -- saved as strings
   List<int> directors = []; // Director(s)
   List<int> writers = []; // Writer(s)
   List<DropdownMenuItem> crewItems = [];
@@ -301,7 +303,7 @@ class _AddMovieState extends State<AddMovie> {
         imageURI = movie?.poster ?? '';
 
         // GENRES
-        filmGenres = genreIndices(movie?.genre ?? []);
+        // filmGenres = genreIndices(movie?.genre ?? []); // TO DO: fix this
         // CREW
         directors = crewEdit != null
             ? crewEdit.isNotEmpty
@@ -1228,56 +1230,113 @@ class _AddMovieState extends State<AddMovie> {
                 ),
                 child: Column(
                   children: <Widget>[
-                    CSearchableDropdown.multiple(
-                      selectedValueWidgetFn: (item) => InputChip(
-                        label: Text(
-                          item,
-                          style: TextStyle(
-                            fontSize: 14,
-                          ),
+                    // CSearchableDropdown.multiple(
+                    //   selectedValueWidgetFn: (item) => InputChip(
+                    //     label: Text(
+                    //       item,
+                    //       style: TextStyle(
+                    //         fontSize: 14,
+                    //       ),
+                    //     ),
+                    //     backgroundColor: Color.fromRGBO(220, 220, 220, 1),
+                    //     deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
+                    //     padding: EdgeInsets.all(7),
+                    //     onPressed: () {},
+                    //     onDeleted: () {
+                    //       setState(() {
+                    //         var index = genreItems
+                    //             .indexWhere((genre) => genre.value == item);
+                    //         filmGenres.removeWhere((item) => item == index);
+                    //       });
+                    //     },
+                    //   ),
+                    //   key: UniqueKey(),
+                    //   style: TextStyle(
+                    //     color: Colors.black,
+                    //   ),
+                    //   underline: Container(),
+                    //   items: genreItems,
+                    //   selectedItems: filmGenres,
+                    //   hint: Padding(
+                    //     padding: const EdgeInsets.all(12.0),
+                    //     child: Text("Genre *",
+                    //         style:
+                    //             TextStyle(color: Colors.black, fontSize: 16)),
+                    //   ),
+                    //   searchHint: Text("Pumili ng genre",
+                    //       style: TextStyle(color: Colors.white)),
+                    //   onChanged: (value) {
+                    //     setState(() {
+                    //       filmGenres = value;
+                    //     });
+                    //   },
+                    //   closeButton: (filmGenres) {
+                    //     return (filmGenres.isNotEmpty
+                    //         ? "I-save ang ${filmGenres.length == 1 ? '"' + genreItems[filmGenres.first].value.toString() + '"' : '(' + filmGenres.length.toString() + ')'}"
+                    //         : "Wag nalang");
+                    //   },
+                    //   isExpanded: true,
+                    // ),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Color.fromRGBO(240, 240, 240, 1),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: TestChipsInput(
+                        textCapitalization: TextCapitalization.words,
+                        enabled: true,
+                        textStyle: const TextStyle(
+                            fontFamily: 'Poppins', fontSize: 16),
+                        decoration: const InputDecoration(
+                          labelText: 'Pumili ng genre',
+                          contentPadding: EdgeInsets.all(10),
                         ),
-                        backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-                        deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-                        padding: EdgeInsets.all(7),
-                        onPressed: () {},
-                        onDeleted: () {
+                        findSuggestions: (String query) {
                           setState(() {
-                            var index = genreItems
-                                .indexWhere((genre) => genre.value == item);
-                            filmGenres.removeWhere((item) => item == index);
+                            test = query;
                           });
+                          if (query.isNotEmpty) {
+                            var lowercaseQuery = query.toLowerCase();
+                            return genres.where((item) {
+                              return item
+                                  .toLowerCase()
+                                  .contains(query.toLowerCase());
+                            }).toList(growable: false)
+                              ..sort((a, b) => a
+                                  .toLowerCase()
+                                  .indexOf(lowercaseQuery)
+                                  .compareTo(
+                                      b.toLowerCase().indexOf(lowercaseQuery)));
+                          }
+                          return genres;
+                        },
+                        submittedText: test,
+                        onChanged: (data) {
+                          filmGenres = data;
+                        },
+                        chipBuilder: (context, state, c) {
+                          return InputChip(
+                            key: ObjectKey(c),
+                            label: Text(c),
+                            onDeleted: () => state.deleteChip(c),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          );
+                        },
+                        suggestionBuilder: (context, state, c) {
+                          return ListTile(
+                            key: ObjectKey(c),
+                            title: Text(c),
+                            onTap: () => state.selectSuggestion(c),
+                          );
                         },
                       ),
-                      key: UniqueKey(),
-                      style: TextStyle(
-                        color: Colors.black,
-                      ),
-                      underline: Container(),
-                      items: genreItems,
-                      selectedItems: filmGenres,
-                      hint: Padding(
-                        padding: const EdgeInsets.all(12.0),
-                        child: Text("Genre *",
-                            style:
-                                TextStyle(color: Colors.black, fontSize: 16)),
-                      ),
-                      searchHint: Text("Pumili ng genre",
-                          style: TextStyle(color: Colors.white)),
-                      onChanged: (value) {
-                        setState(() {
-                          filmGenres = value;
-                        });
-                      },
-                      closeButton: (filmGenres) {
-                        return (filmGenres.isNotEmpty
-                            ? "I-save ang ${filmGenres.length == 1 ? '"' + genreItems[filmGenres.first].value.toString() + '"' : '(' + filmGenres.length.toString() + ')'}"
-                            : "Wag nalang");
-                      },
-                      isExpanded: true,
                     ),
                   ],
                 ),
               ),
+              Text("Pindutin ang 'ENTER' para magdagdag ng genre."),
             ],
           ),
         );
@@ -1451,7 +1510,7 @@ class _AddMovieState extends State<AddMovie> {
                                   SizedBox(
                                     width: 5,
                                   ),
-                                  genreItems[index].child,
+                                  // genreItems[index].child, // TO DO: fix this so genre can be displayed
                                 ],
                               ),
                             )

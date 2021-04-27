@@ -10,7 +10,6 @@ class Review {
   final int reviewId;
   final int movieId;
   final String userId;
-  final String prefix;
   final String firstName;
   final String middleName;
   final String lastName;
@@ -24,7 +23,6 @@ class Review {
       {this.reviewId,
       this.movieId,
       this.userId,
-      this.prefix,
       this.firstName,
       this.middleName,
       this.lastName,
@@ -39,7 +37,6 @@ class Review {
       reviewId: json['id'],
       movieId: json['movie_id'],
       userId: json['account_id'],
-      prefix: json['prefix'],
       firstName: json['first_name'],
       middleName: json['middle_name'],
       lastName: json['last_name'],
@@ -57,6 +54,6 @@ class Review {
         "account_id": userId,
         "rating": rating,
         "review": review,
-        "added_at": addedAt,
+        "created_at": addedAt,
       };
 }

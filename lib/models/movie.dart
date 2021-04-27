@@ -16,33 +16,34 @@ class Movie {
   final List<String> screenshot;
   final String releaseDate;
   final String addedBy;
+  final bool isDeleted;
 
-  Movie({
-    this.movieId,
-    this.title,
-    this.synopsis,
-    this.runningTime,
-    this.poster,
-    this.genre,
-    this.screenshot,
-    this.releaseDate,
-    this.addedBy,
-  });
+  Movie(
+      {this.movieId,
+      this.title,
+      this.synopsis,
+      this.runningTime,
+      this.poster,
+      this.genre,
+      this.screenshot,
+      this.releaseDate,
+      this.addedBy,
+      this.isDeleted});
 
   factory Movie.fromJson(Map<String, dynamic> json) {
     return Movie(
-      movieId: json['id'],
-      title: json['title'],
-      synopsis: json['synopsis'],
-      runningTime: json['runtime'],
-      poster: json['poster'],
-      genre: json['genre'],
-      screenshot: json['screenshot'] == null
-          ? null
-          : List<String>.from(json["screenshot"].map((x) => x)),
-      releaseDate: json['release_date'],
-      addedBy: json['added_by'],
-    );
+        movieId: json['id'],
+        title: json['title'],
+        synopsis: json['synopsis'],
+        runningTime: json['runtime'],
+        poster: json['poster'],
+        genre: json['genre'],
+        screenshot: json['screenshot'] == null
+            ? null
+            : List<String>.from(json["screenshot"].map((x) => x)),
+        releaseDate: json['release_date'],
+        addedBy: json['added_by'],
+        isDeleted: json['is_deleted']);
   }
 
   Map<String, dynamic> toJson() => {
@@ -55,5 +56,6 @@ class Movie {
         "screenshot": screenshot,
         "release_date": releaseDate,
         "added_by": addedBy,
+        "is_deleted": isDeleted,
       };
 }

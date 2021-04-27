@@ -60,7 +60,7 @@ class MovieViewModel extends BaseModel {
     File poster,
     String imageURI,
     List screenshots,
-    List<int> genre,
+    List<String> genre, // previously List<int>
     List<int> directors,
     List<int> writers,
     String addedBy,
@@ -75,9 +75,9 @@ class MovieViewModel extends BaseModel {
     var images = [];
     Response response;
 
-    for (var g in genre) {
-      filmGenres.add(genres.singleWhere((i) => genres.indexOf(i) == g));
-    }
+    // for (var g in genre) {
+    //   filmGenres.add(genres.singleWhere((i) => genres.indexOf(i) == g));
+    // }
 
     if (poster != null && mimetype.trim() != '') {
       filename = poster.path.split('/').last;
@@ -111,7 +111,8 @@ class MovieViewModel extends BaseModel {
         'synopsis': synopsis,
         'release_date': releaseDate,
         'running_time': runningTime,
-        'genre': filmGenres,
+        'genre':
+            genre, // previously filmGenres nung List<int> pa yung pinapass as parameter
         'directors': directors,
         'writers': writers,
         'added_by': addedBy,
