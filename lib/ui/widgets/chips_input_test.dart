@@ -145,7 +145,7 @@ class ChipsInputState<T> extends State<TestChipsInput<T>>
 
     _focusNode.removeListener(_handleFocusChanged);
     if (null == widget.focusNode) {
-      _focusNode.dispose();
+      // _focusNode.dispose();
     }
 
     _suggestionsStreamController.close();
@@ -259,18 +259,22 @@ class ChipsInputState<T> extends State<TestChipsInput<T>>
 
   void addData(T data) {
     if (!_hasReachedMaxChips) {
-      _chips.add(data);
-      if (widget.allowChipEditing) {
-        var enteredText = _value.normalCharactersText ?? '';
-        if (enteredText.isNotEmpty) _enteredTexts[data] = enteredText;
+      var tempList = [];
+      for (var chip in _chips) {
+        tempList.add(chip.toString().toLowerCase());
       }
-      _updateTextInputState(replaceText: true);
+
+      if (!tempList.contains(data)) {
+        _chips.add(data);
+
+        if (widget.allowChipEditing) {
+          var enteredText = _value.normalCharactersText ?? '';
+          if (enteredText.isNotEmpty) _enteredTexts[data] = enteredText;
+        }
+        _updateTextInputState(replaceText: true);
+      }
 
       _suggestions = null;
-      // _suggestionsStreamController.add(_suggestions);
-      // if (widget.maxChips == _chips.length) _suggestionsBoxController.close();
-      // } else {
-      // _suggestionsBoxController.close();
     }
     widget.onChanged(_chips.toList(growable: false));
   }

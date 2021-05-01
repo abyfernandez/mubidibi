@@ -51,6 +51,7 @@ class ChipsInput<T> extends StatefulWidget {
     this.autofocus = false,
     this.allowChipEditing = false,
     this.focusNode,
+    this.nextFocusNode,
   })  : assert(maxChips == null || initialValue.length <= maxChips),
         super(key: key);
 
@@ -76,6 +77,7 @@ class ChipsInput<T> extends StatefulWidget {
   final bool autofocus;
   final bool allowChipEditing;
   final FocusNode focusNode;
+  final FocusNode nextFocusNode;
 
   // final Color cursorColor;
 
@@ -346,7 +348,12 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   void performAction(TextInputAction action) {
     switch (action) {
       case TextInputAction.done:
+        if (widget.nextFocusNode != null) {
+          widget.nextFocusNode.requestFocus();
+        }
+        break;
       case TextInputAction.go:
+
       case TextInputAction.send:
       case TextInputAction.search:
         if (_suggestions != null && _suggestions.isNotEmpty) {

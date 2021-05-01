@@ -59,7 +59,7 @@ class _AddMovieState extends State<AddMovie> {
   var selectedValue;
   String test;
 
-  // MOVIE FIELD VARIABLES
+  // MOVIE FIELD CONTROLLERS
   DateTime _date;
   final titleController = TextEditingController();
   final synopsisController = TextEditingController();
@@ -67,6 +67,26 @@ class _AddMovieState extends State<AddMovie> {
   final dateController = TextEditingController();
   final roleController = TextEditingController();
 
+  // MOVIE FIELD FOCUSNODES
+  final titleNode = FocusNode();
+  final synopsisNode = FocusNode();
+  final runtimeNode = FocusNode();
+  final dateNode = FocusNode();
+  final roleNode = FocusNode();
+  final directorNode = FocusNode();
+  final writerNode = FocusNode();
+  final addActorNode = FocusNode();
+
+  // MOVIE FORMKEYS
+  List<GlobalKey<FormState>> _formKeys = [
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>(),
+    GlobalKey<FormState>()
+  ];
+
+  // OTHER VARIABLES
   File imageFile; // for uploading poster w/ image picker
   final picker = ImagePicker();
   var mimetype;
@@ -80,12 +100,14 @@ class _AddMovieState extends State<AddMovie> {
   final NavigationService _navigationService = locator<NavigationService>();
   final DialogService _dialogService = locator<DialogService>();
 
+  // LISTS
   List<String> filmGenres = []; // Genre(s) -- saved as strings
   List<int> directors = []; // Director(s)
   List<int> writers = []; // Writer(s)
   List<DropdownMenuItem> crewItems = [];
   List<Crew> crewList = [];
 
+  // STEPPER TITLES
   int currentStep = 0;
   List<String> stepperTitle = [
     "Title, Release Date, Running Time, and Synopsis",
@@ -95,6 +117,7 @@ class _AddMovieState extends State<AddMovie> {
     "Review"
   ];
 
+  // Function: FETCH GENRES
   List<String> genreFromJson(String str) =>
       List<String>.from(json.decode(str).map((x) => x['genre']));
 
@@ -114,7 +137,7 @@ class _AddMovieState extends State<AddMovie> {
     }).toList();
   }
 
-  // function for calling viewmodel's getAllCrew method
+  // Funciton: calls viewmodel's getAllCrew method
   void fetchCrew() async {
     var model = CrewViewModel();
 
@@ -130,6 +153,7 @@ class _AddMovieState extends State<AddMovie> {
     }).toList();
   }
 
+  // Function: Shows datepicker and update value of Date
   Future<Null> _selectDate(BuildContext context) async {
     DateTime _datePicker = await showDatePicker(
         context: context,
@@ -149,7 +173,7 @@ class _AddMovieState extends State<AddMovie> {
     }
   }
 
-  // gets the id of the crew using the list of indices provided by the Director(s)/Writer(s) select fields.
+  // Function: (TO DO: MIGHT GET DEPRECATED) gets the id of the crew using the list of indices provided by the Director(s)/Writer(s) select fields.
   List<int> crewIds(List<int> indices) {
     List<int> crewIds = [];
     for (var i in indices) {
@@ -162,7 +186,7 @@ class _AddMovieState extends State<AddMovie> {
     return crewIds;
   }
 
-  // the genre array passed from the detail view is in string and named form, not as indices of the genres itself so we have to convert it first
+  // FUNCTION: (TO DO: IS THIS NEEDED???) the genre array passed from the detail view is in string and named form, not as indices of the genres itself so we have to convert it first
   List<int> genreIndices(List<dynamic> genresFromDetail) {
     List<int> genreIndices = [];
     for (var item in genresFromDetail) {
@@ -175,7 +199,7 @@ class _AddMovieState extends State<AddMovie> {
     return genreIndices;
   }
 
-  // get image using image picker for movie poster
+  // Function: get image using image picker for movie poster
   Future getImage() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -189,7 +213,7 @@ class _AddMovieState extends State<AddMovie> {
     }
   }
 
-  // get images using image picker for movie screenshots
+  // Function: get images using image picker for movie screenshots
   Future getScreenshot() async {
     final pickedFile = await picker.getImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -202,6 +226,7 @@ class _AddMovieState extends State<AddMovie> {
     }
   }
 
+  // Function: display screenshots in a scrollable horizontal view
   Widget displayScreenshots() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,11 +277,17 @@ class _AddMovieState extends State<AddMovie> {
     );
   }
 
+  // Function: adds ActorWidget in the ListView builder
   addActor() {
     setState(() {
-      size =
-          dynamicList.length + 1; // pass the index of the widget to the class
-      dynamicList.add(new ActorWidget(
+      size = dynamicList.length; // pass the index of the widget to the class
+
+      // insert to actors and roles lists
+      actors.add(0);
+      roles.add([]);
+
+      // add actor wdiget to list
+      dynamicList.add(ActorWidget(
           key: ObjectKey(size),
           crewItems: crewItems,
           crewList: crewList,
@@ -264,19 +295,10 @@ class _AddMovieState extends State<AddMovie> {
     });
   }
 
-  List<GlobalKey<FormState>> _formKeys = [
-    GlobalKey<FormState>(),
-    GlobalKey<FormState>(),
-    GlobalKey<FormState>(),
-    GlobalKey<FormState>(),
-    GlobalKey<FormState>()
-  ];
-
   @override
   void initState() {
     fetchCrew();
     fetchGenres();
-
     super.initState();
   }
 
@@ -523,44 +545,25 @@ class _AddMovieState extends State<AddMovie> {
         return Container(
           child: Column(
             children: [
-              SizedBox(height: 10),
+              SizedBox(height: 15),
               // MOVIE TITLE
               Container(
                 color: Color.fromRGBO(240, 240, 240, 1),
                 child: TextFormField(
+                  autofocus: true,
+                  focusNode: titleNode,
                   textCapitalization: TextCapitalization.words,
                   controller: titleController,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
                   style: TextStyle(
                     color: Colors.black,
                   ),
+                  onFieldSubmitted: (val) {
+                    dateNode.requestFocus();
+                  },
                   decoration: InputDecoration(
-                    // hintText: "Pamagat *",
-                    // hintStyle: TextStyle(
-                    //   color: Colors.black87,
-                    //   fontSize: 16,
-                    // ),
                     labelText: "Pamagat *",
                     contentPadding: EdgeInsets.all(10),
-
-                    // filled: true,
-                    // fillColor: Color.fromRGBO(240, 240, 240, 1),
-                    // enabledBorder: OutlineInputBorder(
-                    // borderRadius: BorderRadius.circular(5),
-                    // borderSide: BorderSide.none,
-                    // ),
-                    // focusedBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide.none,
-                    // ),
-                    // errorBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide(color: Colors.red),
-                    // ),
-                    // focusedErrorBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide(color: Colors.red),
-                    // ),
                   ),
                   validator: (value) {
                     if (value.isEmpty || value == null) {
@@ -571,7 +574,7 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               ),
               SizedBox(
-                height: 10,
+                height: 15,
               ),
               Container(
                 color: Color.fromRGBO(240, 240, 240, 1),
@@ -579,6 +582,7 @@ class _AddMovieState extends State<AddMovie> {
                   children: [
                     TextFormField(
                       readOnly: true,
+                      focusNode: dateNode,
                       controller: dateController,
                       keyboardType: TextInputType.datetime,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -589,27 +593,12 @@ class _AddMovieState extends State<AddMovie> {
                         color: Colors.black,
                       ),
                       decoration: InputDecoration(
-                        // filled: true,
-                        // fillColor: Color.fromRGBO(240, 240, 240, 1),
-                        // hintText: _date != null
-                        //     ? DateFormat("MMM. d, y").format(_date)
-                        //     : "Release Date",
-
-                        // hintStyle: TextStyle(
-                        //   color: Colors.black87,
-                        //   fontSize: 16,
-                        // ),
                         labelText: "Petsa ng Paglabas",
                         contentPadding: EdgeInsets.all(10),
-                        // enabledBorder: OutlineInputBorder(
-                        //   borderRadius: BorderRadius.circular(5),
-                        //   borderSide: BorderSide.none,
-                        // ),
-                        // focusedBorder: OutlineInputBorder(
-                        //   borderRadius: BorderRadius.circular(5),
-                        //   borderSide: BorderSide.none,
-                        // ),
                       ),
+                      onFieldSubmitted: (val) {
+                        runtimeNode.requestFocus();
+                      },
                     ),
                     _date != null
                         ? PositionedDirectional(
@@ -620,7 +609,6 @@ class _AddMovieState extends State<AddMovie> {
                               child: Icon(Icons.close_outlined,
                                   color: Color.fromRGBO(150, 150, 150, 1)),
                               onTap: () {
-                                print("Clear");
                                 setState(() {
                                   _date = null;
                                   dateController.text = "";
@@ -632,44 +620,33 @@ class _AddMovieState extends State<AddMovie> {
                   ],
                 ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 15),
               // RUNTIME
               Container(
                 color: Color.fromRGBO(240, 240, 240, 1),
                 child: TextFormField(
-                  controller: runtimeController,
-                  keyboardType: TextInputType.number,
-                  autovalidateMode: AutovalidateMode.onUserInteraction,
-                  style: TextStyle(
-                    color: Colors.black,
-                  ),
-                  decoration: InputDecoration(
-                    // hintText: "Runtime (minuto)",
-                    // hintStyle: TextStyle(
-                    //   color: Colors.black87,
-                    //   fontSize: 16,
-                    // ),
-                    labelText: "Runtime (minuto)",
-                    contentPadding: EdgeInsets.all(10),
-                    // filled: true,
-                    // fillColor: Color.fromRGBO(240, 240, 240, 1),
-                    // enabledBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide.none,
-                    // ),
-                    // focusedBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide.none,
-                    // ),
-                  ),
-                ),
+                    focusNode: runtimeNode,
+                    controller: runtimeController,
+                    keyboardType: TextInputType.number,
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: "Runtime (minuto)",
+                      contentPadding: EdgeInsets.all(10),
+                    ),
+                    onFieldSubmitted: (val) {
+                      synopsisNode.requestFocus();
+                    }),
               ),
               SizedBox(
-                height: 10,
+                height: 15,
               ),
               Container(
                 color: Color.fromRGBO(240, 240, 240, 1),
                 child: TextFormField(
+                  focusNode: synopsisNode,
                   controller: synopsisController,
                   textCapitalization: TextCapitalization.sentences,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -678,31 +655,8 @@ class _AddMovieState extends State<AddMovie> {
                   ),
                   maxLines: null, // 5
                   decoration: InputDecoration(
-                    // filled: true,
-                    // fillColor: Color.fromRGBO(240, 240, 240, 1),
-                    // hintText: "Buod *",
-                    // hintStyle: TextStyle(
-                    //   color: Colors.black87,
-                    //   fontSize: 16,
-                    // ),
                     labelText: "Buod *",
                     contentPadding: EdgeInsets.all(10),
-                    // enabledBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide.none,
-                    // ),
-                    // focusedBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide.none,
-                    // ),
-                    // errorBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide(color: Colors.red),
-                    // ),
-                    // focusedErrorBorder: OutlineInputBorder(
-                    //   borderRadius: BorderRadius.circular(5),
-                    //   borderSide: BorderSide(color: Colors.red),
-                    // ),
                   ),
                   validator: (value) {
                     if (value.isEmpty || value == null) {
@@ -713,7 +667,7 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               ),
               SizedBox(
-                height: 10,
+                height: 15,
               ),
             ],
           ),
@@ -918,6 +872,8 @@ class _AddMovieState extends State<AddMovie> {
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: ChipsInput(
+                  focusNode: directorNode,
+                  nextFocusNode: writerNode,
                   keyboardAppearance: Brightness.dark,
                   textCapitalization: TextCapitalization.words,
                   enabled: true,
@@ -962,9 +918,7 @@ class _AddMovieState extends State<AddMovie> {
                     for (var c in data) {
                       ids.add(c.crewId);
                     }
-
                     directors = ids;
-                    print(directors);
                   },
                   chipBuilder: (context, state, c) {
                     return InputChip(
@@ -1067,6 +1021,8 @@ class _AddMovieState extends State<AddMovie> {
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: ChipsInput(
+                  focusNode: writerNode,
+                  nextFocusNode: addActorNode,
                   keyboardAppearance: Brightness.dark,
                   textCapitalization: TextCapitalization.words,
                   enabled: true,
@@ -1106,7 +1062,6 @@ class _AddMovieState extends State<AddMovie> {
                       ids.add(c.crewId);
                     }
                     writers = ids;
-                    print(writers);
                   },
                   chipBuilder: (context, state, c) {
                     return InputChip(
@@ -1146,6 +1101,7 @@ class _AddMovieState extends State<AddMovie> {
                 width: 140,
                 child: dynamicList.isEmpty
                     ? FlatButton(
+                        focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
                         onPressed: addActor,
                         child: Row(
@@ -1159,41 +1115,75 @@ class _AddMovieState extends State<AddMovie> {
               ),
               Column(
                 children: [
-                  ListView.builder(
+                  ListView(
                     shrinkWrap: true,
-                    itemCount: dynamicList.length,
-                    itemBuilder: (_, index) => Column(children: [
-                      dynamicList[index],
-                      Container(
-                        alignment: Alignment.centerRight,
-                        child: FlatButton(
-                          color: Color.fromRGBO(240, 240, 240, 1),
-                          child: Text("Remove"),
-                          onPressed: () {
-                            if (actors.length == 0 && roles.length == 0) {
-                              setState(() {
-                                dynamicList.removeAt(index);
-                              });
-                            } else {
-                              setState(() {
-                                dynamicList.removeAt(index);
-                                actors.removeAt(index);
-                                roles.removeAt(index);
-                              });
-                            }
-                            print('actor: $actors[index]');
-                            print('roles: $roles[index]');
-                          },
-                        ),
-                      ),
-                      SizedBox(
-                        height: 10,
-                      ),
-                      Divider(height: 1, thickness: 2),
-                    ]),
+                    children: dynamicList
+                        .map((item) => Column(
+                              key: ObjectKey(item),
+                              children: [
+                                item,
+                                Container(
+                                  alignment: Alignment.centerRight,
+                                  child: FlatButton(
+                                    color: Color.fromRGBO(240, 240, 240, 1),
+                                    child: Text("Remove"),
+                                    onPressed: () {
+                                      setState(() {
+                                        // remove from actors and roles lists
+                                        actors.removeAt(
+                                            dynamicList.indexOf(item));
+                                        roles.removeAt(
+                                            dynamicList.indexOf(item));
+                                        dynamicList.removeAt(
+                                            dynamicList.indexOf(item));
+                                      });
+                                    },
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                Divider(height: 1, thickness: 2),
+                              ],
+                            ))
+                        .toList(),
+
+                    // itemCount: dynamicList.length,
+                    // itemBuilder: (_, index) {
+                    // print(dynamicList.length);
+
+                    // final item = dynamicList[index];
+                    // return dynamicList[index] != null
+                    //     ? Column(key: ObjectKey(item), children: [
+                    //         dynamicList[index],
+                    //         Container(
+                    //           alignment: Alignment.centerRight,
+                    //           child: FlatButton(
+                    //             color: Color.fromRGBO(240, 240, 240, 1),
+                    //             child: Text("Remove"),
+                    //             onPressed: () {
+                    //               setState(() {
+                    //                 dynamicList.removeAt(index);
+                    //                 dynamicList.insert(index, null);
+
+                    //                 // "remove" from actor and roles
+                    //                 actors[index] = 0;
+                    //                 roles[index] = [];
+                    //               });
+                    //             },
+                    //           ),
+                    //         ),
+                    //         SizedBox(
+                    //           height: 10,
+                    //         ),
+                    //         Divider(height: 1, thickness: 2),
+                    //       ])
+                    //     : Container();
+                    // }
                   ),
                 ],
               ),
+
               SizedBox(
                 height: 10,
               ),
@@ -1201,6 +1191,7 @@ class _AddMovieState extends State<AddMovie> {
                 width: 140,
                 child: dynamicList.isNotEmpty
                     ? FlatButton(
+                        focusNode: addActorNode,
                         color: Color.fromRGBO(192, 192, 192, 1),
                         onPressed: addActor,
                         child: Row(
@@ -1311,7 +1302,8 @@ class _AddMovieState extends State<AddMovie> {
                           }
                           return genres;
                         },
-                        submittedText: test,
+                        submittedText:
+                            test != null ? test.trimLeft().trimRight() : "",
                         onChanged: (data) {
                           filmGenres = data;
                         },
@@ -1533,26 +1525,26 @@ class ActorWidget extends StatefulWidget {
   final List<Crew> crewList;
   final size;
 
-  const ActorWidget({
-    Key key,
-    this.crewItems,
-    this.crewList,
-    this.size,
-  }) : super(key: key);
+  const ActorWidget({Key key, this.crewItems, this.crewList, this.size})
+      : super(key: key);
 
   @override
   ActorWidgetState createState() => ActorWidgetState();
 }
 
 class ActorWidgetState extends State<ActorWidget> {
-  var selectedValue;
+  var temp;
+  var tempActor;
+  List<String> tempRoles;
+
+  final testController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       child: Column(children: [
         SizedBox(
-          height: 10,
+          height: 15,
         ),
         Container(
           decoration: BoxDecoration(
@@ -1589,12 +1581,10 @@ class ActorWidgetState extends State<ActorWidget> {
               return widget.crewList;
             },
             onChanged: (data) {
-              List<int> ids = [];
-              for (var c in data) {
-                ids.add(c.crewId);
-              }
-              actors = ids;
-              print(actors);
+              setState(() {
+                actors[widget.size] = data[0]
+                    .crewId; // replace the value in the list if it already exists.
+              });
             },
             chipBuilder: (context, state, c) {
               return InputChip(
@@ -1670,24 +1660,67 @@ class ActorWidgetState extends State<ActorWidget> {
         //   ),
         // ),
         SizedBox(
-          height: 10,
+          height: 15,
         ),
+        // Container(
+        //   color: Color.fromRGBO(240, 240, 240, 1),
+        //   child: CustomChipsInput(
+        //       key: ObjectKey(widget.size),
+        //       onChanged: (List<String> ganap) {
+        //         if (widget.size > roles.length || roles.length == 0) {
+        //           roles.add(ganap); // add
+        //         } else {
+        //           roles[widget.size - 1] = ganap; // replace
+        //         }
+        //         print('ROLE: $roles');
+        //       }),
+        // ),
+
         Container(
           color: Color.fromRGBO(240, 240, 240, 1),
-          child: CustomChipsInput(
-              key: ObjectKey(widget.size),
-              onChanged: (List<String> ganap) {
-                if (widget.size > roles.length || roles.length == 0) {
-                  roles.add(ganap); // add
-                } else {
-                  roles[widget.size - 1] = ganap; // replace
-                }
-                print('ROLE: $roles');
-              }),
+          child: TestChipsInput(
+            key: ObjectKey(widget.size),
+            keyboardAppearance: Brightness.dark,
+            textCapitalization: TextCapitalization.words,
+            enabled: true,
+            textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+            decoration: const InputDecoration(
+              labelText: 'Role',
+              contentPadding: EdgeInsets.all(10),
+            ),
+            findSuggestions: (String query) {
+              setState(() {
+                temp = query;
+              });
+              return [];
+            },
+            submittedText: temp != null ? temp.trimLeft().trimRight() : "",
+            onChanged: (data) {
+              print("roles: $data");
+              List<String> tempList =
+                  data.map((role) => role.toString()).toList();
+
+              setState(() {
+                roles[widget.size] = tempList; // replace
+              });
+            },
+            chipBuilder: (context, state, c) {
+              print(state);
+              return InputChip(
+                key: ObjectKey(c),
+                label: Text(c),
+                onDeleted: () => state.deleteChip(c),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              );
+            },
+            suggestionBuilder: (context, state, c) {
+              return null;
+            },
+          ),
         ),
         SizedBox(height: 5),
-        Text("Pindutin ang 'ENTER' para ma-save ang role."),
-        SizedBox(height: 10),
+        Text("Pindutin ang 'ENTER' para i-save ang role."),
+        SizedBox(height: 15),
         Wrap(
           children: roles.map((r) {
             return Text(r.toString());

@@ -5,17 +5,20 @@ import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/globals.dart' as Config;
+import 'package:mubidibi/ui/views/see_all_view.dart';
 
 import '../../locator.dart';
 
 class ContentList extends StatelessWidget {
   final String title;
   final List<Movie> contentList;
+  final String seeAll;
 
   const ContentList({
     Key key,
     @required this.title,
     @required this.contentList,
+    this.seeAll,
   }) : super(key: key);
 
   @override
@@ -28,13 +31,36 @@ class ContentList extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Text(
-              title,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 20.0,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SeeAllView(movies: contentList),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    seeAll,
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Container(

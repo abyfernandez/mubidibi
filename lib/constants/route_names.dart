@@ -9,3 +9,4 @@ const String MovieViewRoute = "MovieView";
 const String AddMovieRoute = "AddMovie";
 const String CrewViewRoute = "CrewView";
 const String SearchViewRoute = "SearchView";
+const String SeeAllViewRoute = "SeeAllView";

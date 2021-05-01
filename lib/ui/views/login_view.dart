@@ -16,8 +16,14 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
+  // controllers
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
+  // focusnodes
+  final emailNode = FocusNode();
+  final passwordlNode = FocusNode();
+  final loginButtonNode = FocusNode();
 
   final DialogService _dialogService = locator<DialogService>();
   final NavigationService _navigationService = locator<NavigationService>();
@@ -115,6 +121,8 @@ class _LoginViewState extends State<LoginView> {
                                 SizedBox(height: 50.0),
                                 Container(
                                   child: InputField(
+                                    fieldFocusNode: emailNode,
+                                    nextFocusNode: passwordlNode,
                                     placeholder: 'Email Address',
                                     controller: emailController,
                                     onChanged: (val) {
@@ -136,6 +144,8 @@ class _LoginViewState extends State<LoginView> {
                               children: <Widget>[
                                 Container(
                                   child: InputField(
+                                    fieldFocusNode: passwordlNode,
+                                    nextFocusNode: loginButtonNode,
                                     placeholder: 'Password',
                                     password: true,
                                     controller: passwordController,
@@ -156,6 +166,7 @@ class _LoginViewState extends State<LoginView> {
                               padding: EdgeInsets.symmetric(vertical: 30.0),
                               width: double.infinity,
                               child: FlatButton(
+                                focusNode: loginButtonNode,
                                 // onPressed: () async {
                                 //   if (_formKey.currentState.validate()) {
                                 //     model.login(
@@ -177,11 +188,13 @@ class _LoginViewState extends State<LoginView> {
                                           setState(() {
                                             _saving = false;
                                           });
+
+                                          // show snack bar or flutter toast (success)
                                           // TO DO: flutter toast or snackbar to notify that user has successfully logged in
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
                                         } else {
-                                          // set _saving to false and display error dialog box
+                                          // set _saving to false and display error dialog box or snackbar/flutter toast for login error
                                           setState(() {
                                             _saving = false;
                                           });

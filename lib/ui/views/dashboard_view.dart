@@ -190,6 +190,7 @@ class _DashboardViewState extends State<DashboardView>
                     child: ContentList(
                       key: PageStorageKey('myFavorites'),
                       title: 'Mga Favorite',
+                      seeAll: 'See All',
                       contentList: snapshot.data,
                     ),
                   ),
@@ -197,6 +198,7 @@ class _DashboardViewState extends State<DashboardView>
                     child: ContentList(
                       key: PageStorageKey('movies'),
                       title: 'Mga Pelikula',
+                      seeAll: 'See All',
                       contentList: snapshot.data,
                     ),
                   ),

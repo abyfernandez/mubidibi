@@ -276,6 +276,8 @@ class _CrewViewState extends State<CrewView>
                   SizedBox(height: 10),
                   crew.photos != null
                       ? Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -287,13 +289,15 @@ class _CrewViewState extends State<CrewView>
                                       fontWeight: FontWeight.bold),
                                 ),
                                 // TO DO: MAKE A PAGE TO VIEW ALL PHOTOS / IMAGE VIEWER (FOR MULTIPLE IMAGES)
-                                GestureDetector(
-                                  child: Text('See All',
-                                      style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold)),
-                                  onTap: () {},
-                                ),
+                                crew.photos.length != 1
+                                    ? GestureDetector(
+                                        child: Text('See All',
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold)),
+                                        onTap: () {},
+                                      )
+                                    : Container(),
                               ],
                             ),
                             displayPhotos()
