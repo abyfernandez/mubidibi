@@ -392,9 +392,9 @@ class _MovieViewState extends State<MovieView>
     var hours = 0;
     var minutes = 0;
 
-    if (movie.runningTime != null || movie.runningTime != 0) {
-      hours = movie.runningTime ~/ 60; // integer division
-      minutes = movie.runningTime % 60; // modulo division
+    if (movie.runtime != null && movie.runtime != 0) {
+      hours = movie.runtime ~/ 60; // integer division
+      minutes = movie.runtime % 60; // modulo division
 
       return (hours != 0 ? hours.toString() + ' oras ' : '') +
           (minutes != 0 ? minutes.toString() + ' minuto' : '');
@@ -636,7 +636,7 @@ class _MovieViewState extends State<MovieView>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      widget.movie.genre.isNotEmpty
+                      widget.movie.genre != null
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -669,7 +669,7 @@ class _MovieViewState extends State<MovieView>
                               ),
                               SizedBox(height: 2.0),
                               Text(
-                                movie.releaseDate != null ||
+                                movie.releaseDate != null &&
                                         movie.releaseDate.trim() != ''
                                     ? DateFormat("MMM. d, y").format(
                                         DateTime.parse(movie.releaseDate),

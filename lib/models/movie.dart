@@ -10,7 +10,7 @@ class Movie {
   final int movieId;
   final String title;
   final String synopsis;
-  final num runningTime;
+  final num runtime;
   final String poster;
   final List<dynamic> genre;
   final List<String> screenshot;
@@ -22,7 +22,7 @@ class Movie {
       {this.movieId,
       this.title,
       this.synopsis,
-      this.runningTime,
+      this.runtime,
       this.poster,
       this.genre,
       this.screenshot,
@@ -35,7 +35,7 @@ class Movie {
         movieId: json['id'],
         title: json['title'],
         synopsis: json['synopsis'],
-        runningTime: json['runtime'],
+        runtime: json['runtime'],
         poster: json['poster'],
         genre: json['genre'],
         screenshot: json['screenshot'] == null
@@ -50,7 +50,7 @@ class Movie {
         "id": movieId,
         "title": title,
         "synopsis": synopsis,
-        "runtime": runningTime,
+        "runtime": runtime,
         "poster": poster,
         "genre": genre,
         "screenshot": screenshot,

@@ -227,7 +227,7 @@ class _AddMovieState extends State<AddMovie> {
   }
 
   // Function: display screenshots in a scrollable horizontal view
-  Widget displayScreenshots() {
+  Widget displayScreenshots(String mode) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: screenshots
@@ -248,28 +248,30 @@ class _AddMovieState extends State<AddMovie> {
                     borderRadius: BorderRadius.circular(5),
                   ),
                 ),
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
-                  alignment: Alignment.center,
-                  child: GestureDetector(
-                    child: Icon(Icons.close),
-                    onTap: () {
-                      setState(() {
-                        screenshots.remove(pic);
-                      });
-                    },
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5.0),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey,
-                        offset: Offset(0.0, 1.0),
-                        blurRadius: 6.0,
-                      ),
-                    ],
-                  ),
-                ),
+                mode == "edit"
+                    ? Container(
+                        margin: EdgeInsets.symmetric(horizontal: 5),
+                        alignment: Alignment.center,
+                        child: GestureDetector(
+                          child: Icon(Icons.close),
+                          onTap: () {
+                            setState(() {
+                              screenshots.remove(pic);
+                            });
+                          },
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey,
+                              offset: Offset(0.0, 1.0),
+                              blurRadius: 6.0,
+                            ),
+                          ],
+                        ),
+                      )
+                    : Container(),
               ],
             ),
           )
@@ -282,8 +284,7 @@ class _AddMovieState extends State<AddMovie> {
     setState(() {
       size = dynamicList.length; // pass the index of the widget to the class
 
-      // insert to actors and roles lists
-      actors.add(0);
+      // insert empty data to roles list
       roles.add([]);
 
       // add actor wdiget to list
@@ -299,11 +300,19 @@ class _AddMovieState extends State<AddMovie> {
   void initState() {
     fetchCrew();
     fetchGenres();
+    actors = [];
+    directors = [];
+    writers = [];
+    roles = [];
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    print(directors.isNotEmpty ? "D not" : "D empty");
+    print(writers.isNotEmpty ? "W not" : "W empty");
+    print(actors.isNotEmpty ? "A not" : "A empty");
+
     var currentUser = _authenticationService.currentUser;
 
     final _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -319,7 +328,7 @@ class _AddMovieState extends State<AddMovie> {
             ? DateTime.parse(movie?.releaseDate)
             : null;
         synopsisController.text = movie?.synopsis ?? '';
-        runtimeController.text = movie?.runningTime?.toString() ?? '';
+        runtimeController.text = movie?.runtime?.toString() ?? '';
 
         // TO DO: IMAGE EDIT
         imageURI = movie?.poster ?? '';
@@ -364,177 +373,179 @@ class _AddMovieState extends State<AddMovie> {
             style: TextStyle(color: Colors.black),
           ),
         ),
-        body: ModalProgressHUD(
-          inAsyncCall: _saving,
-          child: AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle.light,
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: Stack(
-                children: <Widget>[
-                  Container(
-                    height: double.infinity,
-                    child: SingleChildScrollView(
-                      physics: AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30.0,
-                      ),
-                      child: Column(
-                        children: [
-                          SizedBox(height: 20),
-                          MyStepper(
-                            type: MyStepperType.vertical,
-                            currentStep: currentStep,
-                            onStepTapped: (step) async {
-                              if (currentStep == 0) {
-                                // first step
-                                setState(() {
-                                  if (_formKeys[currentStep]
-                                      .currentState
-                                      .validate()) {
-                                    currentStep = step;
-                                  }
-                                });
-                              } else {
-                                // allow tapping of steps
-                                setState(() => currentStep = step);
-                              }
-                            },
-                            onStepCancel: () => {
-                              if (currentStep != 0)
-                                setState(() => --currentStep)
-                            }, // else do nothing
-                            onStepContinue: () async {
-                              if (currentStep + 1 != stepperTitle.length) {
-                                // do not allow user to continue to next step if inputs aren't filled out yet
-                                switch (currentStep) {
-                                  case 0: // title, release date, running time, and synopsis
-                                    setState(() {
-                                      if (_formKeys[currentStep]
-                                          .currentState
-                                          .validate()) {
-                                        currentStep++;
-                                      }
-                                    });
-                                    break;
-
-                                  case 1: // poster
-                                    setState(() {
-                                      currentStep++;
-                                    });
-                                    break;
-                                  case 2: // crew members
-                                    setState(() => ++currentStep);
-                                    break;
-                                  case 3: // genre
-                                    setState(() => ++currentStep);
-                                    break;
+        body:
+            // ModalProgressHUD(
+            //   inAsyncCall: _saving,
+            //   child:
+            AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle.light,
+          child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
+            child: Stack(
+              children: <Widget>[
+                Container(
+                  height: double.infinity,
+                  child: SingleChildScrollView(
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 30.0,
+                    ),
+                    child: Column(
+                      children: [
+                        SizedBox(height: 20),
+                        MyStepper(
+                          type: MyStepperType.vertical,
+                          currentStep: currentStep,
+                          onStepTapped: (step) async {
+                            if (currentStep == 0) {
+                              // first step
+                              setState(() {
+                                if (_formKeys[currentStep]
+                                    .currentState
+                                    .validate()) {
+                                  currentStep = step;
                                 }
-                              } else {
-                                // last step
-                                var confirm =
-                                    await _dialogService.showConfirmationDialog(
-                                        title: "Confirm Details",
-                                        cancelTitle: "No",
-                                        confirmationTitle: "Yes",
-                                        description:
-                                            "Are you sure that you want to continue?");
-                                if (confirm.confirmed == true) {
+                              });
+                            } else {
+                              // allow tapping of steps
+                              setState(() => currentStep = step);
+                            }
+                          },
+                          onStepCancel: () => {
+                            if (currentStep != 0) setState(() => --currentStep)
+                          }, // else do nothing
+                          onStepContinue: () async {
+                            if (currentStep + 1 != stepperTitle.length) {
+                              // do not allow user to continue to next step if inputs aren't filled out yet
+                              switch (currentStep) {
+                                case 0: // title, release date, running time, and synopsis
+                                  setState(() {
+                                    if (_formKeys[currentStep]
+                                        .currentState
+                                        .validate()) {
+                                      currentStep++;
+                                    }
+                                  });
+                                  break;
+
+                                case 1: // poster
+                                  setState(() {
+                                    currentStep++;
+                                  });
+                                  break;
+                                case 2: // crew members
+                                  setState(() => ++currentStep);
+                                  break;
+                                case 3: // genre
+                                  setState(() => ++currentStep);
+                                  break;
+                              }
+                            } else {
+                              // last step
+                              var confirm =
+                                  await _dialogService.showConfirmationDialog(
+                                      title: "Confirm Details",
+                                      cancelTitle: "No",
+                                      confirmationTitle: "Yes",
+                                      description:
+                                          "Are you sure that you want to continue?");
+                              if (confirm.confirmed == true) {
+                                _saving =
+                                    true; // set saving to true to trigger circular progress indicator
+
+                                final response = await model.addMovie(
+                                    title: titleController.text,
+                                    synopsis: synopsisController.text,
+                                    releaseDate: _date != null
+                                        ? _date.toIso8601String()
+                                        : '',
+                                    runtime: runtimeController.text,
+                                    poster: imageFile,
+                                    imageURI: imageURI,
+                                    screenshots: screenshots,
+                                    mimetype: mimetype,
+                                    genre: filmGenres,
+                                    directors: directors,
+                                    writers: writers,
+                                    actors: actors,
+                                    roles: roles,
+                                    addedBy: currentUser.userId,
+                                    movieId: movieId);
+
+                                // when response is returned, stop showing circular progress indicator
+
+                                if (response != 0) {
+                                  _saving =
+                                      false; // set saving to false to trigger circular progress indicator
+                                  // show success snackbar
+                                  _scaffoldKey.currentState.showSnackBar(
+                                      mySnackBar(
+                                          context,
+                                          'Movie added successfully.',
+                                          Colors.green));
+
                                   _saving =
                                       true; // set saving to true to trigger circular progress indicator
 
-                                  final response = await model.addMovie(
-                                      title: titleController.text,
-                                      synopsis: synopsisController.text,
-                                      releaseDate:
-                                          _date.toIso8601String() ?? '',
-                                      runningTime: runtimeController.text,
-                                      poster: imageFile,
-                                      imageURI: imageURI,
-                                      screenshots: screenshots,
-                                      mimetype: mimetype,
-                                      genre: filmGenres,
-                                      directors: crewIds(directors),
-                                      writers: crewIds(writers),
-                                      addedBy: currentUser.userId,
-                                      movieId: movieId);
+                                  // get movie using id redirect to detail view using response
+                                  var movie = await model.getOneMovie(
+                                      movieId: response.toString());
 
-                                  // when response is returned, stop showing circular progress indicator
-
-                                  if (response != 0) {
+                                  if (movie != null) {
                                     _saving =
                                         false; // set saving to false to trigger circular progress indicator
-                                    // show success snackbar
-                                    _scaffoldKey.currentState.showSnackBar(
-                                        mySnackBar(
-                                            context,
-                                            'Movie added successfully.',
-                                            Colors.green));
-
-                                    _saving =
-                                        true; // set saving to true to trigger circular progress indicator
-
-                                    // get movie using id redirect to detail view using response
-                                    var movie = await model.getOneMovie(
-                                        movieId: response.toString());
-
-                                    if (movie != null) {
-                                      _saving =
-                                          false; // set saving to false to trigger circular progress indicator
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              MovieView(movie: movie),
-                                        ),
-                                      );
-                                    }
-                                  } else {
-                                    _saving =
-                                        false; // set saving to false to trigger circular progress indicator
-                                    // show error snackbar
-                                    _scaffoldKey.currentState.showSnackBar(
-                                        mySnackBar(
-                                            context,
-                                            'Something went wrong. Check your inputs and try again.',
-                                            Colors.red));
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            MovieView(movie: movie),
+                                      ),
+                                    );
                                   }
+                                } else {
+                                  _saving =
+                                      false; // set saving to false to trigger circular progress indicator
+                                  // show error snackbar
+                                  _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                      context,
+                                      'Something went wrong. Check your inputs and try again.',
+                                      Colors.red));
                                 }
                               }
-                            },
-                            steps: [
-                              for (var i = 0; i < stepperTitle.length; i++)
-                                MyStep(
-                                  title: Text(
-                                    stepperTitle[i],
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                  isActive: i <= currentStep,
-                                  state: i == currentStep
-                                      ? MyStepState.editing
-                                      : i < currentStep
-                                          ? MyStepState.complete
-                                          : MyStepState.indexed,
-                                  content: LimitedBox(
-                                    maxWidth: 300,
-                                    child: Form(
-                                        key: _formKeys[i],
-                                        child: getContent(i)),
+                            }
+                          },
+                          steps: [
+                            for (var i = 0; i < stepperTitle.length; i++)
+                              MyStep(
+                                title: Text(
+                                  stepperTitle[i],
+                                  style: TextStyle(
+                                    fontSize: 18,
                                   ),
                                 ),
-                            ],
-                          ),
-                        ],
-                      ),
+                                isActive: i <= currentStep,
+                                state: i == currentStep
+                                    ? MyStepState.editing
+                                    : i < currentStep
+                                        ? MyStepState.complete
+                                        : MyStepState.indexed,
+                                content: LimitedBox(
+                                  maxWidth: 300,
+                                  child: Form(
+                                      key: _formKeys[i], child: getContent(i)),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
+        // ),
       ),
     );
   }
@@ -764,7 +775,7 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              // multiple files for screenshots
+              // TO DO: multiple files for screenshots
               Padding(
                 padding: EdgeInsets.only(left: 15),
                 child: Container(
@@ -782,7 +793,7 @@ class _AddMovieState extends State<AddMovie> {
                             height: 70,
                             color: Color.fromRGBO(240, 240, 240, 1)),
                         screenshots.length != 0
-                            ? displayScreenshots()
+                            ? displayScreenshots("edit")
                             : Container(),
                       ],
                     ),
@@ -1305,7 +1316,15 @@ class _AddMovieState extends State<AddMovie> {
                         submittedText:
                             test != null ? test.trimLeft().trimRight() : "",
                         onChanged: (data) {
-                          filmGenres = data;
+                          List<String> categories = data.length != 0
+                              ? data
+                                  .map((item) => item.toString().trim())
+                                  .toList()
+                              : [];
+                          setState(() {
+                            filmGenres = categories;
+                          });
+                          print(filmGenres);
                         },
                         chipBuilder: (context, state, c) {
                           return InputChip(
@@ -1334,7 +1353,6 @@ class _AddMovieState extends State<AddMovie> {
         );
       case 4:
         return Container(
-          height: 400,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
             color: Color.fromRGBO(240, 240, 240, 1),
@@ -1363,26 +1381,30 @@ class _AddMovieState extends State<AddMovie> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 10),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text("Petsa ng Paglabas: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      _date == null
-                          ? ''
-                          : DateFormat("MMM. d, y").format(_date),
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+                  _date != null ? SizedBox(height: 10) : SizedBox(),
+                  _date != null
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Petsa ng Paglabas: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  _date != null
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            _date == null
+                                ? ''
+                                : DateFormat("MMM. d, y").format(_date),
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : SizedBox(),
                   SizedBox(height: 10),
                   Container(
                     alignment: Alignment.topLeft,
@@ -1401,113 +1423,213 @@ class _AddMovieState extends State<AddMovie> {
                       ),
                     ),
                   ),
-                  SizedBox(height: 10),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text("Poster: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: imageFile != null
-                        ? Image.file(
-                            imageFile,
-                            width: 150,
-                            height: 200,
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text("Mga Direktor: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Column(
-                        children: crewIds(directors)
-                            .map<Widget>(
-                              (index) => new Row(
+                  imageFile != null ? SizedBox(height: 10) : SizedBox(),
+                  imageFile != null
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Poster: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  imageFile != null
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: imageFile != null
+                              ? Image.file(
+                                  imageFile,
+                                  width: 150,
+                                  height: 200,
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        )
+                      : SizedBox(),
+                  screenshots.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  screenshots.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Mga Screenshot: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  screenshots.isNotEmpty
+                      ? displayScreenshots("display")
+                      : SizedBox(),
+                  directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  directors.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Mga Direktor: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  directors.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Column(
+                              children: directors.map<Widget>((id) {
+                            var direk = crewList
+                                .firstWhere((item) => item.crewId == id);
+                            return new Row(
+                              children: [
+                                new Icon(Icons.fiber_manual_record, size: 16),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                new Text(
+                                  direk.firstName +
+                                      (direk.middleName != null
+                                          ? " " + direk.middleName
+                                          : "") +
+                                      " " +
+                                      direk.lastName +
+                                      (direk.suffix != null
+                                          ? " " + direk.suffix
+                                          : ""),
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ],
+                            );
+                          }).toList()),
+                        )
+                      : SizedBox(),
+                  writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  writers.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Mga Manunulat: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  writers.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Column(
+                              children: writers.map<Widget>((id) {
+                            var writer = crewList
+                                .firstWhere((item) => item.crewId == id);
+                            return new Row(
+                              children: [
+                                new Icon(Icons.fiber_manual_record, size: 16),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                new Text(
+                                  writer.firstName +
+                                      (writer.middleName != null
+                                          ? " " + writer.middleName
+                                          : "") +
+                                      " " +
+                                      writer.lastName +
+                                      (writer.suffix != null
+                                          ? " " + writer.suffix
+                                          : ""),
+                                  style: TextStyle(fontSize: 16),
+                                ),
+                              ],
+                            );
+                          }).toList()),
+                        )
+                      : SizedBox(),
+                  actors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  // TO DO: Display actors
+                  actors.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            "Mga Aktor: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : SizedBox(),
+                  // TO DO: fix overflow issue when text is too long
+                  actors.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Column(
+                            children: actors.map((id) {
+                              var item =
+                                  crewList.firstWhere((p) => p.crewId == id);
+                              return new Wrap(
                                 children: [
                                   new Icon(Icons.fiber_manual_record, size: 16),
                                   SizedBox(
                                     width: 5,
                                   ),
                                   new Text(
-                                    crewItems[index].value,
-                                    style: TextStyle(fontSize: 16),
-                                  ),
+                                      item.firstName +
+                                          (item.middleName != null
+                                              ? " " + item.middleName
+                                              : "") +
+                                          " " +
+                                          item.lastName +
+                                          (item.suffix != null
+                                              ? " " + item.suffix
+                                              : ""),
+                                      style: TextStyle(fontSize: 16),
+                                      softWrap: true,
+                                      overflow: TextOverflow.fade),
+                                  roles[actors.indexOf(id)].length != 0
+                                      ? Text(
+                                          " - " +
+                                              roles[actors.indexOf(id)]
+                                                  .join(" / "),
+                                          style: TextStyle(
+                                              fontStyle: FontStyle.italic,
+                                              fontSize: 16),
+                                          softWrap: true,
+                                          overflow: TextOverflow.fade)
+                                      : SizedBox(),
                                 ],
-                              ),
-                            )
-                            .toList()),
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text("Mga Manunulat: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Column(
-                        children: crewIds(writers)
-                            .map<Widget>(
-                              (index) => new Row(
-                                children: [
-                                  new Icon(Icons.fiber_manual_record, size: 16),
-                                  SizedBox(
-                                    width: 5,
-                                  ),
-                                  new Text(
-                                    crewItems[index].value,
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                                ],
-                              ),
-                            )
-                            .toList()),
-                  ),
-                  SizedBox(height: 10),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text("Genre/s: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Column(
-                        children: filmGenres
-                            .map<Widget>(
-                              (index) => new Row(
-                                children: [
-                                  new Icon(Icons.fiber_manual_record, size: 16),
-                                  SizedBox(
-                                    width: 5,
-                                  ),
-                                  // genreItems[index].child, // TO DO: fix this so genre can be displayed
-                                ],
-                              ),
-                            )
-                            .toList()),
-                  ),
+                              );
+                            }).toList(),
+                          ),
+                        )
+                      : SizedBox(),
+                  filmGenres.length != 0 ? SizedBox(height: 10) : SizedBox(),
+                  filmGenres.length != 0
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Mga Genre: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  filmGenres.length != 0
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Wrap(
+                              children: filmGenres
+                                  .map<Widget>((str) => Container(
+                                        margin: EdgeInsets.only(right: 3),
+                                        child: Chip(
+                                          label: Text(str),
+                                          backgroundColor: Colors.blue[100],
+                                        ),
+                                      ))
+                                  .toList()),
+                        )
+                      : SizedBox(),
                 ],
               ),
             ),
@@ -1581,9 +1703,16 @@ class ActorWidgetState extends State<ActorWidget> {
               return widget.crewList;
             },
             onChanged: (data) {
+              print(dynamicList.length.toString());
+              print(actors.length.toString());
               setState(() {
-                actors[widget.size] = data[0]
-                    .crewId; // replace the value in the list if it already exists.
+                if (dynamicList.length > actors.length) {
+                  // actor is not yet added to list
+                  actors.add(data[0].crewId);
+                } else {
+                  actors[widget.size] = data[0]
+                      .crewId; // replace the value in the list if it already exists.
+                }
               });
             },
             chipBuilder: (context, state, c) {

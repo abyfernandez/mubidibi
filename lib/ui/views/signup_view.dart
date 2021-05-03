@@ -76,6 +76,7 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
 
   @override
   Widget build(BuildContext context) {
+    // TO DO: include user's  email address
     return ViewModelProvider<SignUpViewModel>.withConsumer(
       viewModel: SignUpViewModel(),
       builder: (context, model, child) => Scaffold(

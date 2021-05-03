@@ -42,6 +42,7 @@ exports.movie = app => {
     // call function add_movie with params: String title, Array genre, Date release_date, String synopsis, String poster, String added_by 
 
     // upload image to cloudinary 
+    // TO DO: create centralized cloudinary (for both mobile and web use)
     var cloudinary = require('cloudinary');
 
     cloudinary.config({
@@ -62,6 +63,7 @@ exports.movie = app => {
         if (!pic.file && movieData.length == 0) {
           movieData = JSON.parse(pic.fields.movie.value); // movie data sent from the frontend
         } else {
+          // TO DO: Fix ---> this currently only works if there is a poster added. However if poster is not provided, this might crash
           var buffer = await pic.toBuffer();
           var image = await buffer.toString('base64');
           image = image.replace(/(\r\n|\n|\r)/gm, "");
@@ -92,13 +94,15 @@ exports.movie = app => {
     var title = movieData.title.replace(/'/g, "''");
     var synopsis = movieData.synopsis.replace(/'/g, "''");
 
+    console.log(movieData);
+
     var query = `select add_movie (
       '${title}',
       '${synopsis}', 
       _genre => `
 
     // check first if genre array is empty or not
-    if (movieData.genre.length != 0 || movieData.genre != null) {
+    if (movieData.genre.length != 0 && movieData.genre != null) {
       query = query.concat(`array [`)
       movieData.genre.forEach(genre => {
         query = query.concat(`'`, genre, `'`)
@@ -117,7 +121,7 @@ exports.movie = app => {
     // release date
     query = query.concat(`_release_date => `)
 
-    if (movieData.release_date != "" || movieData.release_date != null) {
+    if (movieData.release_date != "" && movieData.release_date != null) {
       query = query.concat(`'${movieData.release_date}', 
       `)
     } else {
@@ -127,7 +131,7 @@ exports.movie = app => {
 
     query = query.concat(`_runtime => `)
 
-    if (movieData.running_time != "" || movieData.running_time != null) {
+    if (movieData.running_time != "" && movieData.running_time != null) {
       query = query.concat(`${parseInt(movieData.running_time)}, 
       `)
     } else {
@@ -187,6 +191,7 @@ exports.movie = app => {
 
       console.log(query);
 
+      // add directors
       var result = await client.query(query).then((result) => {
         const id = result.rows[0].add_movie
         if (movieData.directors.length != 0) {
@@ -200,10 +205,11 @@ exports.movie = app => {
           });
         }
 
+        // add writers
         if (movieData.writers.length != 0) {
           movieData.writers.forEach(writer => {
             client.query(
-              `call add_movie_writer(
+              `call add_movie_writer (
                 ${id},
                 ${writer}
               )`
@@ -211,10 +217,34 @@ exports.movie = app => {
           });
         }
 
-        return result
-      });
+        // add actors
+        // assume that actor's name/id is required. Roles are not required.
+        if (movieData.actors.length != 0) {
+          movieData.actors.forEach((actor, index) => {
+            var actorQuery = `call add_movie_actor (
+              ${id},
+              ${actor},
+              `;
 
-      release()
+            if (movieData.roles[index].length) {
+              actorQuery = actorQuery.concat(`array [`);
+              movieData.roles[index].forEach(role => {
+                actorQuery = actorQuery.concat(`'`, role, `'`)
+                if (role != movieData.roles[movieData.roles.length - 1]) {
+                  actorQuery = actorQuery.concat(',')
+                }
+              });
+              actorQuery = actorQuery.concat(`]`)
+            } else {
+              actorQuery = actorQuery.concat(`null`);
+            }
+
+            client.query(actorQuery);
+          });
+        }
+        return result;
+      });
+      release();
       res.send(err || JSON.stringify(result.rows[0].add_movie));
     }
   });
@@ -389,14 +419,23 @@ exports.movie = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      client.query('DELETE FROM movie where id = $1 RETURNING id', [parseInt(req.params.id)],
-        function onResult(err, result) {
-          console.log(result);
+      // initial delete
+      // client.query('DELETE FROM movie where id = $1 RETURNING id', [parseInt(req.params.id)],
+      //   function onResult(err, result) {
+      //     console.log(result);
 
-          release()
-          res.send(err || JSON.stringify(result.rows[0].id));
+      //     release()
+      //     res.send(err || JSON.stringify(result.rows[0].id));
+      //   }
+      // );
+
+      // updated delete: soft-delete only, set the is_deleted field to true
+      client.query('UPDATE movie SET is_deleted = true where id = $1', [parseInt(req.params.id)],
+        function onResult(err, result) {
+          release();
+          res.send(err, JSON.stringify)
         }
-      );
+      )
     }
   });
 
