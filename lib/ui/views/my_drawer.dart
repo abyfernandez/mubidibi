@@ -32,7 +32,7 @@ class MyDrawer extends StatelessWidget {
             children: <Widget>[
               UserAccountsDrawerHeader(
                 decoration: BoxDecoration(
-                  color: Colors.lightBlue,
+                  color: Color.fromRGBO(240, 240, 240, 1),
                 ),
                 margin: EdgeInsets.only(bottom: 0),
                 accountName: GestureDetector(
@@ -47,7 +47,7 @@ class MyDrawer extends StatelessWidget {
                 ),
                 // TO DO: Display currentUser's email address
                 accountEmail: Text(
-                  '',
+                  currentUser.email,
                   style: TextStyle(
                     // color: Colors.white,
                     fontSize: 16,

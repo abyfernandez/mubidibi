@@ -1,5 +1,6 @@
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
@@ -47,9 +48,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         viewToShow: HomeView(),
       );
     case MovieViewRoute:
+      var movieId = settings.arguments as String;
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: MovieView(),
+        viewToShow: MovieView(movieId: movieId),
       );
     case AddMovieRoute:
       var movie = settings.arguments as Movie;
@@ -57,11 +59,17 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         routeName: settings.name,
         viewToShow: AddMovie(movie: movie),
       );
-    case CrewViewRoute:
+    case AddCrewRoute:
       var crew = settings.arguments as Crew;
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: CrewView(crew: crew),
+        viewToShow: AddCrew(crew: crew),
+      );
+    case CrewViewRoute:
+      var crewId = settings.arguments as String;
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: CrewView(crewId: crewId),
       );
     case SearchViewRoute:
       return _getPageRoute(

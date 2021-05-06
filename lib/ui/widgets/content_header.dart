@@ -119,7 +119,8 @@ class _ContentHeaderMobile extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => MovieView(movie: featuredContent),
+                      builder: (_) => MovieView(
+                          movieId: featuredContent.movieId.toString()),
                     ),
                   ),
                 },

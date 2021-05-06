@@ -37,10 +37,7 @@ class StartUpView extends StatelessWidget {
               ),
             ),
             SizedBox(height: 50),
-            CircularProgressIndicator(
-                //   strokeWidth: 3,
-                //   valueColor: AlwaysStoppedAnimation(Theme.of(context).accentColor),
-                ),
+            CircularProgressIndicator(),
           ]),
         ),
       ),

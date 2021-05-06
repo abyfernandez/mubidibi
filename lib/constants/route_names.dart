@@ -7,6 +7,7 @@ const String DashboardViewRoute = "DashboardView";
 const String HomeViewRoute = "HomeView";
 const String MovieViewRoute = "MovieView";
 const String AddMovieRoute = "AddMovie";
+const String AddCrewRoute = "AddCrew";
 const String CrewViewRoute = "CrewView";
 const String SearchViewRoute = "SearchView";
 const String SeeAllViewRoute = "SeeAllView";

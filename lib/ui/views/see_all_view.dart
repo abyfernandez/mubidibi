@@ -84,7 +84,8 @@ class SeeAllView extends StatelessWidget {
                             Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => MovieView(movie: movie),
+                                  builder: (_) => MovieView(
+                                      movieId: movie.movieId.toString()),
                                 ));
                           },
                         ),

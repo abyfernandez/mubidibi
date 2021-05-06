@@ -13,6 +13,7 @@ class StartUpViewModel extends BaseModel {
   Future handleStartUpLogic() async {
     var hasLoggedInUser = await _authenticationService.isUserLoggedIn();
 
+    // TO DO: separation of admin, and non-admin user privileges
     if (hasLoggedInUser) {
       await _navigationService.navigateTo(HomeViewRoute);
     } else {

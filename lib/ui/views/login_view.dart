@@ -39,7 +39,6 @@ class _LoginViewState extends State<LoginView> {
     } else {
       _isButtonDisabled = true;
     }
-    print(_isButtonDisabled);
     return _isButtonDisabled;
   }
 

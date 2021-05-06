@@ -147,6 +147,7 @@ class _DashboardViewState extends State<DashboardView>
                 icon: Icons.add,
                 titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                 onPress: () async {
+                  await _navigationService.navigateTo(AddCrewRoute);
                   _animationController.reverse();
                 },
               ),

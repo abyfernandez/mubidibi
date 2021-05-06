@@ -54,7 +54,7 @@ class ContentScroll extends StatelessWidget {
                     child: Text(
                       "See all",
                       style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   )
                 : Container(),
@@ -78,7 +78,8 @@ class ContentScroll extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => CrewView(crew: crew[index]),
+                            builder: (_) =>
+                                CrewView(crewId: crew[index].crewId.toString()),
                           ),
                         ),
                       },

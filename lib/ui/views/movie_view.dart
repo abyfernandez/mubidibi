@@ -1,4 +1,5 @@
 import 'dart:convert';
+// import 'dart:html';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
+import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -28,23 +30,23 @@ import 'package:floating_action_bubble/floating_action_bubble.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'home_view.dart';
 import 'package:mubidibi/globals.dart' as Config;
-import 'package:modal_progress_hud/modal_progress_hud.dart';
 
 class MovieView extends StatefulWidget {
-  final Movie movie;
+  final String movieId;
 
-  MovieView({this.movie});
+  MovieView({this.movieId});
 
   @override
-  _MovieViewState createState() => _MovieViewState(movie);
+  _MovieViewState createState() => _MovieViewState(movieId);
 }
 
 class _MovieViewState extends State<MovieView>
     with SingleTickerProviderStateMixin {
-  final Movie movie;
+  final String movieId;
 
-  _MovieViewState(this.movie);
+  _MovieViewState(this.movieId);
 
+  Movie movie;
   Future<List<List<Crew>>> crew;
   List<List<Crew>> crewEdit;
   Future<List<Review>> reviews;
@@ -59,14 +61,14 @@ class _MovieViewState extends State<MovieView>
   var userReview;
   double overallRating = 0.0;
 
-  // Local State Variable/s
+  // local variables
   bool _saving = false;
 
   // variables needed for adding reviews
   final reviewController = TextEditingController();
 
   // function for calling viewmodel's getCrewForDetails method
-  Future<List<List<Crew>>> fetchCrew(String movieId) async {
+  Future<List<List<Crew>>> fetchCrew() async {
     var model = CrewViewModel();
     var crew = await model.getCrewForDetails(movieId: movieId);
 
@@ -74,6 +76,16 @@ class _MovieViewState extends State<MovieView>
       crewEdit = crew;
     });
     return crew;
+  }
+
+  // function for calling movie viewmodel's getOneMovie method
+  Future fetchMovie() async {
+    var model = MovieViewModel();
+    var film = await model.getOneMovie(movieId: movieId);
+
+    setState(() {
+      movie = film;
+    });
   }
 
   String timeAgo(String formattedString) {
@@ -178,7 +190,6 @@ class _MovieViewState extends State<MovieView>
                               Container(
                                 margin: EdgeInsets.zero,
                                 padding: EdgeInsets.zero,
-                                // color: Colors.blue,
                                 child: PopupMenuButton(
                                   padding: EdgeInsets.zero,
                                   itemBuilder: (BuildContext context) => [
@@ -404,7 +415,8 @@ class _MovieViewState extends State<MovieView>
 
   @override
   void initState() {
-    crew = fetchCrew(movie.movieId.toString());
+    fetchMovie();
+    crew = fetchCrew();
     currentUser = _authenticationService.currentUser;
 
     _animationController = AnimationController(
@@ -421,6 +433,7 @@ class _MovieViewState extends State<MovieView>
   GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // formkey
   FocusNode focusNode =
       new FocusNode(); // to close keyboard after posting review
+  GlobalKey _toolTipKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -429,7 +442,9 @@ class _MovieViewState extends State<MovieView>
     num _rating;
     // MediaQueryData queryData;
     // queryData = MediaQuery.of(context);
-    //
+
+    if (movie == null) return Center(child: CircularProgressIndicator());
+
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
       onModelReady: (model) {
@@ -462,53 +477,117 @@ class _MovieViewState extends State<MovieView>
                 },
               ),
               //Floating action menu item
-              Bubble(
-                title: "Delete",
-                iconColor: Colors.white,
-                bubbleColor: Colors.lightBlue,
-                icon: Icons.delete,
-                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-                onPress: () async {
-                  _animationController.reverse();
+              movie.isDeleted == false
+                  ? Bubble(
+                      title: "Delete",
+                      iconColor: Colors.white,
+                      bubbleColor: Colors.lightBlue,
+                      icon: Icons.delete,
+                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      onPress: () async {
+                        _animationController.reverse();
 
-                  // TO DO: if user is an admin, they can soft delete movies
-                  var response = await _dialogService.showConfirmationDialog(
-                      title: "Confirm Deletion",
-                      cancelTitle: "No",
-                      confirmationTitle: "Yes",
-                      description:
-                          "Are you sure that you want to delete this movie?");
-                  if (response.confirmed == true) {
-                    var model = MovieViewModel();
+                        // TO DO: if user is an admin, they can soft delete movies
+                        var response = await _dialogService.showConfirmationDialog(
+                            title: "Confirm Deletion",
+                            cancelTitle: "No",
+                            confirmationTitle: "Yes",
+                            description:
+                                "Are you sure you want to delete this movie?");
+                        if (response.confirmed == true) {
+                          var model = MovieViewModel();
 
-                    _saving = true;
+                          _saving = true;
 
-                    var deleteRes =
-                        await model.deleteMovie(id: movie.movieId.toString());
-                    if (deleteRes != 0) {
-                      // show success snackbar
-                      _scaffoldKey.currentState.showSnackBar(mySnackBar(context,
-                          'Movie deleted successfully.', Colors.green));
+                          var deleteRes = await model.deleteMovie(
+                              id: movie.movieId.toString());
+                          if (deleteRes != 0) {
+                            // show success snackbar
+                            // TO DO: show snackbar; di na sya nagpapakita ever since i added the fetchMovie() line
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'Movie deleted successfully.',
+                                Colors.green));
 
-                      _saving = false;
+                            fetchMovie();
+                            _saving = false;
 
-                      // redirect to homepage
+                            // redirect to homepage if user is not an admin
 
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => HomeView(),
-                        ),
-                      );
-                    } else {
-                      _saving = false;
+                            if (currentUser.isAdmin != true) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HomeView(),
+                                ),
+                              );
+                            }
+                          } else {
+                            _saving = false;
 
-                      _scaffoldKey.currentState.showSnackBar(mySnackBar(context,
-                          'Something went wrong. Try again.', Colors.red));
-                    }
-                  }
-                },
-              ),
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'Something went wrong. Try again.',
+                                Colors.red));
+                          }
+                        }
+                      },
+                    )
+                  : Bubble(
+                      title: "Restore",
+                      iconColor: Colors.white,
+                      bubbleColor: Colors.lightBlue,
+                      icon: Icons.restore_from_trash_outlined,
+                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      onPress: () async {
+                        _animationController.reverse();
+
+                        // TO DO: if user is an admin, they can restore delete movies
+                        var response = await _dialogService.showConfirmationDialog(
+                            title: "Confirm Restoration",
+                            cancelTitle: "No",
+                            confirmationTitle: "Yes",
+                            description:
+                                "Are you sure you want to restore this movie?");
+                        if (response.confirmed == true) {
+                          var model = MovieViewModel();
+
+                          _saving = true;
+
+                          var restoreRes = await model.restoreMovie(
+                              id: movie.movieId.toString());
+                          if (restoreRes != 0) {
+                            // show success snackbar
+                            // TO DO: show snackbar; di na sya nagpapakita ever since i added the fetchMovie() line
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'This movie is now restored.',
+                                Colors.green));
+
+                            _saving = false;
+                            fetchMovie();
+                            print("is deleted: ");
+                            print(movie.isDeleted);
+
+                            // redirect to homepage
+
+                            // Navigator.pushReplacement(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) => HomeView(),
+                            //   ),
+                            // );
+                          } else {
+                            _saving = false;
+
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'Something went wrong. Try again.',
+                                Colors.red));
+                          }
+                        }
+                      },
+                    ),
             ],
 
             // animation controller
@@ -524,7 +603,7 @@ class _MovieViewState extends State<MovieView>
             // Floating Action button Icon color
             iconColor: Colors.white,
 
-            // Flaoting Action button Icon
+            // Floating Action button Icon
             iconData: Icons.settings,
             backGroundColor: Colors.lightBlue,
           ),
@@ -542,7 +621,7 @@ class _MovieViewState extends State<MovieView>
                       decoration: new BoxDecoration(
                         image: new DecorationImage(
                           image: CachedNetworkImageProvider(
-                              widget.movie.poster ?? Config.imgNotFound),
+                              movie.poster ?? Config.imgNotFound),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -578,8 +657,7 @@ class _MovieViewState extends State<MovieView>
                                     alignment: Alignment.center,
                                   ),
                                 ),
-                                imageUrl:
-                                    widget.movie.poster ?? Config.imgNotFound,
+                                imageUrl: movie.poster ?? Config.imgNotFound,
                                 width: 250,
                                 height: 350,
                                 fit: BoxFit.cover,
@@ -590,8 +668,7 @@ class _MovieViewState extends State<MovieView>
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => FullPhoto(
-                                      url: widget.movie.poster ??
-                                          Config.imgNotFound),
+                                      url: movie.poster ?? Config.imgNotFound),
                                 ),
                               );
                             },
@@ -610,13 +687,26 @@ class _MovieViewState extends State<MovieView>
                           iconSize: 30.0,
                           color: Colors.white,
                         ),
-                        IconButton(
-                          padding: EdgeInsets.only(right: 20.0),
-                          onPressed: () => print('Add to Favorites'),
-                          icon: Icon(Icons.add),
-                          iconSize: 30.0,
-                          color: Colors.white,
-                        ),
+                        // if user is an admin, replace button with a "DELETED" tag if movie is deleted, non if it isn't deleted.
+                        // if user is not an admin, show "add to favorite" button instead.
+                        currentUser.isAdmin == true
+                            ? movie.isDeleted == true
+                                ? IconButton(
+                                    padding: EdgeInsets.only(right: 20.0),
+                                    onPressed: () => print(
+                                        "This movie is currently hidden."),
+                                    icon: Icon(Icons.error_outline_outlined),
+                                    iconSize: 30.0,
+                                    color: Colors.white,
+                                  )
+                                : SizedBox()
+                            : IconButton(
+                                padding: EdgeInsets.only(right: 20.0),
+                                onPressed: () => print('Add to Favorites'),
+                                icon: Icon(Icons.add),
+                                iconSize: 30.0,
+                                color: Colors.white,
+                              ),
                       ],
                     ),
                   ],
@@ -628,7 +718,7 @@ class _MovieViewState extends State<MovieView>
                     children: <Widget>[
                       Center(
                         child: Text(
-                          widget.movie.title.toUpperCase(),
+                          movie.title.toUpperCase(),
                           style: TextStyle(
                               fontSize: 25.0,
                               fontWeight: FontWeight.bold,
@@ -636,12 +726,12 @@ class _MovieViewState extends State<MovieView>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      widget.movie.genre != null
+                      movie.genre != null
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                   Text(
-                                    widget.movie.genre.reduce(
+                                    movie.genre.reduce(
                                         (curr, next) => curr + ", " + next),
                                     style: TextStyle(
                                         fontSize: 16,
@@ -720,7 +810,7 @@ class _MovieViewState extends State<MovieView>
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 40.0),
                   child: Text(
-                    "     " + widget.movie.synopsis,
+                    "     " + movie.synopsis,
                     textAlign: TextAlign.justify,
                     style: TextStyle(
                       color: Colors.black,

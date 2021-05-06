@@ -1,20 +1,26 @@
 exports.movie = app => {
   // GET MOVIES
-  app.get('/mubidibi/movies/', async (req, res) => {
+  app.post('/mubidibi/movies/', async (req, res) => {
     app.pg.connect(onConnect)
 
     function onConnect(err, client, release) {
       if (err) return res.send(err)
+      var query = `SELECT * FROM movie `;
+
+      if (!req.body.is_admin) {
+        query = query.concat(` WHERE is_deleted = false `);
+      }
+
+      query = query.concat(`order by id`);
 
       client.query(
-        'SELECT * FROM movie',
+        query,
         function onResult(err, result) {
           release()
           if (result) res.send(JSON.stringify(result.rows));
           else res.send(err);
         }
       )
-
     }
   });
 
@@ -63,7 +69,7 @@ exports.movie = app => {
         if (!pic.file && movieData.length == 0) {
           movieData = JSON.parse(pic.fields.movie.value); // movie data sent from the frontend
         } else {
-          // TO DO: Fix ---> this currently only works if there is a poster added. However if poster is not provided, this might crash
+          // TO DO: Fix ---> this currently only works if there is a poster added. However if poster is not provided, this might crash --> (?)
           var buffer = await pic.toBuffer();
           var image = await buffer.toString('base64');
           image = image.replace(/(\r\n|\n|\r)/gm, "");
@@ -87,7 +93,6 @@ exports.movie = app => {
     }
 
     // ADD TO DB
-    // TO DO: UPLOAD MULTIPLE IMAGES FOR SCREENSHOTS
     app.pg.connect(onConnect); // DB connection
 
     // catch apostrophes to avoid errors when inserting
@@ -302,7 +307,6 @@ exports.movie = app => {
     var title = movieData.title.replace(/'/g, "''");
     var synopsis = movieData.synopsis.replace(/'/g, "''");
 
-
     // construct query 
     var query = `UPDATE movie 
     SET title = '${title}', 
@@ -429,13 +433,30 @@ exports.movie = app => {
       //   }
       // );
 
-      // updated delete: soft-delete only, set the is_deleted field to true
-      client.query('UPDATE movie SET is_deleted = true where id = $1', [parseInt(req.params.id)],
+      // updated delete: soft-delete only, sets the is_deleted field to true
+      client.query('UPDATE movie SET is_deleted = true where id = $1 RETURNING id', [parseInt(req.params.id)],
         function onResult(err, result) {
           release();
-          res.send(err, JSON.stringify)
+          res.send(err || JSON.stringify(result.rows[0].id));
         }
-      )
+      );
+    }
+  });
+
+  // RESTORE MOVIE
+  app.post('/mubidibi/movies/restore/', (req, res) => {
+    app.pg.connect(onConnect);
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err);
+
+      // restore movie: sets the is_deleted field to false;
+      client.query('UPDATE movie SET is_deleted = false where id = $1 RETURNING id', [parseInt(req.body.id)],
+        function onResult(err, result) {
+          release();
+          res.send(err || JSON.stringify(result.rows[0].id));
+        }
+      );
     }
   });
 

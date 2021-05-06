@@ -20,6 +20,7 @@ class Crew {
   final List<String> photos;
   final String description;
   final List<String> role;
+  final bool isDeleted;
 
   Crew(
       {this.crewId,
@@ -34,7 +35,8 @@ class Crew {
       this.displayPic,
       this.photos,
       this.description,
-      this.role});
+      this.role,
+      this.isDeleted});
 
   factory Crew.fromJson(Map<String, dynamic> json) {
     return Crew(
@@ -55,6 +57,7 @@ class Crew {
       role: json["role"] == null
           ? []
           : List<String>.from(json["role"].map((x) => x)),
+      isDeleted: json['is_deleted'],
     );
   }
 
@@ -72,5 +75,6 @@ class Crew {
         "photos": photos,
         "description": description,
         "role": role,
+        "is_deleted": isDeleted
       };
 }

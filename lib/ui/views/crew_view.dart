@@ -1,38 +1,59 @@
 import 'dart:ui';
-
+import 'dart:convert';
+import 'package:floating_action_bubble/floating_action_bubble.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/services/authentication_service.dart';
+import 'package:mubidibi/services/dialog_service.dart';
+import 'package:mubidibi/ui/shared/shared_styles.dart';
+import 'package:mubidibi/ui/views/add_crew.dart';
+import 'package:mubidibi/ui/views/home_view.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:provider_architecture/viewmodel_provider.dart';
 import 'package:mubidibi/globals.dart' as Config;
 import 'full_photo.dart';
 
+// TO DO: instead of passing the crew data, use the API call to get crew data by ID
 class CrewView extends StatefulWidget {
-  final Crew crew;
+  final String crewId;
 
-  CrewView({this.crew});
+  CrewView({this.crewId});
 
   @override
-  _CrewViewState createState() => _CrewViewState(crew);
+  _CrewViewState createState() => _CrewViewState(crewId);
 }
 
 class _CrewViewState extends State<CrewView>
     with SingleTickerProviderStateMixin {
-  final Crew crew;
+  final String crewId;
 
-  _CrewViewState(this.crew);
+  _CrewViewState(this.crewId);
 
+  Crew crew;
+  bool _saving = false;
   List<List<Crew>> crewEdit;
   List<String> roles = [];
+  final AuthenticationService _authenticationService =
+      locator<AuthenticationService>();
+  final DialogService _dialogService = locator<DialogService>();
+  var currentUser;
+  Animation<double> _animation;
+  AnimationController _animationController;
 
   void fetchCrew() async {
     var model = CrewViewModel();
     crewEdit = await model.getAllCrewTypes();
+    var c = await model.getOneCrew(crewId: crewId);
 
     setState(() {
+      crew = c;
+
       // TODO: implement initState
       for (var i = 0; i < crewEdit.length; i++) {
         for (var type in crewEdit[i]) {
@@ -57,6 +78,16 @@ class _CrewViewState extends State<CrewView>
   @override
   void initState() {
     fetchCrew();
+    currentUser = _authenticationService.currentUser;
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 260),
+    );
+
+    final curvedAnimation =
+        CurvedAnimation(curve: Curves.easeInOut, parent: _animationController);
+    _animation = Tween<double>(begin: 0, end: 1).animate(curvedAnimation);
     super.initState();
   }
 
@@ -82,8 +113,8 @@ class _CrewViewState extends State<CrewView>
           children: crew.photos != null
               ? crew.photos.map((pic) {
                   return Container(
-                    height: 250,
-                    width: 230,
+                    height: 150,
+                    width: 120,
                     margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                     decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(5),
@@ -121,14 +152,176 @@ class _CrewViewState extends State<CrewView>
     MediaQueryData queryData;
     queryData = MediaQuery.of(context);
 
+    final _scaffoldKey = GlobalKey<ScaffoldState>();
+
+    if (crew == null) return Center(child: CircularProgressIndicator());
+
     return ViewModelProvider.withConsumer(
       viewModel: CrewViewModel(),
       builder: (context, model, child) => Scaffold(
+        key: _scaffoldKey,
         appBar: AppBar(
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
         ),
         extendBodyBehindAppBar: true,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        // TO DO: hide button when scrolling ???
+        floatingActionButton: Visibility(
+          visible: currentUser.isAdmin,
+          child: FloatingActionBubble(
+            // Menu items
+            items: <Bubble>[
+              // Floating action menu item
+              Bubble(
+                title: "Edit",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.edit_outlined,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddCrew(crew: crew),
+                    ),
+                  );
+                  _animationController.reverse();
+                },
+              ),
+              //Floating action menu item
+              crew.isDeleted == false
+                  ? Bubble(
+                      title: "Delete",
+                      iconColor: Colors.white,
+                      bubbleColor: Colors.lightBlue,
+                      icon: Icons.delete,
+                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      onPress: () async {
+                        _animationController.reverse();
+
+                        // TO DO: if user is an admin, they can soft delete crew
+                        var response =
+                            await _dialogService.showConfirmationDialog(
+                                title: "Confirm Deletion",
+                                cancelTitle: "No",
+                                confirmationTitle: "Yes",
+                                description:
+                                    "Are you sure you want to delete this crew?");
+                        if (response.confirmed == true) {
+                          var model = CrewViewModel();
+
+                          _saving = true;
+
+                          var deleteRes = await model.deleteCrew(
+                              id: crew.crewId.toString());
+                          if (deleteRes != 0) {
+                            // show success snackbar
+                            // TO DO: show snackbar; di na sya nagpapakita ever since i added the fetchCrew() line
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'Crew deleted successfully.',
+                                Colors.green));
+
+                            fetchCrew();
+                            _saving = false;
+
+                            // redirect to homepage if user is not an admin
+
+                            if (currentUser.isAdmin != true) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HomeView(),
+                                ),
+                              );
+                            }
+                          } else {
+                            _saving = false;
+
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'Something went wrong. Try again.',
+                                Colors.red));
+                          }
+                        }
+                      },
+                    )
+                  : Bubble(
+                      title: "Restore",
+                      iconColor: Colors.white,
+                      bubbleColor: Colors.lightBlue,
+                      icon: Icons.restore_from_trash_outlined,
+                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      onPress: () async {
+                        _animationController.reverse();
+
+                        // TO DO: if user is an admin, they can restore delete movies
+                        var response = await _dialogService.showConfirmationDialog(
+                            title: "Confirm Restoration",
+                            cancelTitle: "No",
+                            confirmationTitle: "Yes",
+                            description:
+                                "Are you sure you want to restore this movie?");
+                        if (response.confirmed == true) {
+                          var model = CrewViewModel();
+
+                          _saving = true;
+
+                          var restoreRes = await model.restoreCrew(
+                              id: crew.crewId.toString());
+                          if (restoreRes != 0) {
+                            // show success snackbar
+                            // TO DO: show snackbar; di na sya nagpapakita ever since i added the fetchMovie() line
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'This movie is now restored.',
+                                Colors.green));
+
+                            _saving = false;
+                            fetchCrew();
+                            print("is deleted: ");
+                            print(crew.isDeleted);
+
+                            // redirect to homepage
+
+                            // Navigator.pushReplacement(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) => HomeView(),
+                            //   ),
+                            // );
+                          } else {
+                            _saving = false;
+
+                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                                context,
+                                'Something went wrong. Try again.',
+                                Colors.red));
+                          }
+                        }
+                      },
+                    ),
+            ],
+
+            // animation controller
+            animation: _animation,
+
+            // On pressed change animation state
+            onPress: () => {
+              _animationController.isCompleted
+                  ? _animationController.reverse()
+                  : _animationController.forward(),
+            },
+
+            // Floating Action button Icon color
+            iconColor: Colors.white,
+
+            // Floating Action button Icon
+            iconData: Icons.settings,
+            backGroundColor: Colors.lightBlue,
+          ),
+        ),
         body: ListView(
           children: <Widget>[
             SizedBox(height: 10),
@@ -222,7 +415,7 @@ class _CrewViewState extends State<CrewView>
                             alignment: Alignment.center,
                           ),
                         ),
-                        imageUrl: widget.crew.displayPic ?? Config.userNotFound,
+                        imageUrl: crew.displayPic ?? Config.userNotFound,
                         width: 150,
                         height: 200,
                         alignment: Alignment.center,
@@ -234,8 +427,7 @@ class _CrewViewState extends State<CrewView>
                         context,
                         MaterialPageRoute(
                           builder: (context) => FullPhoto(
-                              url: widget.crew.displayPic ??
-                                  Config.userNotFound),
+                              url: crew.displayPic ?? Config.userNotFound),
                         ),
                       );
                     },

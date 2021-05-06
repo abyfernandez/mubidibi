@@ -1,23 +1,40 @@
 import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
+import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
+import '../locator.dart';
 import 'base_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
-import 'package:mubidibi/ui/shared/list_items.dart';
 import 'package:dio/dio.dart';
 
 class MovieViewModel extends BaseModel {
   final List<Movie> movies = [];
+  final AuthenticationService _authenticationService =
+      locator<AuthenticationService>();
+  var currentUser;
 
   // Function: GET ALL MOVIES
   Future<List<Movie>> getAllMovies() async {
+    currentUser = _authenticationService.currentUser;
+    print(currentUser.isAdmin);
+
     setBusy(true);
-    final response = await http.get(Config.api + 'movies/');
+    // add filter when retrieving data from the database
+    // TO DO: send the condition through body, not parameters. fix this when you wake up
+    var response;
+
+    // send API Request
+    response = await http.post(Config.api + 'movies/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{"is_admin": currentUser.isAdmin}));
+
     setBusy(false);
     if (response.statusCode == 200) {
       movies.addAll(movieFromJson(response.body));
@@ -60,7 +77,7 @@ class MovieViewModel extends BaseModel {
     File poster,
     String imageURI,
     List screenshots,
-    List<String> genre, // previously List<int>
+    List<String> genre,
     List<int> directors,
     List<int> writers,
     List<int> actors,
@@ -108,8 +125,7 @@ class MovieViewModel extends BaseModel {
         'synopsis': synopsis,
         'release_date': releaseDate,
         'running_time': runtime,
-        'genre':
-            genre, // previously filmGenres nung List<int> pa yung pinapass as parameter
+        'genre': genre,
         'directors': directors,
         'writers': writers,
         'added_by': addedBy,
@@ -153,6 +169,21 @@ class MovieViewModel extends BaseModel {
     var uri = Uri.http(Config.apiNoHTTP, '/mubidibi/movies/$id', queryParams);
 
     final response = await http.delete(uri);
+
+    if (response.statusCode == 200) {
+      return (json.decode(response.body));
+    }
+    return 0;
+  }
+
+  // RESTORE MOVIE
+  Future<int> restoreMovie({@required String id}) async {
+    // send API Request
+    var response = await http.post(Config.api + "movies/restore/",
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{"id": id}));
 
     if (response.statusCode == 200) {
       return (json.decode(response.body));

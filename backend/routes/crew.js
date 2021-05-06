@@ -71,4 +71,220 @@ exports.crew = app => {
       res.send(err || JSON.stringify(crew));
     }
   });
+
+  // GET ONE CREW
+  app.get('/mubidibi/one-crew/:id', (req, res) => {
+    app.pg.connect(onConnect)
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err)
+
+      client.query(
+        'SELECT * FROM crew where id = $1', [parseInt(req.params.id)],
+        function onResult(err, result) {
+          release()
+          if (result) res.send(JSON.stringify(result.rows[0]));
+          else res.send(err);
+        }
+      )
+    }
+  });
+
+  // ADD CREW
+  app.post('/mubidibi/add-crew/', async (req, res) => {
+    // call function add_crew
+
+    // upload image to cloudinary 
+    // TO DO: create centralized cloudinary (for both mobile and web use)
+    var cloudinary = require('cloudinary');
+
+    cloudinary.config({
+      cloud_name: "mubidibi-sp",
+      api_key: '385294841727974',
+      api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
+    });
+
+    // CREW PHOTOS AND DISPLAY PIC UPLOAD   -- displayPic first element in the array
+
+    var images = [];
+    var crewData = [];    // crew data sent from the frontend
+    const pics = await req.parts();
+
+    if (pics != null) {
+      for await (const pic of pics) {
+
+        if (!pic.file && crewData.length == 0) {
+          crewData = JSON.parse(pic.fields.crew.value); // crew data sent from the frontend
+        } else {
+          // TO DO: Fix ---> this currently only works if there is a displayPic added. However if displayPic is not provided, this might crash --> (?)
+          var buffer = await pic.toBuffer();
+          var image = await buffer.toString('base64');
+          image = image.replace(/(\r\n|\n|\r)/gm, "");
+
+          // convert base64 to data uri
+          var imageURI = `data:${pic.mimetype};base64,${image}`;
+
+          var upload = await cloudinary.v2.uploader.upload(imageURI,
+            {
+              folder: "folder-name",
+            },
+            async function (err, result) {
+              if (err) return err;
+              else {
+                images.push(result.url);
+              }
+            }
+          );
+        }
+      }
+    }
+
+    // ADD TO DB
+    app.pg.connect(onConnect); // DB connection
+
+    // catch apostrophes to avoid errors when inserting
+    var first_name = crewData.first_name.replace(/'/g, "''");
+    var middle_name = crewData.middle_name.replace(/'/g, "''");
+    var last_name = crewData.last_name.replace(/'/g, "''");
+    var suffix = crewData.suffix.replace(/'/g, "''");
+    var birthplace = crewData.birthplace.replace(/'/g, "''");
+    var description = crewData.description.replace(/'/g, "''");
+
+    console.log(crewData);
+    // -- select add_crew (
+    //   --   _first_name => 'Joy',
+    //   --   _last_name => 'Viado',
+    //   --   _birthday => '1959-04-10',
+    //   --   _birthplace => 'Manila, Philippines',
+    //   --   _display_pic => 'https://res.cloudinary.com/mubidibi-sp/image/upload/v1617670644/crew/Joy%20Viado/undefined_tyiaq3.jpg',
+    //   --   _photos => array ['https://res.cloudinary.com/mubidibi-sp/image/upload/v1617670652/crew/Joy%20Viado/undefined_vfm6di.jpg', 'https://res.cloudinary.com/mubidibi-sp/image/upload/v1617670661/crew/Joy%20Viado/images_zvuprr.jpg'],
+    //   --   _description => 'Joy Viado acted in theater plays, horror, drama, romance and comedy films. She also appeared in several television shows, particularly from ABS-CBN.',
+    //   --   _added_by => '2015-66134',
+    //   --   _is_alive => false
+    //   -- );
+
+    var query = `select add_crew (
+    _first_name => '${first_name}',
+    _last_name => '${last_name}',
+    `;
+
+    if (middle_name != "" && middle_name != null) {
+      query = query.concat(`_middle_name => '${middle_name}', 
+      `);
+    }
+
+    if (suffix != "" && suffix != null) {
+      query = query.concat(`_suffix => '${suffix}', 
+      `);
+    }
+
+    if (crewData.birthday != "" && crewData.birthday != null) {
+      query = query.concat(`_birthday => '${crewData.birthday}', 
+      `);
+    }
+
+    if (birthplace != "" && birthplace != null) {
+      query = query.concat(`_birthplace => '${birthplace}', 
+      `);
+    }
+
+    if (description != "" && description != null) {
+      query = query.concat(`_description => '${description}', 
+      `);
+    }
+
+    if (crewData.is_alive != null) {
+      query = query.concat(`_is_alive => ${crewData.is_alive}, 
+      `);
+    }
+
+    if (crewData.deathdate != "" && crewData.deathdate != null) {
+      query = query.concat(`_deathdate => '${crewData.deathdate}', 
+      `);
+    }
+
+    // append displayPic if provided by user 
+    if (crewData.displayPic == true && images.length != 0) {
+      query = query.concat(`_display_pic => '${images[0]}', 
+      `)
+    }
+
+    // append photos if provided by user 
+    if (images.length > 1 && crewData.displayPic == true) {  // both displayPic and photos exist
+      query = query.concat(`_photos => array [`)
+      images.forEach(pic => {
+        if (pic != images[0]) {
+          query = query.concat(`'`, pic, `'`)
+        }
+        if (pic != images[images.length - 1] && pic != images[0]) {
+          query = query.concat(',')
+        }
+      });
+      query = query.concat(`], 
+      `)
+    } else if (images.length > 0 && crewData.displayPic == false) {  // only photos were provided
+      query = query.concat(`_photos => array [`)
+      images.forEach(pic => {
+        query = query.concat(`'`, pic, `'`)
+        if (pic != images[images.length - 1]) {
+          query = query.concat(',')
+        }
+      });
+      query = query.concat(`], 
+      `)
+    }
+
+    query = query.concat(`_added_by => '${crewData.added_by}'
+    );`
+    );
+
+    async function onConnect(err, client, release) {
+      if (err) return res.send(err);
+
+      console.log(query);
+      // TO DO: Add awards
+      var result = await client.query(query).then((result) => {
+        const id = result.rows[0].add_crew
+        // awards here 
+        return result;
+
+      });
+      release();
+      res.send(err || JSON.stringify(result.rows[0].add_crew));
+    }
+  });
+
+  // DELETE MOVIE
+  app.delete('/mubidibi/delete-crew/:id', (req, res) => {
+    app.pg.connect(onConnect);
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err);
+
+      // soft-delete only, sets the is_deleted field to true
+      client.query('UPDATE crew SET is_deleted = true where id = $1 RETURNING id', [parseInt(req.params.id)],
+        function onResult(err, result) {
+          release();
+          res.send(err || JSON.stringify(result.rows[0].id));
+        }
+      );
+    }
+  });
+
+  // RESTORE MOVIE
+  app.post('/mubidibi/crew/restore/', (req, res) => {
+    app.pg.connect(onConnect);
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err);
+
+      // restore movie: sets the is_deleted field to false;
+      client.query('UPDATE crew SET is_deleted = false where id = $1 RETURNING id', [parseInt(req.body.id)],
+        function onResult(err, result) {
+          release();
+          res.send(err || JSON.stringify(result.rows[0].id));
+        }
+      );
+    }
+  });
 }

@@ -55,7 +55,7 @@ class ContentList extends StatelessWidget {
                     seeAll,
                     style: const TextStyle(
                       color: Colors.black,
-                      fontSize: 20.0,
+                      fontSize: 16.0,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -80,7 +80,8 @@ class ContentList extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => MovieView(movie: contentList[index]),
+                        builder: (_) => MovieView(
+                            movieId: contentList[index].movieId.toString()),
                       ),
                     ),
                   },

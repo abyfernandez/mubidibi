@@ -144,7 +144,7 @@ class AuthenticationService {
 
       await _populateCurrentUser(currentUser);
 
-      print(currentUser);
+      print("currentuser: $currentUser");
 
       // await _firestoreService.createUser(User(
       //     uid: currentUser.uid,

@@ -110,7 +110,7 @@ class _AddMovieState extends State<AddMovie> {
   // STEPPER TITLES
   int currentStep = 0;
   List<String> stepperTitle = [
-    "Title, Release Date, Running Time, and Synopsis",
+    "Basic Details",
     "Poster and Screenshots",
     "Crew Member/s",
     "Genre/s",
@@ -137,7 +137,7 @@ class _AddMovieState extends State<AddMovie> {
     }).toList();
   }
 
-  // Funciton: calls viewmodel's getAllCrew method
+  // Function: calls viewmodel's getAllCrew method
   void fetchCrew() async {
     var model = CrewViewModel();
 
@@ -309,14 +309,13 @@ class _AddMovieState extends State<AddMovie> {
 
   @override
   Widget build(BuildContext context) {
-    print(directors.isNotEmpty ? "D not" : "D empty");
-    print(writers.isNotEmpty ? "W not" : "W empty");
-    print(actors.isNotEmpty ? "A not" : "A empty");
-
     var currentUser = _authenticationService.currentUser;
 
     final _scaffoldKey = GlobalKey<ScaffoldState>();
-
+    // TO DO: add crew (redirect to add crew form) and then go back to add movie form
+    // TO DO: check if poster and screenshots are actually saved in cloudinary
+    // TO DO: add awards in stepper
+    // TO DO: Check the &&  and || conditions if they're correct
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
       onModelReady: (model) async {
@@ -333,8 +332,6 @@ class _AddMovieState extends State<AddMovie> {
         // TO DO: IMAGE EDIT
         imageURI = movie?.poster ?? '';
 
-        // GENRES
-        // filmGenres = genreIndices(movie?.genre ?? []); // TO DO: fix this
         // CREW
         directors = crewEdit != null
             ? crewEdit.isNotEmpty
@@ -373,11 +370,7 @@ class _AddMovieState extends State<AddMovie> {
             style: TextStyle(color: Colors.black),
           ),
         ),
-        body:
-            // ModalProgressHUD(
-            //   inAsyncCall: _saving,
-            //   child:
-            AnnotatedRegion<SystemUiOverlayStyle>(
+        body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
@@ -497,8 +490,8 @@ class _AddMovieState extends State<AddMovie> {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            MovieView(movie: movie),
+                                        builder: (context) => MovieView(
+                                            movieId: movie.movieId.toString()),
                                       ),
                                     );
                                   }
@@ -545,7 +538,6 @@ class _AddMovieState extends State<AddMovie> {
             ),
           ),
         ),
-        // ),
       ),
     );
   }
@@ -559,7 +551,8 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(height: 15),
               // MOVIE TITLE
               Container(
-                color: Color.fromRGBO(240, 240, 240, 1),
+                decoration:
+                    BoxDecoration(borderRadius: BorderRadius.circular(10)),
                 child: TextFormField(
                   autofocus: true,
                   focusNode: titleNode,
@@ -575,6 +568,8 @@ class _AddMovieState extends State<AddMovie> {
                   decoration: InputDecoration(
                     labelText: "Pamagat *",
                     contentPadding: EdgeInsets.all(10),
+                    filled: true,
+                    fillColor: Color.fromRGBO(240, 240, 240, 1),
                   ),
                   validator: (value) {
                     if (value.isEmpty || value == null) {
@@ -655,7 +650,8 @@ class _AddMovieState extends State<AddMovie> {
                 height: 15,
               ),
               Container(
-                color: Color.fromRGBO(240, 240, 240, 1),
+                decoration:
+                    BoxDecoration(borderRadius: BorderRadius.circular(10)),
                 child: TextFormField(
                   focusNode: synopsisNode,
                   controller: synopsisController,
@@ -668,6 +664,8 @@ class _AddMovieState extends State<AddMovie> {
                   decoration: InputDecoration(
                     labelText: "Buod *",
                     contentPadding: EdgeInsets.all(10),
+                    filled: true,
+                    fillColor: Color.fromRGBO(240, 240, 240, 1),
                   ),
                   validator: (value) {
                     if (value.isEmpty || value == null) {
@@ -1673,6 +1671,7 @@ class ActorWidgetState extends State<ActorWidget> {
             color: Color.fromRGBO(240, 240, 240, 1),
             borderRadius: BorderRadius.circular(5),
           ),
+          // TO DO: make every widget collapsible to reduce space
           child: ChipsInput(
             maxChips: 1,
             keyboardAppearance: Brightness.dark,
@@ -1804,7 +1803,6 @@ class ActorWidgetState extends State<ActorWidget> {
         //         print('ROLE: $roles');
         //       }),
         // ),
-
         Container(
           color: Color.fromRGBO(240, 240, 240, 1),
           child: TestChipsInput(

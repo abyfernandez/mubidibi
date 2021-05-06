@@ -304,8 +304,9 @@ class _SearchViewState extends State<SearchView> {
                                           Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (_) =>
-                                                    MovieView(movie: movie),
+                                                builder: (_) => MovieView(
+                                                    movieId: movie.movieId
+                                                        .toString()),
                                               ));
                                         },
                                       ),
@@ -402,7 +403,7 @@ class _SearchViewState extends State<SearchView> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) => CrewView(
-                                                  crew: c,
+                                                  crewId: c.crewId.toString(),
                                                 ),
                                               ));
                                         },
