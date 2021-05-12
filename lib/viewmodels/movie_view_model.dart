@@ -21,11 +21,9 @@ class MovieViewModel extends BaseModel {
   // Function: GET ALL MOVIES
   Future<List<Movie>> getAllMovies() async {
     currentUser = _authenticationService.currentUser;
-    print(currentUser.isAdmin);
 
     setBusy(true);
-    // add filter when retrieving data from the database
-    // TO DO: send the condition through body, not parameters. fix this when you wake up
+    // add filter when retrieving data from the database ???? (filters)
     var response;
 
     // send API Request
@@ -33,7 +31,9 @@ class MovieViewModel extends BaseModel {
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(<String, dynamic>{"is_admin": currentUser.isAdmin}));
+        body: jsonEncode(<String, dynamic>{
+          "is_admin": currentUser != null ? currentUser.isAdmin : "0"
+        }));
 
     setBusy(false);
     if (response.statusCode == 200) {

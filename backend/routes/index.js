@@ -18,15 +18,24 @@ exports.routes = app => {
     }
   });
 
+
+  var cloudinary = require('cloudinary');
+
+  cloudinary.config({
+    cloud_name: "mubidibi-sp",
+    api_key: '385294841727974',
+    api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
+  });
+
   // Call User Routes 
   // user(app);
 
   // Call Movie Routes
-  movie(app);
+  movie(app, cloudinary);
   // Call Crew Routes
-  crew(app);
+  crew(app, cloudinary);
   // Call User Routes
-  user(app);
+  user(app, cloudinary);
   // Call Review Routes
-  review(app);
+  review(app, cloudinary);
 }

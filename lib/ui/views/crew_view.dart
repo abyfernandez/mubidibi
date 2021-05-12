@@ -37,8 +37,6 @@ class _CrewViewState extends State<CrewView>
 
   Crew crew;
   bool _saving = false;
-  List<List<Crew>> crewEdit;
-  List<String> roles = [];
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
   final DialogService _dialogService = locator<DialogService>();
@@ -48,30 +46,10 @@ class _CrewViewState extends State<CrewView>
 
   void fetchCrew() async {
     var model = CrewViewModel();
-    crewEdit = await model.getAllCrewTypes();
     var c = await model.getOneCrew(crewId: crewId);
 
     setState(() {
       crew = c;
-
-      // TODO: implement initState
-      for (var i = 0; i < crewEdit.length; i++) {
-        for (var type in crewEdit[i]) {
-          if (crew.crewId == type.crewId) {
-            switch (i) {
-              case 0:
-                roles.add('Direktor');
-                break;
-              case 1:
-                roles.add('Manunulat');
-                break;
-              case 2:
-                roles.add('Aktor');
-                break;
-            }
-          }
-        }
-      }
     });
   }
 
@@ -91,15 +69,15 @@ class _CrewViewState extends State<CrewView>
     super.initState();
   }
 
-  Widget displayRoles() {
+  Widget displayTypes() {
     return Wrap(
-        children: roles != null
-            ? roles.map((role) {
+        children: crew.type != null
+            ? crew.type.map((type) {
                 return Container(
                     margin: EdgeInsets.only(right: 5),
                     child: Chip(
                       labelPadding: EdgeInsets.only(left: 2, right: 2),
-                      label: Text(role, style: TextStyle(fontSize: 12)),
+                      label: Text(type, style: TextStyle(fontSize: 12)),
                       backgroundColor: Color.fromRGBO(176, 224, 230, 1),
                     ));
               }).toList()
@@ -110,7 +88,7 @@ class _CrewViewState extends State<CrewView>
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-          children: crew.photos != null
+          children: crew.photos.isNotEmpty
               ? crew.photos.map((pic) {
                   return Container(
                     height: 150,
@@ -168,7 +146,9 @@ class _CrewViewState extends State<CrewView>
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         // TO DO: hide button when scrolling ???
         floatingActionButton: Visibility(
-          visible: currentUser.isAdmin,
+          visible: currentUser != null
+              ? currentUser.isAdmin
+              : false, // if current user is a guest user, do not show the FAB
           child: FloatingActionBubble(
             // Menu items
             items: <Bubble>[
@@ -228,7 +208,8 @@ class _CrewViewState extends State<CrewView>
 
                             // redirect to homepage if user is not an admin
 
-                            if (currentUser.isAdmin != true) {
+                            if (currentUser != null &&
+                                currentUser.isAdmin != true) {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -349,8 +330,8 @@ class _CrewViewState extends State<CrewView>
                         ),
                       ),
 
-                      // display( roles (crew types)
-                      displayRoles(),
+                      // display type (crew types)
+                      displayTypes(),
                       SizedBox(height: 10),
                       Wrap(
                         direction: Axis.vertical,
@@ -466,7 +447,7 @@ class _CrewViewState extends State<CrewView>
                           ),
                         ),
                   SizedBox(height: 10),
-                  crew.photos != null
+                  crew.photos.isNotEmpty
                       ? Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -481,9 +462,9 @@ class _CrewViewState extends State<CrewView>
                                       fontWeight: FontWeight.bold),
                                 ),
                                 // TO DO: MAKE A PAGE TO VIEW ALL PHOTOS / IMAGE VIEWER (FOR MULTIPLE IMAGES)
-                                crew.photos.length != 1
+                                crew.photos.length >= 4
                                     ? GestureDetector(
-                                        child: Text('See All',
+                                        child: Text('Tingnan Lahat',
                                             style: TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold)),

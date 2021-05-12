@@ -26,8 +26,6 @@ import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
 import 'dart:convert';
 
-// TO DO: FIX UI (e.g. INPUT FORM FIELDS)
-
 // FOR DYNAMIC WIDGET ACTOR
 List<ActorWidget> dynamicList = [];
 List<int> actors = [];
@@ -354,6 +352,8 @@ class _AddMovieState extends State<AddMovie> {
           leading: GestureDetector(
             child: Icon(Icons.arrow_back),
             onTap: () async {
+              FocusScope.of(context).unfocus();
+
               var response = await _dialogService.showConfirmationDialog(
                   title: "Confirm cancellation",
                   cancelTitle: "No",
@@ -366,7 +366,7 @@ class _AddMovieState extends State<AddMovie> {
           ),
           backgroundColor: Colors.white,
           title: Text(
-            "Add Movie",
+            "Magdagdag ng Pelikula",
             style: TextStyle(color: Colors.black),
           ),
         ),
@@ -1156,39 +1156,6 @@ class _AddMovieState extends State<AddMovie> {
                               ],
                             ))
                         .toList(),
-
-                    // itemCount: dynamicList.length,
-                    // itemBuilder: (_, index) {
-                    // print(dynamicList.length);
-
-                    // final item = dynamicList[index];
-                    // return dynamicList[index] != null
-                    //     ? Column(key: ObjectKey(item), children: [
-                    //         dynamicList[index],
-                    //         Container(
-                    //           alignment: Alignment.centerRight,
-                    //           child: FlatButton(
-                    //             color: Color.fromRGBO(240, 240, 240, 1),
-                    //             child: Text("Remove"),
-                    //             onPressed: () {
-                    //               setState(() {
-                    //                 dynamicList.removeAt(index);
-                    //                 dynamicList.insert(index, null);
-
-                    //                 // "remove" from actor and roles
-                    //                 actors[index] = 0;
-                    //                 roles[index] = [];
-                    //               });
-                    //             },
-                    //           ),
-                    //         ),
-                    //         SizedBox(
-                    //           height: 10,
-                    //         ),
-                    //         Divider(height: 1, thickness: 2),
-                    //       ])
-                    //     : Container();
-                    // }
                   ),
                 ],
               ),
@@ -1230,54 +1197,6 @@ class _AddMovieState extends State<AddMovie> {
                 ),
                 child: Column(
                   children: <Widget>[
-                    // CSearchableDropdown.multiple(
-                    //   selectedValueWidgetFn: (item) => InputChip(
-                    //     label: Text(
-                    //       item,
-                    //       style: TextStyle(
-                    //         fontSize: 14,
-                    //       ),
-                    //     ),
-                    //     backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-                    //     deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-                    //     padding: EdgeInsets.all(7),
-                    //     onPressed: () {},
-                    //     onDeleted: () {
-                    //       setState(() {
-                    //         var index = genreItems
-                    //             .indexWhere((genre) => genre.value == item);
-                    //         filmGenres.removeWhere((item) => item == index);
-                    //       });
-                    //     },
-                    //   ),
-                    //   key: UniqueKey(),
-                    //   style: TextStyle(
-                    //     color: Colors.black,
-                    //   ),
-                    //   underline: Container(),
-                    //   items: genreItems,
-                    //   selectedItems: filmGenres,
-                    //   hint: Padding(
-                    //     padding: const EdgeInsets.all(12.0),
-                    //     child: Text("Genre *",
-                    //         style:
-                    //             TextStyle(color: Colors.black, fontSize: 16)),
-                    //   ),
-                    //   searchHint: Text("Pumili ng genre",
-                    //       style: TextStyle(color: Colors.white)),
-                    //   onChanged: (value) {
-                    //     setState(() {
-                    //       filmGenres = value;
-                    //     });
-                    //   },
-                    //   closeButton: (filmGenres) {
-                    //     return (filmGenres.isNotEmpty
-                    //         ? "I-save ang ${filmGenres.length == 1 ? '"' + genreItems[filmGenres.first].value.toString() + '"' : '(' + filmGenres.length.toString() + ')'}"
-                    //         : "Wag nalang");
-                    //   },
-                    //   isExpanded: true,
-                    // ),
-
                     Container(
                       decoration: BoxDecoration(
                         color: Color.fromRGBO(240, 240, 240, 1),
@@ -1322,7 +1241,6 @@ class _AddMovieState extends State<AddMovie> {
                           setState(() {
                             filmGenres = categories;
                           });
-                          print(filmGenres);
                         },
                         chipBuilder: (context, state, c) {
                           return InputChip(
@@ -1349,7 +1267,7 @@ class _AddMovieState extends State<AddMovie> {
             ],
           ),
         );
-      case 4:
+      case 4: // review
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
@@ -1702,8 +1620,6 @@ class ActorWidgetState extends State<ActorWidget> {
               return widget.crewList;
             },
             onChanged: (data) {
-              print(dynamicList.length.toString());
-              print(actors.length.toString());
               setState(() {
                 if (dynamicList.length > actors.length) {
                   // actor is not yet added to list
@@ -1739,70 +1655,9 @@ class ActorWidgetState extends State<ActorWidget> {
             },
           ),
         ),
-
-        // Container(
-        //   decoration: BoxDecoration(
-        //     color: Color.fromRGBO(240, 240, 240, 1),
-        //     borderRadius: BorderRadius.circular(5),
-        //   ),
-        //   child: CSearchableDropdown.single(
-        //     selectedValueWidgetFn: (item) => Chip(
-        //       label: Text(
-        //         item,
-        //         style: TextStyle(
-        //           fontSize: 14,
-        //         ),
-        //       ),
-        //       backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-        //       deleteIconColor: Color.fromRGBO(150, 150, 150, 1),
-        //       padding: EdgeInsets.all(7),
-        //     ),
-        //     style: TextStyle(
-        //       color: Colors.black,
-        //     ),
-        //     menuBackgroundColor: Colors.white,
-        //     underline: Container(),
-        //     items: widget.crewItems,
-        //     value: selectedValue,
-        //     hint: Padding(
-        //       padding: const EdgeInsets.all(12.0),
-        //       child: Text("Aktor",
-        //           style: TextStyle(color: Colors.black, fontSize: 16)),
-        //     ),
-        //     searchHint:
-        //         Text("Search Any", style: TextStyle(color: Colors.white)),
-        //     onChanged: (value) {
-        //       var index =
-        //           widget.crewItems.indexWhere((actor) => actor.value == value);
-        //       var id = widget.crewList[index].crewId;
-
-        //       if (widget.size > actors.length || actors.length == 0) {
-        //         // if actors list is empty or the widget's index is larger than the size of the actors list, it means that the data hasnt been added to the list
-        //         actors.add(id);
-        //       } else {
-        //         actors[widget.size - 1] =
-        //             id; // replace the value in the list if it already exists.
-        //       }
-        //     },
-        //     isExpanded: true,
-        //   ),
-        // ),
         SizedBox(
           height: 15,
         ),
-        // Container(
-        //   color: Color.fromRGBO(240, 240, 240, 1),
-        //   child: CustomChipsInput(
-        //       key: ObjectKey(widget.size),
-        //       onChanged: (List<String> ganap) {
-        //         if (widget.size > roles.length || roles.length == 0) {
-        //           roles.add(ganap); // add
-        //         } else {
-        //           roles[widget.size - 1] = ganap; // replace
-        //         }
-        //         print('ROLE: $roles');
-        //       }),
-        // ),
         Container(
           color: Color.fromRGBO(240, 240, 240, 1),
           child: TestChipsInput(
@@ -1823,7 +1678,6 @@ class ActorWidgetState extends State<ActorWidget> {
             },
             submittedText: temp != null ? temp.trimLeft().trimRight() : "",
             onChanged: (data) {
-              print("roles: $data");
               List<String> tempList =
                   data.map((role) => role.toString()).toList();
 
@@ -1832,7 +1686,6 @@ class ActorWidgetState extends State<ActorWidget> {
               });
             },
             chipBuilder: (context, state, c) {
-              print(state);
               return InputChip(
                 key: ObjectKey(c),
                 label: Text(c),
@@ -1848,11 +1701,6 @@ class ActorWidgetState extends State<ActorWidget> {
         SizedBox(height: 5),
         Text("Pindutin ang 'ENTER' para i-save ang role."),
         SizedBox(height: 15),
-        Wrap(
-          children: roles.map((r) {
-            return Text(r.toString());
-          }).toList(),
-        ),
       ]),
     );
   }

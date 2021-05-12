@@ -1,5 +1,7 @@
 exports.crew = app => {
 
+  // TO DO: Remove cloudinary declaration in this file and check whether the app will still work
+
   // GET CREW
   app.get('/mubidibi/crew/', (req, res) => {
     app.pg.connect(onConnect)
@@ -17,7 +19,7 @@ exports.crew = app => {
     }
   });
 
-  // GET ALL CREW
+  // GET ALL CREW -- // TO DO: might get deprecated
   app.get('/mubidibi/all-crew/', (req, res) => {
     app.pg.connect(onConnect)
 
@@ -76,14 +78,27 @@ exports.crew = app => {
   app.get('/mubidibi/one-crew/:id', (req, res) => {
     app.pg.connect(onConnect)
 
-    function onConnect(err, client, release) {
+    async function onConnect(err, client, release) {
       if (err) return res.send(err)
 
       client.query(
         'SELECT * FROM crew where id = $1', [parseInt(req.params.id)],
-        function onResult(err, result) {
+        async function onResult(err, result) {
+          var crew = result.rows[0];
+          var type = [];
+
+          var director = await client.query(`select exists(select 1 from movie_director where director_id=$1)`, [parseInt(req.params.id)]);
+          var writer = await client.query(`select exists(select 1 from movie_writer where writer_id=$1)`, [parseInt(req.params.id)]);
+          var actor = await client.query(`select exists(select 1 from movie_actor where actor_id=$1)`, [parseInt(req.params.id)]);
+
+          if (director.rows[0].exists) type.push("Direktor");
+          if (writer.rows[0].exists) type.push("Manunulat");
+          if (actor.rows[0].exists) type.push("Aktor");
+
+          crew['type'] = type;
+
           release()
-          if (result) res.send(JSON.stringify(result.rows[0]));
+          if (result) res.send(JSON.stringify(crew));
           else res.send(err);
         }
       )

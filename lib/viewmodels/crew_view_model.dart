@@ -23,28 +23,6 @@ class CrewViewModel extends BaseModel {
     }
   }
 
-  // Function: GET ALL CREW ACCORDING TO CREW TYPE
-  Future<List<List<Crew>>> getAllCrewTypes() async {
-    setBusy(true);
-
-    // send API Request
-    final response = await http.get(Config.api + 'all-crew/');
-
-    List<List<Crew>> crew = [];
-    var items = json.decode(response.body);
-
-    if (response.statusCode == 200) {
-      // create a list of CREW
-      if (items.isNotEmpty) {
-        crew = List<List<Crew>>.from(
-            items.map((x) => List<Crew>.from(x.map((x) => Crew.fromJson(x)))));
-      }
-    } else {
-      throw Exception('Failed to get crew');
-    }
-    return crew;
-  }
-
   // Function: GET CREW for Movie Detail View
   Future<List<List<Crew>>> getCrewForDetails({@required String movieId}) async {
     var queryParams = {

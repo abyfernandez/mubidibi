@@ -12,6 +12,7 @@ class ReviewViewModel extends BaseModel {
 
   void setReviews(List<Review> response) {
     reviews = response;
+    print(jsonEncode(reviews));
     notifyListeners();
     print("notified listeners");
   }

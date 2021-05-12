@@ -15,90 +15,114 @@ class MyDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var currentUser = _authenticationService.currentUser;
+    print(currentUser);
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        iconTheme: IconThemeData(
-            // color: Colors.black, //change your color here
-            ),
-      ),
-      body: Container(
-        color: Colors.white,
-        height: double.infinity,
-        width: double.infinity,
-        child: Drawer(
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              UserAccountsDrawerHeader(
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                ),
-                margin: EdgeInsets.only(bottom: 0),
-                accountName: GestureDetector(
-                  child: Text(
-                      (currentUser.firstName + " " + currentUser.lastName) ??
-                          ' ',
-                      style: TextStyle(
-                          fontSize: 18, decoration: TextDecoration.underline)),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          iconTheme: IconThemeData(
+              // color: Colors.black, //change your color here
+              ),
+        ),
+        body: Container(
+          color: Colors.white,
+          height: double.infinity,
+          width: double.infinity,
+          child: Drawer(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: <Widget>[
+                currentUser != null
+                    ? UserAccountsDrawerHeader(
+                        decoration: BoxDecoration(
+                          color: Color.fromRGBO(240, 240, 240, 1),
+                        ),
+                        margin: EdgeInsets.only(bottom: 0),
+                        accountName: GestureDetector(
+                          child: Text(
+                              (currentUser.firstName +
+                                      " " +
+                                      currentUser.lastName) ??
+                                  ' ',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  decoration: TextDecoration.underline)),
+                          onTap: () {
+                            print("View Profile");
+                          },
+                        ),
+                        // TO DO: Display currentUser's email address
+                        accountEmail: Text(
+                          currentUser.email,
+                          style: TextStyle(
+                            // color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                        currentAccountPicture: CircleAvatar(
+                          backgroundImage: NetworkImage(Config.userNotFound),
+                          radius: 60,
+                        ),
+                      )
+                    : SizedBox(),
+                Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
+                ListTile(
+                  leading: Icon(
+                    Icons.info_outlined,
+                    size: 20,
+                  ),
+                  title: Text(
+                    "About Mubidibi",
+                    style: TextStyle(fontWeight: FontWeight.w300, fontSize: 16),
+                  ),
                   onTap: () {
-                    print("View Profile");
+                    // TO DO: Create page for App Info
                   },
                 ),
-                // TO DO: Display currentUser's email address
-                accountEmail: Text(
-                  currentUser.email,
-                  style: TextStyle(
-                    // color: Colors.white,
-                    fontSize: 16,
-                  ),
-                ),
-                currentAccountPicture: CircleAvatar(
-                  backgroundImage: NetworkImage(Config.userNotFound),
-                  radius: 60,
-                ),
-              ),
-              Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
-              ListTile(
-                leading: Icon(
-                  Icons.info_outlined,
-                  size: 20,
-                ),
-                title: Text(
-                  "About Mubidibi",
-                  style: TextStyle(fontWeight: FontWeight.w300, fontSize: 16),
-                ),
-                onTap: () {
-                  // TO DO: Create page for App Info
-                },
-              ),
-              Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
-              ListTile(
-                leading: Icon(
-                  Icons.logout,
-                  size: 20,
-                ),
-                title: Text(
-                  "Sign Out",
-                  style: TextStyle(fontWeight: FontWeight.w300, fontSize: 16),
-                ),
-                onTap: () async {
-                  var response = await _dialogService.showConfirmationDialog(
-                      title: "Sign Out",
-                      cancelTitle: "No",
-                      confirmationTitle: "Yes",
-                      description: "Are you sure that you want to sign out?");
-                  if (response.confirmed == true) {
-                    await _authenticationService.signOut();
-                    await _navigationService.navigateTo(StartUpViewRoute);
-                  }
-                },
-              ),
-              Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
-            ],
+                Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
+                currentUser != null
+                    ? ListTile(
+                        leading: Icon(
+                          Icons.logout,
+                          size: 20,
+                        ),
+                        title: Text(
+                          "Sign Out",
+                          style: TextStyle(
+                              fontWeight: FontWeight.w300, fontSize: 16),
+                        ),
+                        onTap: () async {
+                          var response =
+                              await _dialogService.showConfirmationDialog(
+                                  title: "Sign Out",
+                                  cancelTitle: "No",
+                                  confirmationTitle: "Yes",
+                                  description:
+                                      "Are you sure that you want to sign out?");
+                          if (response.confirmed == true) {
+                            await _authenticationService.signOut();
+                            await _navigationService
+                                .navigateTo(StartUpViewRoute);
+                          }
+                        },
+                      )
+                    : ListTile(
+                        leading: Icon(
+                          currentUser != null ? Icons.logout : Icons.login,
+                          size: 20,
+                        ),
+                        title: Text(
+                          "Sign In",
+                          style: TextStyle(
+                              fontWeight: FontWeight.w300, fontSize: 16),
+                        ),
+                        onTap: () {
+                          _navigationService.navigateTo(LoginViewRoute);
+                        },
+                      ),
+                Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
+              ],
+            ),
           ),
-        ),
-      ),
-    );
+        ));
   }
 }

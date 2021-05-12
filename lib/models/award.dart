@@ -10,9 +10,9 @@ class Award {
   final int awardId;
   final int movieId;
   String name;
-  List<String> category;
+  List<String> category; // movie, actor
   String year;
-  String type;
+  String type; //  nominated, won
   String description;
   final String addedBy;
   bool isDeleted;

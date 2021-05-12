@@ -19,7 +19,8 @@ class Crew {
   final String displayPic;
   final List<String> photos;
   final String description;
-  final List<String> role;
+  final List<String> role; // roles in movies
+  final List<String> type; // actor/director/writer
   final bool isDeleted;
 
   Crew(
@@ -36,6 +37,7 @@ class Crew {
       this.photos,
       this.description,
       this.role,
+      this.type,
       this.isDeleted});
 
   factory Crew.fromJson(Map<String, dynamic> json) {
@@ -57,6 +59,9 @@ class Crew {
       role: json["role"] == null
           ? []
           : List<String>.from(json["role"].map((x) => x)),
+      type: json["type"] == null
+          ? []
+          : List<String>.from(json["type"].map((x) => x)),
       isDeleted: json['is_deleted'],
     );
   }
@@ -75,6 +80,7 @@ class Crew {
         "photos": photos,
         "description": description,
         "role": role,
+        "type": type,
         "is_deleted": isDeleted
       };
 }

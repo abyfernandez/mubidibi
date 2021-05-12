@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/full_photo.dart';
+import 'package:mubidibi/ui/views/signin_category_view.dart';
 import 'package:mubidibi/ui/widgets/responsive.dart';
 import 'package:mubidibi/ui/widgets/vertical_icon_button.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
@@ -109,7 +110,8 @@ class _ContentHeaderMobile extends StatelessWidget {
               VerticalIconButton(
                 icon: Icons.add,
                 title: 'My Favorites',
-                onTap: () => print('My Favorites'),
+                onTap: () =>
+                    _navigationService.navigateTo(SignInCategoryViewRoute),
               ),
               VerticalIconButton(
                 icon: Icons.info_outline,

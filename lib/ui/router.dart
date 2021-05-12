@@ -78,9 +78,19 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case SeeAllViewRoute:
       var movies = settings.arguments as List<Movie>;
+      var crew = settings.arguments as List<Crew>;
+      var photos = settings.arguments as List<String>;
+      var screenshots = settings.arguments as List<String>;
+      var type = settings.arguments as String;
+
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: SeeAllView(movies: movies),
+        viewToShow: SeeAllView(
+            movies: movies,
+            crew: crew,
+            photos: photos,
+            screenshots: screenshots,
+            type: type),
       );
     default:
       return MaterialPageRoute(

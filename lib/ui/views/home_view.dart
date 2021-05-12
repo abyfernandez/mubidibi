@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/locator.dart';
@@ -86,6 +85,7 @@ class _HomeViewState extends State<HomeView> {
             icon: Icon(Icons.search_outlined),
             label: 'Search',
           ),
+          // TO DO: changes in design kapag guest lang yung user
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications_outlined),
             label: 'Notifications',

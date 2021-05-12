@@ -258,8 +258,11 @@ class _MovieViewState extends State<MovieView>
   }
 
   Widget displayReviews(List<Review> reviews) {
-    var userReviews =
-        reviews.where((review) => review.userId != currentUser.userId).toList();
+    var userReviews = currentUser != null
+        ? reviews
+            .where((review) => review.userId != currentUser.userId)
+            .toList()
+        : reviews;
 
     return Container(
       decoration: BoxDecoration(
@@ -358,7 +361,6 @@ class _MovieViewState extends State<MovieView>
                             child: Text(
                               review.review,
                               style: TextStyle(fontSize: 15),
-                              // textAlign: TextAlign.justify,
                             ),
                           ),
                         ],
@@ -455,7 +457,7 @@ class _MovieViewState extends State<MovieView>
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         // TO DO: hide button when scrolling ???
         floatingActionButton: Visibility(
-          visible: currentUser.isAdmin,
+          visible: currentUser != null ? currentUser.isAdmin : false,
           child: FloatingActionBubble(
             // Menu items
             items: <Bubble>[
@@ -512,9 +514,10 @@ class _MovieViewState extends State<MovieView>
                             fetchMovie();
                             _saving = false;
 
-                            // redirect to homepage if user is not an admin
+                            // TO DO: not sure what to do here huhu -- redirect to homepage if user is not an admin
 
-                            if (currentUser.isAdmin != true) {
+                            if (currentUser != null &&
+                                currentUser.isAdmin != true) {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -682,14 +685,15 @@ class _MovieViewState extends State<MovieView>
                         IconButton(
                           padding: EdgeInsets.only(left: 30.0),
                           onPressed: () =>
-                              _navigationService.navigateTo(HomeViewRoute),
+                              // _navigationService.navigateTo(HomeViewRoute), -- this causes to redirecto to homepage after searching for movies, instead na bumalik lang sa search page
+                              _navigationService.pop(),
                           icon: Icon(Icons.arrow_back),
                           iconSize: 30.0,
                           color: Colors.white,
                         ),
                         // if user is an admin, replace button with a "DELETED" tag if movie is deleted, non if it isn't deleted.
                         // if user is not an admin, show "add to favorite" button instead.
-                        currentUser.isAdmin == true
+                        currentUser != null && currentUser.isAdmin == true
                             ? movie.isDeleted == true
                                 ? IconButton(
                                     padding: EdgeInsets.only(right: 20.0),
@@ -700,13 +704,15 @@ class _MovieViewState extends State<MovieView>
                                     color: Colors.white,
                                   )
                                 : SizedBox()
-                            : IconButton(
-                                padding: EdgeInsets.only(right: 20.0),
-                                onPressed: () => print('Add to Favorites'),
-                                icon: Icon(Icons.add),
-                                iconSize: 30.0,
-                                color: Colors.white,
-                              ),
+                            : currentUser != null
+                                ? IconButton(
+                                    padding: EdgeInsets.only(right: 20.0),
+                                    onPressed: () => print('Add to Favorites'),
+                                    icon: Icon(Icons.add),
+                                    iconSize: 30.0,
+                                    color: Colors.white,
+                                  )
+                                : SizedBox(),
                       ],
                     ),
                   ],
@@ -872,199 +878,225 @@ class _MovieViewState extends State<MovieView>
                     : Container(),
                 SizedBox(height: 15),
 
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text("Mga Review",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      )),
-                ),
+                model.reviews.isNotEmpty
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Text("Mga Review",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      )
+                    : SizedBox(),
                 SizedBox(height: 15),
 
-                // Add Review Text Area
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      !model.busy &&
-                              (model.reviews
-                                          .where((review) =>
-                                              review.userId ==
-                                              currentUser.userId)
-                                          .length !=
-                                      0 &&
-                                  model.isEditing == false)
-                          ? checkReview(model.reviews)
-                          : Container(
-                              decoration: BoxDecoration(
-                                color: Color.fromRGBO(240, 240, 240, 1),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              child: InkWell(
-                                  // to dismiss the keyboard when the user tabs out of the TextField
-                                  splashColor: Colors.transparent,
-                                  onTap: () {
-                                    FocusScope.of(context)
-                                        .requestFocus(FocusNode());
-                                  },
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 10,
-                                          ),
-                                          Padding(
-                                            padding: EdgeInsets.only(top: 10),
-                                            child: Row(
+                // Add Review Text Area only for registered users and admins
+                currentUser != null
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            !model.busy &&
+                                    (model.reviews
+                                                .where((review) =>
+                                                    review.userId ==
+                                                    currentUser.userId)
+                                                .length !=
+                                            0 &&
+                                        model.isEditing == false)
+                                ? checkReview(model.reviews)
+                                : Container(
+                                    decoration: BoxDecoration(
+                                      color: Color.fromRGBO(240, 240, 240, 1),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: InkWell(
+                                        // to dismiss the keyboard when the user tabs out of the TextField
+                                        splashColor: Colors.transparent,
+                                        onTap: () {
+                                          FocusScope.of(context)
+                                              .requestFocus(FocusNode());
+                                        },
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
                                               children: [
-                                                Text("Rating: ",
-                                                    style: TextStyle(
-                                                        fontSize: 16)),
-                                                RatingBar.builder(
-                                                  direction: Axis.horizontal,
-                                                  allowHalfRating: true,
-                                                  itemCount: 5,
-                                                  itemSize: 25,
-                                                  unratedColor: Color.fromRGBO(
-                                                      192, 192, 192, 1),
-                                                  itemPadding:
-                                                      EdgeInsets.symmetric(
-                                                          horizontal: 2.0),
-                                                  itemBuilder: (context, _) =>
-                                                      Icon(
-                                                    Icons.star,
-                                                    color: Colors.amber,
+                                                SizedBox(
+                                                  width: 10,
+                                                ),
+                                                Padding(
+                                                  padding:
+                                                      EdgeInsets.only(top: 10),
+                                                  child: Row(
+                                                    children: [
+                                                      Text("Rating: ",
+                                                          style: TextStyle(
+                                                              fontSize: 16)),
+                                                      RatingBar.builder(
+                                                        direction:
+                                                            Axis.horizontal,
+                                                        allowHalfRating: true,
+                                                        itemCount: 5,
+                                                        itemSize: 25,
+                                                        unratedColor:
+                                                            Color.fromRGBO(192,
+                                                                192, 192, 1),
+                                                        itemPadding: EdgeInsets
+                                                            .symmetric(
+                                                                horizontal:
+                                                                    2.0),
+                                                        itemBuilder:
+                                                            (context, _) =>
+                                                                Icon(
+                                                          Icons.star,
+                                                          color: Colors.amber,
+                                                        ),
+                                                        onRatingUpdate:
+                                                            (rating) {
+                                                          _rating = rating;
+                                                        },
+                                                        updateOnDrag: true,
+                                                      ),
+                                                    ],
                                                   ),
-                                                  onRatingUpdate: (rating) {
-                                                    _rating = rating;
-                                                  },
-                                                  updateOnDrag: true,
                                                 ),
                                               ],
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 10),
-                                      Padding(
-                                        padding: EdgeInsets.only(left: 10),
-                                        child: Text("Review:",
-                                            style: TextStyle(fontSize: 16)),
-                                      ),
-                                      SizedBox(height: 5),
-                                      Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 20),
-                                        child: TextFormField(
-                                          controller: reviewController,
-                                          focusNode: focusNode,
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                          ),
-                                          maxLines: null,
-                                          decoration: InputDecoration(
-                                            filled: true,
-                                            fillColor: Colors.white,
-                                            hintText:
-                                                "I-type ang iyong review...",
-                                            hintStyle: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 16,
+                                            SizedBox(height: 10),
+                                            Padding(
+                                              padding:
+                                                  EdgeInsets.only(left: 10),
+                                              child: Text("Review:",
+                                                  style:
+                                                      TextStyle(fontSize: 16)),
                                             ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                              borderSide: BorderSide.none,
+                                            SizedBox(height: 5),
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 20),
+                                              child: TextFormField(
+                                                controller: reviewController,
+                                                focusNode: focusNode,
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                ),
+                                                maxLines: null,
+                                                decoration: InputDecoration(
+                                                  filled: true,
+                                                  fillColor: Colors.white,
+                                                  hintText:
+                                                      "I-type ang iyong review...",
+                                                  hintStyle: TextStyle(
+                                                    color: Colors.black87,
+                                                    fontSize: 16,
+                                                  ),
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: BorderSide.none,
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: BorderSide.none,
+                                                  ),
+                                                  errorBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            5),
+                                                    borderSide: BorderSide(
+                                                        color: Colors.red),
+                                                  ),
+                                                ),
+                                              ),
                                             ),
-                                            focusedBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                              borderSide: BorderSide.none,
-                                            ),
-                                            errorBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(5),
-                                              borderSide:
-                                                  BorderSide(color: Colors.red),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 10),
-                                      Container(
-                                        padding: EdgeInsets.only(left: 20),
-                                        alignment: Alignment.centerLeft,
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(5)),
-                                        child: ButtonTheme(
-                                          padding: EdgeInsets.symmetric(
-                                              vertical: 6.0,
-                                              horizontal:
-                                                  10.0), //adds padding inside the button
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize
-                                                  .shrinkWrap, //limits the touch area to the button area
-                                          minWidth: 0, //wraps child's width
-                                          height: 0,
-                                          child: FlatButton(
-                                            color: Colors.lightBlue,
-                                            onPressed: () {
-                                              focusNode.unfocus();
+                                            SizedBox(height: 10),
+                                            Container(
+                                              padding:
+                                                  EdgeInsets.only(left: 20),
+                                              alignment: Alignment.centerLeft,
+                                              decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5)),
+                                              child: ButtonTheme(
+                                                padding: EdgeInsets.symmetric(
+                                                    vertical: 6.0,
+                                                    horizontal:
+                                                        10.0), //adds padding inside the button
+                                                materialTapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap, //limits the touch area to the button area
+                                                minWidth:
+                                                    0, //wraps child's width
+                                                height: 0,
+                                                child: FlatButton(
+                                                  color: Colors.lightBlue,
+                                                  onPressed: () {
+                                                    focusNode.unfocus();
 
-                                              // submit post and save into db
-                                              var model = ReviewViewModel();
-                                              final response = model.addReview(
-                                                  movieId:
-                                                      movie.movieId.toString(),
-                                                  userId: currentUser.userId
-                                                      .toString(),
-                                                  rating: _rating.toString(),
-                                                  review:
-                                                      reviewController.text);
+                                                    // submit post and save into db
+                                                    var model =
+                                                        ReviewViewModel();
+                                                    final response =
+                                                        model.addReview(
+                                                            movieId: movie
+                                                                .movieId
+                                                                .toString(),
+                                                            userId: currentUser
+                                                                .userId
+                                                                .toString(),
+                                                            rating: _rating
+                                                                .toString(),
+                                                            review:
+                                                                reviewController
+                                                                    .text);
 
-                                              if (response != null) {
-                                                // show success snackbar
-                                                _scaffoldKey.currentState
-                                                    .showSnackBar(mySnackBar(
-                                                        context,
-                                                        'Your review has been posted.',
-                                                        Colors.green));
-                                              } else {
-                                                // show error snackbar
-                                                _scaffoldKey.currentState
-                                                    .showSnackBar(mySnackBar(
-                                                        context,
-                                                        'Something went wrong. Please try again later.',
-                                                        Colors.green));
-                                              }
-                                            },
-                                            child: Text(
-                                              "POST",
-                                              style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.white),
+                                                    if (response != null) {
+                                                      // show success snackbar
+                                                      _scaffoldKey.currentState
+                                                          .showSnackBar(mySnackBar(
+                                                              context,
+                                                              'Your review has been posted.',
+                                                              Colors.green));
+                                                    } else {
+                                                      // show error snackbar
+                                                      _scaffoldKey.currentState
+                                                          .showSnackBar(mySnackBar(
+                                                              context,
+                                                              'Something went wrong. Please try again later.',
+                                                              Colors.green));
+                                                    }
+                                                  },
+                                                  child: Text(
+                                                    "POST",
+                                                    style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.white),
+                                                  ),
+                                                ),
+                                              ),
                                             ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(height: 10),
-                                    ],
-                                  ))),
-                    ],
-                  ),
-                ),
+                                            SizedBox(height: 10),
+                                          ],
+                                        ))),
+                          ],
+                        ),
+                      )
+                    : SizedBox(),
                 SizedBox(height: 15),
                 // display other reviews for this movie
                 Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: !model.busy && model.reviews.isNotEmpty
                         ? displayReviews(model.reviews)
-                        : Container()),
+                        : SizedBox()),
                 SizedBox(height: 25),
               ],
             ),

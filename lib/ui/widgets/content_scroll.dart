@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/globals.dart' as Config;
+import 'package:mubidibi/ui/views/see_all_view.dart';
 
 class ContentScroll extends StatelessWidget {
   final List<List<Crew>> crewEdit;
@@ -47,20 +48,25 @@ class ContentScroll extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            // TO DO: limit the display to only 5 or 6, and then write onPressed function to See All button
-            crew.length > 4
+            crew.length >= 4
                 ? GestureDetector(
-                    onTap: () => print('View $title'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SeeAllView(crew: crew, type: "crew"),
+                        ),
+                      );
+                    },
                     child: Text(
-                      "See all",
+                      "Tingnan Lahat",
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                     ),
                   )
                 : Container(),
           ],
         ),
-        // ),
         SizedBox(
           height: 10,
         ),
@@ -73,7 +79,7 @@ class ContentScroll extends StatelessWidget {
                   itemCount: crew.length,
                   itemBuilder: (BuildContext context, int index) {
                     return GestureDetector(
-                      // Show Movie Details
+                      // Show Crew Details
                       onTap: () => {
                         Navigator.push(
                           context,
@@ -134,10 +140,13 @@ class ContentScroll extends StatelessWidget {
                                   crew[index].firstName +
                                       " " +
                                       (crew[index].middleName != null
-                                          ? crew[index].middleName +
-                                              " " +
-                                              crew[index].lastName
-                                          : crew[index].lastName) +
+                                          ? " " + crew[index].middleName
+                                          : "") +
+                                      " " +
+                                      crew[index].lastName +
+                                      (crew[index].suffix != null
+                                          ? " " + crew[index].suffix
+                                          : "") +
                                       " " +
                                       (title == "Mga Aktor"
                                           ? "bilang " + dislayRoles(crew[index])
@@ -151,7 +160,6 @@ class ContentScroll extends StatelessWidget {
                                   maxLines: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  // borderRadius: BorderRadius.circular(5.0),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.black54,

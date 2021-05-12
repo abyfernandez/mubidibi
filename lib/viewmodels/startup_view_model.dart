@@ -14,10 +14,13 @@ class StartUpViewModel extends BaseModel {
     var hasLoggedInUser = await _authenticationService.isUserLoggedIn();
 
     // TO DO: separation of admin, and non-admin user privileges
-    if (hasLoggedInUser) {
-      await _navigationService.navigateTo(HomeViewRoute);
-    } else {
-      await _navigationService.navigateTo(SignInCategoryViewRoute);
-    }
+    // if (hasLoggedInUser) {
+    //   await _navigationService.navigateTo(HomeViewRoute);
+    // } else {
+    //   await _navigationService.navigateTo(SignInCategoryViewRoute);
+    // }
+
+    // TO DO : TEST -- redirecto to HomeView right away
+    await _navigationService.navigateTo(HomeViewRoute);
   }
 }

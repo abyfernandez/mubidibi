@@ -43,10 +43,6 @@ class _SearchViewState extends State<SearchView> {
     crew = await model.getAllCrew();
   }
 
-  // void fetchAllCrew() async {
-  //   var model =
-  // }
-
   @override
   void initState() {
     fetchMovies();
@@ -125,7 +121,9 @@ class _SearchViewState extends State<SearchView> {
                                                         caseSensitive: false),
                                                   );
                                                 }).toList();
-                                                noResult = false;
+                                                movieQueryResult.isEmpty
+                                                    ? noResult = true
+                                                    : noResult = false;
                                               })
                                             : setState(() {
                                                 movieQueryResult = [];
@@ -136,13 +134,24 @@ class _SearchViewState extends State<SearchView> {
                                             ? setState(() {
                                                 crewQueryResult =
                                                     crew.where((c) {
-                                                  return (c.firstName.contains(
+                                                  var name = c.firstName +
+                                                      " " +
+                                                      (c.middleName != null
+                                                          ? c.middleName
+                                                          : "") +
+                                                      c.lastName +
+                                                      (c.suffix != null
+                                                          ? " " + c.suffix
+                                                          : "");
+                                                  return (name.contains(
                                                     new RegExp(
                                                         query.trimRight(),
                                                         caseSensitive: false),
                                                   ));
                                                 }).toList();
-                                                noResult = false;
+                                                crewQueryResult.isEmpty
+                                                    ? noResult = true
+                                                    : noResult = false;
                                               })
                                             : setState(() {
                                                 crewQueryResult = [];
@@ -155,8 +164,12 @@ class _SearchViewState extends State<SearchView> {
                                         setState(() {
                                           noResult = true;
                                         });
-                                      } else if (_searchBy == "Crew" &&
-                                          crewQueryResult.isEmpty) {}
+                                      } else if (_searchBy == "Personalidad" &&
+                                          crewQueryResult.isEmpty) {
+                                        setState(() {
+                                          noResult = true;
+                                        });
+                                      }
                                     },
                                   ),
                                 ),
@@ -173,8 +186,8 @@ class _SearchViewState extends State<SearchView> {
                                       child: Text('Pelikula'),
                                     ),
                                     DropdownMenuItem(
-                                      value: 'Crew',
-                                      child: Text('Crew'),
+                                      value: 'Personalidad',
+                                      child: Text('Personalidad'),
                                     ),
                                   ],
                                   onChanged: (choice) {
@@ -192,10 +205,12 @@ class _SearchViewState extends State<SearchView> {
                                                 caseSensitive: false),
                                           );
                                         }).toList();
-                                        noResult = false;
+                                        movieQueryResult.isEmpty
+                                            ? noResult = true
+                                            : noResult = false;
                                       } else if (searchController.text.trim() !=
                                               "" &&
-                                          _searchBy == "Crew") {
+                                          _searchBy == "Personalidad") {
                                         crewQueryResult = crew.where((c) {
                                           return c.firstName.contains(
                                             new RegExp(
@@ -204,7 +219,9 @@ class _SearchViewState extends State<SearchView> {
                                                 caseSensitive: false),
                                           );
                                         }).toList();
-                                        noResult = false;
+                                        crewQueryResult.isEmpty
+                                            ? noResult = true
+                                            : noResult = false;
                                       } else {
                                         movieQueryResult = [];
                                         crewQueryResult = [];
@@ -212,9 +229,6 @@ class _SearchViewState extends State<SearchView> {
                                     });
                                   },
                                 ),
-                                // SizedBox(
-                                //   width: 15,
-                                // ),
                               ],
                             ),
                           ),
@@ -226,6 +240,7 @@ class _SearchViewState extends State<SearchView> {
                                     searchController.text = "";
                                     movieQueryResult = [];
                                     crewQueryResult = [];
+                                    noResult = false;
                                   });
                                 },
                                 child: Container(
@@ -316,14 +331,14 @@ class _SearchViewState extends State<SearchView> {
                                     Container(
                                       child: Center(
                                           child: noResult == true
-                                              ? Text('No results found.',
+                                              ? Text('Walang resulta.',
                                                   style: TextStyle(
                                                       color: Colors.grey,
                                                       fontSize: 18))
                                               : Text(
                                                   _searchBy == "Pelikula"
                                                       ? 'Maghanap ng pelikula'
-                                                      : 'Maghanap ng crew',
+                                                      : 'Maghanap ng personalidad',
                                                   style: TextStyle(
                                                       color: Colors.grey,
                                                       fontSize: 18))),
@@ -338,43 +353,43 @@ class _SearchViewState extends State<SearchView> {
                                           height: 210.0,
                                           child: Stack(
                                             children: [
-                                              Container(
-                                                alignment: Alignment.center,
-                                                margin:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8.0),
-                                                height: 200.0,
-                                                width: 120.0,
-                                                decoration: BoxDecoration(
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black54,
-                                                      offset: Offset(0.0, 0.0),
-                                                      blurRadius: 2.0,
-                                                    ),
-                                                  ],
-                                                  borderRadius:
-                                                      BorderRadius.circular(5),
-                                                ),
-                                                child: Text(
-                                                  c.firstName +
-                                                      (c.middleName != null
-                                                          ? " " +
-                                                              c.middleName +
-                                                              " "
-                                                          : " ") +
-                                                      c.lastName +
-                                                      (c.suffix != null
-                                                          ? " " + c.suffix
-                                                          : ""),
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
+                                              // Container(
+                                              //   alignment: Alignment.center,
+                                              //   margin:
+                                              //       const EdgeInsets.symmetric(
+                                              //           horizontal: 8.0),
+                                              //   height: 200.0,
+                                              //   width: 120.0,
+                                              //   decoration: BoxDecoration(
+                                              //     boxShadow: [
+                                              //       BoxShadow(
+                                              //         color: Colors.black54,
+                                              //         offset: Offset(0.0, 0.0),
+                                              //         blurRadius: 2.0,
+                                              //       ),
+                                              //     ],
+                                              //     borderRadius:
+                                              //         BorderRadius.circular(5),
+                                              //   ),
+                                              //   child: Text(
+                                              //     c.firstName +
+                                              //         (c.middleName != null
+                                              //             ? " " +
+                                              //                 c.middleName +
+                                              //                 " "
+                                              //             : " ") +
+                                              //         c.lastName +
+                                              //         (c.suffix != null
+                                              //             ? " " + c.suffix
+                                              //             : ""),
+                                              //     textAlign: TextAlign.center,
+                                              //     style: TextStyle(
+                                              //       color: Colors.white,
+                                              //       fontSize: 14,
+                                              //       fontWeight: FontWeight.bold,
+                                              //     ),
+                                              //   ),
+                                              // ),
                                               Container(
                                                 margin:
                                                     const EdgeInsets.symmetric(
@@ -385,13 +400,53 @@ class _SearchViewState extends State<SearchView> {
                                                   borderRadius:
                                                       BorderRadius.circular(5),
                                                   image: DecorationImage(
+                                                    alignment: Alignment.center,
                                                     image:
                                                         CachedNetworkImageProvider(
                                                       c.displayPic != null
                                                           ? c.displayPic
-                                                          : Config.imgNotFound,
+                                                          : Config.userNotFound,
                                                     ),
                                                     fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                              Positioned(
+                                                bottom: 9,
+                                                left: 9,
+                                                right: 9,
+                                                child: Container(
+                                                  alignment:
+                                                      Alignment.bottomLeft,
+                                                  child: Text(
+                                                    c.firstName +
+                                                        " " +
+                                                        (c.middleName != null
+                                                            ? " " + c.middleName
+                                                            : "") +
+                                                        " " +
+                                                        c.lastName +
+                                                        (c.suffix != null
+                                                            ? " " + c.suffix
+                                                            : ""),
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                    ),
+                                                    softWrap: true,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 3,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                        color: Colors.black54,
+                                                        offset:
+                                                            Offset(0.0, 0.0),
+                                                        blurRadius: 4.0, // 6
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                               ),
@@ -421,7 +476,7 @@ class _SearchViewState extends State<SearchView> {
                                               : Text(
                                                   _searchBy == "Pelikula"
                                                       ? 'Maghanap ng pelikula'
-                                                      : 'Maghanap ng crew',
+                                                      : 'Maghanap ng personalidad',
                                                   style: TextStyle(
                                                       color: Colors.grey,
                                                       fontSize: 18))),

@@ -1,4 +1,5 @@
 exports.movie = app => {
+
   // GET MOVIES
   app.post('/mubidibi/movies/', async (req, res) => {
     app.pg.connect(onConnect)
@@ -7,7 +8,8 @@ exports.movie = app => {
       if (err) return res.send(err)
       var query = `SELECT * FROM movie `;
 
-      if (!req.body.is_admin) {
+      // if user is not admin, show only the movies that are not soft-deleted
+      if (req.body.is_admin == "0") {
         query = query.concat(` WHERE is_deleted = false `);
       }
 
@@ -49,13 +51,13 @@ exports.movie = app => {
 
     // upload image to cloudinary 
     // TO DO: create centralized cloudinary (for both mobile and web use)
-    var cloudinary = require('cloudinary');
+    // var cloudinary = require('cloudinary');
 
-    cloudinary.config({
-      cloud_name: "mubidibi-sp",
-      api_key: '385294841727974',
-      api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
-    });
+    // cloudinary.config({
+    //   cloud_name: "mubidibi-sp",
+    //   api_key: '385294841727974',
+    //   api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
+    // });
 
     // MOVIE SCREENSHOTS AND POSTER UPLOAD   -- poster first element in the array
 
@@ -258,13 +260,13 @@ exports.movie = app => {
   // UPDATE MOVIE
   app.put('/mubidibi/update-movie/:id', async (req, res) => {
     // upload image to cloudinary 
-    var cloudinary = require('cloudinary');
+    // var cloudinary = require('cloudinary');
 
-    cloudinary.config({
-      cloud_name: "mubidibi-sp",
-      api_key: '385294841727974',
-      api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
-    });
+    // cloudinary.config({
+    //   cloud_name: "mubidibi-sp",
+    //   api_key: '385294841727974',
+    //   api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
+    // });
 
     // MOVIE SCREENSHOTS AND POSTER UPLOAD   -- poster first element in the array
 

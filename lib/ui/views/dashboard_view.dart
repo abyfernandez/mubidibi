@@ -1,12 +1,14 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/ui/views/my_drawer.dart';
 import 'package:mubidibi/ui/widgets/content_header.dart';
+import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/ui/views/content_list.dart';
@@ -27,13 +29,16 @@ class _DashboardViewState extends State<DashboardView>
       locator<AuthenticationService>();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  Future<List<Movie>> movies;
-  ScrollController _scrollController;
+  List<Movie> movies;
+  List<Crew> crew;
+  ScrollController _movieScrollController;
+  ScrollController _crewScrollController;
   var index;
   Animation<double> _animation;
   AnimationController _animationController;
-  IconData fabIcon = Icons.add;
+  IconData fabIcon;
   var currentUser;
+  bool test = false;
 
   List<DropdownMenuItem> _categories = [
     DropdownMenuItem<String>(
@@ -51,19 +56,63 @@ class _DashboardViewState extends State<DashboardView>
   ];
 
   // function for calling viewmodel's getAllCrew method
-  Future<List<Movie>> fetchMovies() async {
+  void fetchMovies() async {
     var model = MovieViewModel();
-    return model.getAllMovies();
+    movies = await model.getAllMovies();
+
+    if (movies != null && movies.length != 0) {
+      var rand = new Random();
+      index = rand.nextInt(movies.length);
+    } else {
+      index = 0;
+    }
+
+    setState(() {
+      movies = movies;
+      index = index;
+    });
+  }
+
+  // function for calling viewmodel's getAllCrew method
+  void fetchCrew() async {
+    var model = CrewViewModel();
+    crew = await model.getAllCrew();
+
+    setState(() {
+      crew = crew;
+    });
+  }
+
+  Widget crewView(BuildContext context, AsyncSnapshot snapshot) {
+    var values = snapshot.data;
+    if (snapshot.connectionState == ConnectionState.done) {
+      return CustomScrollView(
+        controller: _crewScrollController,
+        slivers: [
+          SliverToBoxAdapter(
+            child: ContentList(
+              key: PageStorageKey('crew'),
+              title: 'Mga Personalidad',
+              seeAll: 'Tingnan Lahat',
+              crew: values,
+              type: 'crew',
+            ),
+          ),
+        ],
+      );
+    } else {
+      return Center(
+        child: CircularProgressIndicator(),
+      );
+    }
   }
 
   @override
   void initState() {
     currentUser = _authenticationService.currentUser;
-    movies = fetchMovies();
-    movies.then((m) {
-      var rand = new Random();
-      index = rand.nextInt(m.length);
-    });
+    fetchMovies();
+    fetchCrew();
+    fabIcon = Icons.add;
 
     _animationController = AnimationController(
       vsync: this,
@@ -80,6 +129,10 @@ class _DashboardViewState extends State<DashboardView>
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
+
+    if (movies == null || crew == null || index == null) {
+      return CircularProgressIndicator();
+    }
 
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
@@ -123,7 +176,7 @@ class _DashboardViewState extends State<DashboardView>
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         floatingActionButton: Visibility(
-          visible: currentUser.isAdmin,
+          visible: currentUser != null ? currentUser.isAdmin : false,
           child: FloatingActionBubble(
             // Menu items
             items: <Bubble>[
@@ -135,20 +188,26 @@ class _DashboardViewState extends State<DashboardView>
                 icon: Icons.add,
                 titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                 onPress: () async {
-                  await _navigationService.navigateTo(AddMovieRoute);
                   _animationController.reverse();
+                  await _navigationService.navigateTo(AddMovieRoute);
+                  setState(() {
+                    fabIcon = fabIcon == Icons.add ? Icons.close : Icons.add;
+                  });
                 },
               ),
               //Floating action menu item
               Bubble(
-                title: "Crew",
+                title: "Personalidad",
                 iconColor: Colors.white,
                 bubbleColor: Colors.lightBlue,
                 icon: Icons.add,
                 titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                 onPress: () async {
-                  await _navigationService.navigateTo(AddCrewRoute);
                   _animationController.reverse();
+                  await _navigationService.navigateTo(AddCrewRoute);
+                  setState(() {
+                    fabIcon = fabIcon == Icons.add ? Icons.close : Icons.add;
+                  });
                 },
               ),
             ],
@@ -174,15 +233,15 @@ class _DashboardViewState extends State<DashboardView>
             backGroundColor: Colors.lightBlue,
           ),
         ),
-        body: FutureBuilder(
-          future: movies,
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              return CustomScrollView(
-                controller: _scrollController,
+        body: Column(
+          children: [
+            Flexible(
+              flex: 4,
+              child: CustomScrollView(
+                controller: _movieScrollController,
                 slivers: [
                   SliverToBoxAdapter(
-                    child: ContentHeader(featuredContent: snapshot.data[index]),
+                    child: ContentHeader(featuredContent: movies[index]),
                   ),
                   SliverToBoxAdapter(
                     child: SizedBox(height: 10),
@@ -191,26 +250,33 @@ class _DashboardViewState extends State<DashboardView>
                     child: ContentList(
                       key: PageStorageKey('myFavorites'),
                       title: 'Mga Favorite',
-                      seeAll: 'See All',
-                      contentList: snapshot.data,
+                      seeAll: 'Tingnan Lahat',
+                      movies: movies,
+                      type: 'movies',
                     ),
                   ),
                   SliverToBoxAdapter(
                     child: ContentList(
                       key: PageStorageKey('movies'),
                       title: 'Mga Pelikula',
-                      seeAll: 'See All',
-                      contentList: snapshot.data,
+                      seeAll: 'Tingnan Lahat',
+                      movies: movies,
+                      type: 'movies',
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: ContentList(
+                      key: PageStorageKey('crew'),
+                      title: 'Mga Personalidad',
+                      seeAll: 'Tingnan Lahat',
+                      crew: crew,
+                      type: 'crew',
                     ),
                   ),
                 ],
-              );
-            } else {
-              return Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-          },
+              ),
+            ),
+          ],
         ),
         backgroundColor: Colors.white,
         endDrawer: Theme(

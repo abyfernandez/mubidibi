@@ -26,7 +26,9 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 // FOR DYNAMIC WIDGET ACTOR
 List dynamicList = [];
+List<Award> addedAward = [];
 var size;
+List<bool> opened = []; // state values of awards in listview
 
 class AddCrew extends StatefulWidget {
   final Crew crew;
@@ -224,7 +226,19 @@ class _AddCrewState extends State<AddCrew> {
       // add award widget to list
       dynamicList.add(
           AwardWidget(key: ObjectKey(size), item: new Award(), size: size));
+      opened.add(true);
     });
+  }
+
+  Widget displayAwards() {
+    var count = 1;
+    return Container();
+    return Column(
+        children: dynamicList.map((item) {
+      return Text(count.toString() + ". " + item.item.name != null
+          ? item.item.name
+          : "test" + " ");
+    }).toList());
   }
 
   @override
@@ -236,7 +250,6 @@ class _AddCrewState extends State<AddCrew> {
       viewModel: CrewViewModel(),
       onModelReady: (model) async {
         crewId = crew?.crewId ?? 0;
-        print('here: $crewId');
 
         // update controller's text field
         firstNameController.text = crew?.firstName ?? "";
@@ -259,6 +272,8 @@ class _AddCrewState extends State<AddCrew> {
           leading: GestureDetector(
             child: Icon(Icons.arrow_back),
             onTap: () async {
+              FocusScope.of(context).unfocus();
+
               var response = await _dialogService.showConfirmationDialog(
                   title: "Confirm cancellation",
                   cancelTitle: "No",
@@ -271,7 +286,9 @@ class _AddCrewState extends State<AddCrew> {
           ),
           backgroundColor: Colors.white,
           title: Text(
-            "Add Crew",
+            crew != null
+                ? "Mag-edit ng Personalidad"
+                : "Magdagdag ng Personalidad",
             style: TextStyle(color: Colors.black),
           ),
         ),
@@ -297,6 +314,7 @@ class _AddCrewState extends State<AddCrew> {
                           type: MyStepperType.vertical,
                           currentStep: currentStep,
                           onStepTapped: (step) async {
+                            FocusScope.of(context).unfocus();
                             if (currentStep == 0) {
                               // first step
                               setState(() {
@@ -311,11 +329,14 @@ class _AddCrewState extends State<AddCrew> {
                               setState(() => currentStep = step);
                             }
                           },
-                          onStepCancel: () => {
-                            if (currentStep != 0) setState(() => --currentStep)
+                          onStepCancel: () {
+                            FocusScope.of(context).unfocus();
+
+                            if (currentStep != 0) setState(() => --currentStep);
                           }, // else do nothing
                           onStepContinue: () async {
                             if (currentStep + 1 != stepperTitle.length) {
+                              FocusScope.of(context).unfocus();
                               // do not allow user to continue to next step if inputs aren't filled out yet
                               switch (currentStep) {
                                 case 0: // basic details
@@ -330,16 +351,19 @@ class _AddCrewState extends State<AddCrew> {
 
                                 case 1: // photos
                                   setState(() {
+                                    FocusScope.of(context).unfocus();
                                     currentStep++;
                                   });
                                   break;
 
                                 case 2: // awards
+                                  FocusScope.of(context).unfocus();
                                   setState(() => ++currentStep);
                                   break;
                               }
                             } else {
                               // last step
+                              FocusScope.of(context).unfocus();
                               var confirm =
                                   await _dialogService.showConfirmationDialog(
                                       title: "Confirm Details",
@@ -481,6 +505,7 @@ class _AddCrewState extends State<AddCrew> {
                 child: TextFormField(
                   autofocus: true,
                   focusNode: firstNameNode,
+                  keyboardType: TextInputType.text,
                   textCapitalization: TextCapitalization.words,
                   controller: firstNameController,
                   autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -520,7 +545,6 @@ class _AddCrewState extends State<AddCrew> {
                     lastNameNode.requestFocus();
                   },
                   decoration: InputDecoration(
-                    border: InputBorder.none,
                     labelText: "Middle Name",
                     contentPadding: EdgeInsets.all(10),
                   ),
@@ -543,7 +567,6 @@ class _AddCrewState extends State<AddCrew> {
                     suffixNode.requestFocus();
                   },
                   decoration: InputDecoration(
-                    border: InputBorder.none,
                     labelText: "Last Name *",
                     filled: true,
                     fillColor: Color.fromRGBO(240, 240, 240, 1),
@@ -574,7 +597,6 @@ class _AddCrewState extends State<AddCrew> {
                     birthdayNode.requestFocus();
                   },
                   decoration: InputDecoration(
-                    border: InputBorder.none,
                     labelText: "Suffix",
                     filled: true,
                     fillColor: Color.fromRGBO(240, 240, 240, 1),
@@ -605,7 +627,6 @@ class _AddCrewState extends State<AddCrew> {
                         _selectDate(context, "birthday");
                       },
                       decoration: InputDecoration(
-                        border: InputBorder.none,
                         labelText: "Birthday",
                         filled: true,
                         fillColor: Color.fromRGBO(240, 240, 240, 1),
@@ -650,7 +671,6 @@ class _AddCrewState extends State<AddCrew> {
                   },
                   maxLines: null,
                   decoration: InputDecoration(
-                    border: InputBorder.none,
                     labelText: "Birthplace",
                     filled: true,
                     fillColor: Color.fromRGBO(240, 240, 240, 1),
@@ -701,7 +721,6 @@ class _AddCrewState extends State<AddCrew> {
                                         _selectDate(context, "deathdate");
                                       },
                                       decoration: InputDecoration(
-                                        border: InputBorder.none,
                                         labelText: "Death date",
                                         filled: true,
                                         fillColor:
@@ -865,6 +884,7 @@ class _AddCrewState extends State<AddCrew> {
       case 2: // awards
         return Container(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 10),
               Row(
@@ -891,83 +911,57 @@ class _AddCrewState extends State<AddCrew> {
                     : null,
               ),
               Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ListView(
                     shrinkWrap: true,
                     children: dynamicList.map((item) {
-                      final _k = GlobalKey<AwardWidgetState>();
-                      return Column(
+                      // TO DO: remove delete button when item is closed
+                      return Stack(
                         key: ObjectKey(item),
                         children: [
-                          SizedBox(height: 10),
-                          Slidable(
-                              actionPane: SlidableDrawerActionPane(),
-                              actionExtentRatio: 0.25,
-                              child: item,
-                              secondaryActions: <Widget>[
-                                IconSlideAction(
-                                  caption: 'Delete',
-                                  color: Colors.red,
-                                  icon: Icons.delete,
-                                  onTap: () => setState(() {
+                          item,
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              child: OutlineButton(
+                                padding: EdgeInsets.all(0),
+                                color: Colors.white,
+                                onPressed: () {
+                                  FocusScope.of(context).unfocus();
+                                  setState(() {
+                                    opened.removeAt(dynamicList
+                                        .indexOf(item)); // TO DO: Fix this
                                     dynamicList
                                         .removeAt(dynamicList.indexOf(item));
-                                  }),
-                                ),
-                              ]),
-                          // Row(
-                          //   mainAxisAlignment: MainAxisAlignment.end,
-                          //   crossAxisAlignment: CrossAxisAlignment.end,
-                          //   children: [
-                          //     Container(
-                          //         child: FlatButton(
-                          //           color: Color.fromRGBO(240, 240, 240, 1),
-                          //           onPressed: () {
-                          //             setState(() {
-                          //               dynamicList.removeAt(
-                          //                   dynamicList.indexOf(item));
-                          //             });
-                          //           },
-                          //           child: Text('Remove',
-                          //               style: TextStyle(color: Colors.grey)),
-                          //         ),
-                          //         margin: EdgeInsets.only(right: 5)),
-                          //     Container(
-                          //       child: FlatButton(
-                          //         color: Colors.lightBlue,
-                          //         onPressed: () {
-                          //           if ((item.item.name.isNotEmpty ||
-                          //                   item.item.name != null) &&
-                          //               (item.item.year.length == 4 &&
-                          //                       int.parse(item.item.year) <=
-                          //                           int.parse(DateFormat("y")
-                          //                               .format(
-                          //                                   DateTime.now())) ||
-                          //                   item.item.year.length == 0)) {
-                          //             // TO DO: save item to a list of awards maybe ?
-                          //             // setState(() {
-                          //             // setState(() {
-                          //             // item.closeForm(true);
-                          //             // });
-                          //             // });
-                          //           } else {
-                          //             print("error");
-                          //           }
-                          //         },
-                          //         child: Text('Save',
-                          //             style: TextStyle(color: Colors.white)),
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
-
-                          SizedBox(
-                            height: 10,
+                                    // addedAward.removeAt() // TO DO: ANONG IDEDELETE
+                                  });
+                                },
+                                child: Text('Tanggalin'),
+                              ),
+                              alignment: Alignment.centerRight,
+                            ),
                           ),
-                          // Divider(height: 1, thickness: 2),
                         ],
                       );
                     }).toList(),
+                  ),
+                  Container(
+                    width: 140,
+                    alignment: Alignment.centerLeft,
+                    child: dynamicList.isNotEmpty
+                        ? FlatButton(
+                            color: Color.fromRGBO(192, 192, 192, 1),
+                            onPressed: addAward,
+                            child: Row(
+                              children: [
+                                Icon(Icons.person_add_alt_1_outlined),
+                                Text(" Dagdagan")
+                              ],
+                            ),
+                          )
+                        : null,
                   ),
                 ],
               ),
@@ -1135,6 +1129,7 @@ class _AddCrewState extends State<AddCrew> {
                       photos.isNotEmpty ? displayPhotos("display") : SizedBox(),
 
                       // TO DO: add awards
+                      dynamicList.isNotEmpty ? displayAwards() : SizedBox()
                     ],
                   )),
             ));
@@ -1159,7 +1154,8 @@ class AwardWidgetState extends State<AwardWidget> {
   String name;
   String year;
   String description;
-  List<String> type; // nominated, won
+  String type; // nominated, won
+  bool closed = false;
 
   // FocusNodes
   final nameNode = FocusNode();
@@ -1167,7 +1163,6 @@ class AwardWidgetState extends State<AwardWidget> {
   final typeNode = FocusNode();
   final yearNode = FocusNode();
 
-  bool closed = false;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -1225,75 +1220,174 @@ class AwardWidgetState extends State<AwardWidget> {
                 SizedBox(
                   height: 15,
                 ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Color.fromRGBO(240, 240, 240, 1),
+                        ),
+                        child: TextFormField(
+                          initialValue: widget.item.year,
+                          focusNode: yearNode,
+                          keyboardType: TextInputType.number,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          style: TextStyle(
+                            color: Colors.black,
+                          ),
+                          onFieldSubmitted: (val) {
+                            typeNode.requestFocus();
+                          },
+                          onChanged: (val) {
+                            setState(() {
+                              year = val;
+                              widget.item.year = val;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            labelText: "Year",
+                            contentPadding: EdgeInsets.all(10),
+                            filled: true,
+                            fillColor: Color.fromRGBO(240, 240, 240, 1),
+                          ),
+                          validator: (value) {
+                            var date = DateFormat("y").format(DateTime.now());
+                            if ((value.length < 4 && value.length > 0) ||
+                                (value.length > 4 &&
+                                    int.parse(value) > int.parse(date))) {
+                              return 'Mag-enter ng tamang taon.';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          border:
+                              Border(bottom: BorderSide(color: Colors.black54)),
+                          color: Color.fromRGBO(240, 240, 240, 1),
+                        ),
+                        child: DropdownButton(
+                          autofocus: false,
+                          focusNode: typeNode,
+                          value: widget.item.type,
+                          items: [
+                            DropdownMenuItem(
+                                child: Text("Pumili ng isa",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.grey,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true),
+                                value: ""),
+                            DropdownMenuItem(
+                                child: Text("Nominated"), value: "nominated"),
+                            DropdownMenuItem(child: Text("Won"), value: "won"),
+                          ],
+                          hint: Text('Type'),
+                          elevation: 0,
+                          isDense: false,
+                          underline: Container(),
+                          onChanged: (val) {
+                            setState(() {
+                              type = val;
+                              widget.item.type = val;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: 15,
+                ),
                 Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                  ),
+                  decoration:
+                      BoxDecoration(borderRadius: BorderRadius.circular(10)),
                   child: TextFormField(
-                    initialValue: widget.item.year,
-                    focusNode: yearNode,
-                    keyboardType: TextInputType.number,
+                    initialValue: widget.item.description,
+                    focusNode: descriptionNode,
+                    textCapitalization: TextCapitalization.sentences,
                     autovalidateMode: AutovalidateMode.onUserInteraction,
                     style: TextStyle(
                       color: Colors.black,
                     ),
-                    onFieldSubmitted: (val) {
-                      descriptionNode.requestFocus();
-                    },
-                    onChanged: (val) {
-                      setState(() {
-                        year = val;
-                        widget.item.year = val;
-                      });
-                    },
+                    maxLines: null, // 5
                     decoration: InputDecoration(
-                      labelText: "Year",
+                      labelText: "Description",
                       contentPadding: EdgeInsets.all(10),
                       filled: true,
                       fillColor: Color.fromRGBO(240, 240, 240, 1),
                     ),
-                    validator: (value) {
-                      var date = DateFormat("y").format(DateTime.now());
-                      if ((value.length < 4 && value.length > 0) ||
-                          (value.length > 4 &&
-                              int.parse(value) > int.parse(date))) {
-                        return 'Mag-enter ng tamang taon.';
-                      }
-                      return null;
+                    onFieldSubmitted: (val) {
+                      FocusScope.of(context).unfocus();
+                    },
+                    onChanged: (val) {
+                      setState(() {
+                        description = val;
+                        widget.item.description = val;
+                      });
                     },
                   ),
                 ),
+                SizedBox(
+                  height: 15,
+                ),
                 Container(
-                  child: FlatButton(
-                    color: Colors.lightBlue,
+                  child: OutlineButton(
+                    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                    color: Colors.white,
                     onPressed: () {
+                      FocusScope.of(context).unfocus();
                       if (_formKey.currentState.validate()) {
-                        print(year);
                         setState(() {
+                          opened[widget.size] = false;
                           widget.item.name = name;
                           widget.item.year = year;
+                          widget.item.description = description;
+                          widget.item.type = type;
                           closed = true;
+
+                          addedAward[widget.size] = widget.item;
                         });
                       }
                     },
-                    child: Text('Save item',
-                        style: TextStyle(color: Colors.white)),
+                    child: Text('Save'),
                   ),
-                  alignment: Alignment.centerRight,
+                  alignment: Alignment.center,
                 ),
               ],
             ))
         : ListTile(
+            contentPadding: EdgeInsets.all(10),
             tileColor: Color.fromRGBO(240, 240, 240, 1),
-            title: Text(widget.item.name != null ? widget.item.name : ''),
-            subtitle: Text(widget.item.year != null ? widget.item.year : '',
-                style: TextStyle(fontStyle: FontStyle.italic)),
-            trailing: IconButton(
-              icon: Icon(Icons.edit),
-              onPressed: () {
+            title: Text(
+                (widget.item.name != null ? widget.item.name : '') +
+                    (widget.item.year != null
+                        ? " (" + widget.item.year + ") "
+                        : ''),
+                softWrap: true,
+                overflow: TextOverflow.clip),
+            subtitle: Text(
+                widget.item.description != null ? widget.item.description : '',
+                style: TextStyle(
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.justify),
+            trailing: GestureDetector(
+              child: Icon(Icons.edit),
+              onTap: () {
                 setState(() {
                   closed = false;
+                  opened[widget.size] = true;
                 });
               },
             ),
