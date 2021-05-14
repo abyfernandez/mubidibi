@@ -5,6 +5,10 @@ import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/globals.dart' as Config;
+import 'package:mubidibi/ui/views/home_view.dart';
+import 'package:mubidibi/ui/views/startup_view.dart';
+
+// TO DO: hide the bottom sheet when drawer is opened
 
 class MyDrawer extends StatelessWidget {
   final NavigationService _navigationService = locator<NavigationService>();
@@ -15,7 +19,7 @@ class MyDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var currentUser = _authenticationService.currentUser;
-    print(currentUser);
+
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
@@ -28,6 +32,7 @@ class MyDrawer extends StatelessWidget {
           height: double.infinity,
           width: double.infinity,
           child: Drawer(
+            elevation: 20,
             child: ListView(
               padding: EdgeInsets.zero,
               children: <Widget>[
@@ -39,10 +44,16 @@ class MyDrawer extends StatelessWidget {
                         margin: EdgeInsets.only(bottom: 0),
                         accountName: GestureDetector(
                           child: Text(
-                              (currentUser.firstName +
-                                      " " +
-                                      currentUser.lastName) ??
-                                  ' ',
+                              currentUser.firstName +
+                                  (currentUser.middleName != null
+                                      ? " " + currentUser.middleName
+                                      : "") +
+                                  (currentUser.lastName != null
+                                      ? " " + currentUser.lastName
+                                      : "") +
+                                  (currentUser.suffix != null
+                                      ? " " + currentUser.suffix
+                                      : ""),
                               style: TextStyle(
                                   fontSize: 18,
                                   decoration: TextDecoration.underline)),
@@ -50,7 +61,6 @@ class MyDrawer extends StatelessWidget {
                             print("View Profile");
                           },
                         ),
-                        // TO DO: Display currentUser's email address
                         accountEmail: Text(
                           currentUser.email,
                           style: TextStyle(

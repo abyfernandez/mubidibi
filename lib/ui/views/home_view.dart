@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -8,6 +9,8 @@ import 'package:mubidibi/ui/views/my_drawer.dart';
 import 'package:mubidibi/ui/views/search_view.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
+import 'package:http/http.dart' as http;
+import 'package:mubidibi/globals.dart' as Config;
 
 class HomeView extends StatefulWidget {
   HomeView({Key key}) : super(key: key);
@@ -20,17 +23,21 @@ class _HomeViewState extends State<HomeView> {
   final DialogService _dialogService = locator<DialogService>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int pageIndex = 0;
+  List<DropdownMenuItem> genreItems = [];
+  List<dynamic> genres = [];
+  String sortBy = "";
+  Widget _showPage;
 
   // Initialize Pages
   final SearchView _searchView = SearchView();
-  final DashboardView _dashboardView = DashboardView();
-
-  Widget _showPage = DashboardView();
+  // final DashboardView _dashboardView = DashboardView();
 
   Widget _pageChooser(int page) {
     switch (page) {
       case 0:
-        return DashboardView();
+        return new DashboardView(
+          filter: sortBy,
+        );
         break;
       case 1:
         return _searchView;
@@ -47,14 +54,49 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+  // Function: FETCH GENRES
+  List<String> genreFromJson(String str) =>
+      List<String>.from(json.decode(str).map((x) => x['genre']));
+
+  // fetch genre from API
+  void fetchGenres() async {
+    final response = await http.get(Config.api + 'genres/');
+
+    if (response.statusCode == 200) {
+      // map json to Genre type
+      genres = genreFromJson(response.body);
+
+      genreItems = genres.map<DropdownMenuItem<String>>((dynamic value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value),
+        );
+      }).toList();
+
+      setState(() {});
+    }
+  }
+
+  @override
+  void initState() {
+    fetchGenres();
+    _showPage = DashboardView();
+
+    super.initState();
+  }
+
   // TO DO: When drawer is open and home button is clicked, the page must return to the dashboard
 
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
+
+    if (genreItems == null) return CircularProgressIndicator();
     return Scaffold(
       key: _scaffoldKey,
+      drawerEnableOpenDragGesture: false,
       body: Center(child: _showPage),
+      extendBodyBehindAppBar: pageIndex == 0 ? true : false,
       // TO DO: Show dialog box on back press
       // WillPopScope(
       //   onWillPop: pageIndex == 0 && !isDrawerOpen
@@ -67,6 +109,51 @@ class _HomeViewState extends State<HomeView> {
       //     ),
       //   ),
       // ),
+      appBar: pageIndex == 0
+          ? AppBar(
+              title: Text("mubidibi",
+                  style: TextStyle(
+                      color: Colors.white,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.bold)),
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors
+                  .black, // can be changed to transparent but decreases visibility
+              iconTheme: IconThemeData(color: Colors.white),
+              automaticallyImplyLeading: false,
+              actions: [
+                Container(
+                  margin: EdgeInsets.only(left: 10, right: 10, top: 5),
+                  child: DropdownButton<dynamic>(
+                    icon: null,
+                    iconEnabledColor: Colors.white,
+                    // TO DO: see if may mas ok na solution for this, also check if walang overflow sa ibang device
+                    hint: Text(
+                      "               Categories",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    items: genreItems,
+                    onChanged: (value) {
+                      setState(() {
+                        sortBy = value;
+                        _showPage = _pageChooser(pageIndex);
+                      });
+                    },
+                    underline: Container(),
+                  ),
+                ),
+                Container(
+                  margin: EdgeInsets.only(left: 10, right: 10),
+                  child: GestureDetector(
+                    onTap: () {
+                      _scaffoldKey.currentState.openEndDrawer();
+                    },
+                    child: Icon(Icons.menu),
+                  ),
+                ),
+              ],
+            )
+          : null,
       backgroundColor: Colors.white,
       endDrawer: Theme(
         data: Theme.of(context).copyWith(
@@ -74,7 +161,9 @@ class _HomeViewState extends State<HomeView> {
         ),
         child: MyDrawer(),
       ),
+
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

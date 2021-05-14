@@ -16,14 +16,20 @@ import 'package:mubidibi/models/movie.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
 
 class DashboardView extends StatefulWidget {
-  DashboardView({Key key}) : super(key: key);
+  final String filter;
+
+  DashboardView({Key key, this.filter}) : super(key: key);
 
   @override
-  _DashboardViewState createState() => _DashboardViewState();
+  _DashboardViewState createState() => _DashboardViewState(filter);
 }
 
 class _DashboardViewState extends State<DashboardView>
     with SingleTickerProviderStateMixin {
+  final String filter;
+
+  _DashboardViewState(this.filter);
+
   final NavigationService _navigationService = locator<NavigationService>();
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
@@ -39,21 +45,6 @@ class _DashboardViewState extends State<DashboardView>
   IconData fabIcon;
   var currentUser;
   bool test = false;
-
-  List<DropdownMenuItem> _categories = [
-    DropdownMenuItem<String>(
-      value: "Romance",
-      child: Text("Romance"),
-    ),
-    DropdownMenuItem<String>(
-      value: "Comedy",
-      child: Text("Comedy"),
-    ),
-    DropdownMenuItem<String>(
-      value: "Horror",
-      child: Text("Horror"),
-    )
-  ];
 
   // function for calling viewmodel's getAllCrew method
   void fetchMovies() async {
@@ -110,6 +101,8 @@ class _DashboardViewState extends State<DashboardView>
   @override
   void initState() {
     currentUser = _authenticationService.currentUser;
+    print("FILTER: $filter");
+
     fetchMovies();
     fetchCrew();
     fabIcon = Icons.add;
@@ -139,41 +132,6 @@ class _DashboardViewState extends State<DashboardView>
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
         extendBodyBehindAppBar: true,
-        appBar: AppBar(
-          title: Text("mubidibi",
-              style: TextStyle(
-                  color: Colors.white,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors
-              .black, // can be changed to transparent but decreases visibility
-          iconTheme: IconThemeData(color: Colors.white),
-          automaticallyImplyLeading: false,
-          actions: [
-            Container(
-              margin: EdgeInsets.only(left: 10, right: 10, top: 5),
-              child: DropdownButton<dynamic>(
-                hint: Text(
-                  "Categories",
-                  style: TextStyle(color: Colors.white),
-                ),
-                items: _categories,
-                onChanged: (_) {},
-                underline: Container(),
-              ),
-            ),
-            Container(
-              margin: EdgeInsets.only(left: 10, right: 10),
-              child: GestureDetector(
-                onTap: () {
-                  _scaffoldKey.currentState.openEndDrawer();
-                },
-                child: Icon(Icons.menu),
-              ),
-            ),
-          ],
-        ),
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         floatingActionButton: Visibility(
           visible: currentUser != null ? currentUser.isAdmin : false,

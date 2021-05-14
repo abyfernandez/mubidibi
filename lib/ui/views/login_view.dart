@@ -10,6 +10,8 @@ import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 import 'package:mubidibi/constants/route_names.dart';
 
+// TO DO: add logo name on top of the fields
+
 class LoginView extends StatefulWidget {
   @override
   _LoginViewState createState() => new _LoginViewState();
@@ -114,7 +116,7 @@ class _LoginViewState extends State<LoginView> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
                             // EMAIL ADDRESS FIELD
-                            // TO DO: validate with regex before allowing to be dubmitted
+                            // TO DO: validate with regex before allowing to be submitted
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
@@ -156,6 +158,26 @@ class _LoginViewState extends State<LoginView> {
                                     },
                                   ),
                                 ),
+
+                                // link to sign up
+                                Row(
+                                  children: [
+                                    Text('Gumawa ng bagong account '),
+                                    InkWell(
+                                        onTap: () {
+                                          FocusScope.of(context).unfocus();
+
+                                          _navigationService
+                                              .navigateTo(SignUpViewRoute);
+                                        },
+                                        child: Text('dito',
+                                            style: TextStyle(
+                                                color: Colors.lightBlue,
+                                                decoration:
+                                                    TextDecoration.underline))),
+                                    Text('.'),
+                                  ],
+                                ),
                               ],
                             ),
 
@@ -177,6 +199,8 @@ class _LoginViewState extends State<LoginView> {
                                 onPressed: isButtonDisabled()
                                     ? null
                                     : () async {
+                                        FocusScope.of(context).unfocus();
+
                                         _saving =
                                             true; // set saving to true to trigger circular progress indicator
                                         var response = await model.login(
@@ -194,6 +218,8 @@ class _LoginViewState extends State<LoginView> {
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
                                         } else {
+                                          FocusScope.of(context).unfocus();
+
                                           // set _saving to false and display error dialog box or snackbar/flutter toast for login error
                                           setState(() {
                                             _saving = false;

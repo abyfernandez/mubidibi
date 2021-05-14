@@ -68,7 +68,7 @@ class SignInCategoryView extends StatelessWidget {
                           ),
                           color: Colors.lightBlue,
                           child: Text(
-                            'LOGIN',
+                            'MAG-LOGIN',
                             style: TextStyle(
                               color: Colors.white,
                               letterSpacing: 1.5,
@@ -96,7 +96,7 @@ class SignInCategoryView extends StatelessWidget {
                           ),
                           color: Colors.lightBlue,
                           child: Text(
-                            'SIGN UP',
+                            'GUMAWA NG ACCOUNT',
                             style: TextStyle(
                               color: Colors.white,
                               letterSpacing: 1.5,
@@ -119,7 +119,7 @@ class SignInCategoryView extends StatelessWidget {
                               child: Text(
                                 "Help",
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Colors.black,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   letterSpacing: 1.5,
@@ -131,7 +131,7 @@ class SignInCategoryView extends StatelessWidget {
                               child: Text(
                                 "Privacy",
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Colors.black,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   letterSpacing: 1.5,
@@ -144,6 +144,16 @@ class SignInCategoryView extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+              Positioned(
+                top: 40,
+                left: 15,
+                child: GestureDetector(
+                  onTap: () {
+                    _navigationService.pop();
+                  },
+                  child: Icon(Icons.arrow_back, color: Colors.black, size: 25),
                 ),
               ),
             ],

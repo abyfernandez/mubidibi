@@ -20,6 +20,8 @@ class AuthenticationService {
   Future _populateCurrentUser(FirebaseUser user) async {
     if (user != null) {
       _currentUser = await getUser(userId: user.uid);
+    } else {
+      _currentUser = null;
     }
   }
 
@@ -145,14 +147,6 @@ class AuthenticationService {
       await _populateCurrentUser(currentUser);
 
       print("currentuser: $currentUser");
-
-      // await _firestoreService.createUser(User(
-      //     uid: currentUser.uid,
-      //     displayName: currentUser.displayName,
-      //     photoUrl: currentUser.photoUrl,
-      //     email: currentUser.email,
-      //     type: "user"));
-
       print("User signed in.");
 
       return user != null;
@@ -164,7 +158,8 @@ class AuthenticationService {
     try {
       await googleSignIn.signOut();
       await _firebaseAuth.signOut();
-      print("User signed out.");
+
+      var hasLoggedInUser = isUserLoggedIn();
     } catch (e) {}
   }
 

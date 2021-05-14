@@ -14,8 +14,11 @@ class Review {
   final String middleName;
   final String lastName;
   final String suffix;
-  final num rating;
-  final String review;
+  num rating;
+  String review;
+  int upvoteCount;
+  int downvoteCount;
+  bool upvoted;
   final bool isApproved;
   final String addedAt;
 
@@ -30,7 +33,10 @@ class Review {
       this.rating,
       this.review,
       this.isApproved,
-      this.addedAt});
+      this.addedAt,
+      this.upvoteCount,
+      this.downvoteCount,
+      this.upvoted});
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
@@ -43,6 +49,9 @@ class Review {
       suffix: json['suffix'],
       rating: json['rating'] != null ? double.parse(json['rating']) : 0.0,
       review: json['review'],
+      upvoteCount: json['upvote_count'],
+      downvoteCount: json['downvote_count'],
+      upvoted: json['upvoted'],
       isApproved: json['is_approved'],
       addedAt: json['created_at'],
     );
@@ -50,7 +59,7 @@ class Review {
 
   Map<String, dynamic> toJson() => {
         "id": reviewId,
-        "movie_id": reviewId,
+        "movie_id": movieId,
         "account_id": userId,
         "rating": rating,
         "review": review,

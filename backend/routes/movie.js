@@ -472,7 +472,6 @@ exports.movie = app => {
       client.query(
         'select distinct unnest(genre) as genre from movie',
         function onResult(err, result) {
-          console.log(result);
           release()
           if (result) res.send(JSON.stringify(result.rows));
           else res.send(err);
