@@ -21,6 +21,7 @@ class Review {
   bool upvoted;
   final bool isApproved;
   final String addedAt;
+  bool edit;
 
   Review(
       {this.reviewId,
@@ -36,7 +37,8 @@ class Review {
       this.addedAt,
       this.upvoteCount,
       this.downvoteCount,
-      this.upvoted});
+      this.upvoted,
+      this.edit});
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
@@ -54,6 +56,7 @@ class Review {
       upvoted: json['upvoted'],
       isApproved: json['is_approved'],
       addedAt: json['created_at'],
+      edit: false,
     );
   }
 

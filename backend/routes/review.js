@@ -85,7 +85,7 @@ exports.review = app => {
 
       // Vote
       if (req.body.type == 'insert') {
-        await client.query(`insert into review_vote (review_id, account_id, upvote) values ($1, $2, $3)`, [parseInt(req.body.review_id), req.body.account_id, true]);
+        await client.query(`insert into review_vote (review_id, account_id, upvote) values ($1, $2, $3)`, [parseInt(req.body.review_id), req.body.account_id, req.body.upvote]);
       } else if (req.body.type == "update") {
         await client.query(`update review_vote set upvote = $1 where review_id = $2 and account_id = $3 and upvote = $4`, [req.body.upvote, parseInt(req.body.review_id), req.body.account_id, !req.body.upvote]);
       } else if (req.body.type == "delete") {

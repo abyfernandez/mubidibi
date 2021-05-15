@@ -1,5 +1,6 @@
 import 'dart:convert';
 // import 'dart:html';
+import 'dart:async';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,7 @@ import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/models/review.dart';
+import 'package:mubidibi/models/user.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
@@ -64,7 +66,6 @@ class _MovieViewState extends State<MovieView>
   // local variables
   bool _saving = false;
   bool userHasVoted;
-  var _edit = false;
 
   // variables needed for adding reviews
   final reviewController = TextEditingController();
@@ -99,9 +100,9 @@ class _MovieViewState extends State<MovieView>
   }
 
   // check if currentUser has left a review. Display in first row if true.
-  Widget checkReview(
-      Review userReview, GlobalKey<ScaffoldState> _sKey, num rate) {
+  Widget checkReview(Review userReview, GlobalKey<ScaffoldState> _sKey) {
     var model = ReviewViewModel();
+    var _edit = false;
 
     if (userReview != null) {
       return _edit == false
@@ -265,9 +266,9 @@ class _MovieViewState extends State<MovieView>
                                         ],
                                         onSelected: (value) async {
                                           if (value == 'edit') {
-                                            setState(() {
-                                              _edit = true;
-                                            });
+                                            // setState(() {
+                                            _edit = true;
+                                            // });
                                           } else {
                                             var response = await _dialogService
                                                 .showConfirmationDialog(
@@ -292,22 +293,27 @@ class _MovieViewState extends State<MovieView>
                                                         'Your review has been deleted.',
                                                         Colors.green));
 
-                                                model.getAllReviews(
-                                                    movieId: movie.movieId
-                                                        .toString(),
-                                                    accountId: currentUser
-                                                        .userId
-                                                        .toString());
+                                                Timer(
+                                                    const Duration(
+                                                        milliseconds: 2000),
+                                                    () {
+                                                  model.getAllReviews(
+                                                      movieId: movie.movieId
+                                                          .toString(),
+                                                      accountId: currentUser
+                                                          .userId
+                                                          .toString());
 
-                                                Navigator.pushReplacement(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          MovieView(
-                                                        movieId: movie.movieId
-                                                            .toString(),
-                                                      ),
-                                                    ));
+                                                  Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            MovieView(
+                                                          movieId: movie.movieId
+                                                              .toString(),
+                                                        ),
+                                                      ));
+                                                });
                                               }
                                             }
 
@@ -365,7 +371,11 @@ class _MovieViewState extends State<MovieView>
                 ],
               ),
             )
-          : showReviewForm(userReview, _sKey, rate);
+          : ReviewForm(
+              userReview: userReview,
+              sKey: _sKey,
+              movie: movie,
+              currentUser: currentUser);
     } else {
       return Container();
     }
@@ -604,215 +614,201 @@ class _MovieViewState extends State<MovieView>
     return '-';
   }
 
-  Widget showReviewForm(
-      Review userReview, GlobalKey<ScaffoldState> _sKey, num rate) {
-    // String rev = userReview?.review ?? '';
-    reviewController.text = userReview?.review ?? '';
+  // Widget showReviewForm(Review userReview, GlobalKey<ScaffoldState> _sKey) {
+  //   reviewController.text = userReview?.review ?? '';
+  //   num rate = userReview?.rating ?? 0.00;
+  //   bool _edit = false;
 
-    return Container(
-        decoration: BoxDecoration(
-          color: Color.fromRGBO(240, 240, 240, 1),
-          borderRadius: BorderRadius.circular(5),
-        ),
-        child: InkWell(
-            // to dismiss the keyboard when the user taps out of the TextField
-            splashColor: Colors.transparent,
-            onTap: () {
-              FocusScope.of(context).requestFocus(FocusNode());
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 10,
-                    ),
-                    Padding(
-                      padding: EdgeInsets.only(top: 10),
-                      child: Row(
-                        children: [
-                          Text("Rating: ", style: TextStyle(fontSize: 16)),
-                          RatingBar.builder(
-                            initialRating: userReview?.rating ?? 0,
-                            direction: Axis.horizontal,
-                            allowHalfRating: true,
-                            itemCount: 5,
-                            itemSize: 25,
-                            unratedColor: Color.fromRGBO(192, 192, 192, 1),
-                            itemPadding: EdgeInsets.symmetric(horizontal: 2.0),
-                            itemBuilder: (context, _) => Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                            ),
-                            onRatingUpdate: (rating) {
-                              // _rating = rating;
-                              rate = rating;
-                            },
-                            updateOnDrag: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Padding(
-                  padding: EdgeInsets.only(left: 10),
-                  child: Text("Review:", style: TextStyle(fontSize: 16)),
-                ),
-                SizedBox(height: 5),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: TextFormField(
-                    controller: reviewController,
-                    // initialValue: rev,
-                    focusNode: focusNode,
-                    style: TextStyle(
-                      color: Colors.black,
-                    ),
-                    maxLines: null,
-                    // onChanged: (val) {
-                    //   setState(() {
-                    //   rev = val;
+  //   return Container(
+  //       decoration: BoxDecoration(
+  //         color: Color.fromRGBO(240, 240, 240, 1),
+  //         borderRadius: BorderRadius.circular(5),
+  //       ),
+  //       child: InkWell(
+  //           // to dismiss the keyboard when the user taps out of the TextField
+  //           splashColor: Colors.transparent,
+  //           onTap: () {
+  //             FocusScope.of(context).requestFocus(FocusNode());
+  //           },
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Row(
+  //                 children: [
+  //                   SizedBox(
+  //                     width: 10,
+  //                   ),
+  //                   Padding(
+  //                     padding: EdgeInsets.only(top: 10),
+  //                     child: Row(
+  //                       children: [
+  //                         Text("Rating: ", style: TextStyle(fontSize: 16)),
+  //                         RatingBar.builder(
+  //                           initialRating: rate,
+  //                           direction: Axis.horizontal,
+  //                           allowHalfRating: true,
+  //                           itemCount: 5,
+  //                           itemSize: 25,
+  //                           unratedColor: Color.fromRGBO(192, 192, 192, 1),
+  //                           itemPadding: EdgeInsets.symmetric(horizontal: 2.0),
+  //                           itemBuilder: (context, _) => Icon(
+  //                             Icons.star,
+  //                             color: Colors.amber,
+  //                           ),
+  //                           onRatingUpdate: (rating) {
+  //                             rate = rating;
+  //                           },
+  //                           updateOnDrag: true,
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               SizedBox(height: 10),
+  //               Padding(
+  //                 padding: EdgeInsets.only(left: 10),
+  //                 child: Text("Review:", style: TextStyle(fontSize: 16)),
+  //               ),
+  //               SizedBox(height: 5),
+  //               Padding(
+  //                 padding: EdgeInsets.symmetric(horizontal: 20),
+  //                 child: TextFormField(
+  //                   controller: reviewController,
+  //                   // initialValue: rev,
+  //                   focusNode: focusNode,
+  //                   style: TextStyle(
+  //                     color: Colors.black,
+  //                   ),
+  //                   maxLines: null,
+  //                   decoration: InputDecoration(
+  //                     filled: true,
+  //                     fillColor: Colors.white,
+  //                     hintText: "I-type ang iyong review...",
+  //                     hintStyle: TextStyle(
+  //                       color: Colors.black87,
+  //                       fontSize: 16,
+  //                     ),
+  //                     enabledBorder: OutlineInputBorder(
+  //                       borderRadius: BorderRadius.circular(5),
+  //                       borderSide: BorderSide.none,
+  //                     ),
+  //                     focusedBorder: OutlineInputBorder(
+  //                       borderRadius: BorderRadius.circular(5),
+  //                       borderSide: BorderSide.none,
+  //                     ),
+  //                     errorBorder: OutlineInputBorder(
+  //                       borderRadius: BorderRadius.circular(5),
+  //                       borderSide: BorderSide(color: Colors.red),
+  //                     ),
+  //                   ),
+  //                   validator: (value) {
+  //                     if (value.isEmpty || value == null) {
+  //                       return 'Required ang field na ito.';
+  //                     }
+  //                     return null;
+  //                   },
+  //                 ),
+  //               ),
+  //               SizedBox(height: 10),
+  //               Row(children: [
+  //                 Container(
+  //                   padding: EdgeInsets.only(left: 20),
+  //                   alignment: Alignment.centerLeft,
+  //                   decoration:
+  //                       BoxDecoration(borderRadius: BorderRadius.circular(5)),
+  //                   child: ButtonTheme(
+  //                     padding: EdgeInsets.symmetric(
+  //                         vertical: 6.0,
+  //                         horizontal: 10.0), //adds padding inside the button
+  //                     materialTapTargetSize: MaterialTapTargetSize
+  //                         .shrinkWrap, //limits the touch area to the button area
+  //                     minWidth: 0, //wraps child's width
+  //                     height: 0,
+  //                     child: FlatButton(
+  //                       color: Colors.lightBlue,
+  //                       onPressed: () async {
+  //                         focusNode.unfocus();
 
-                    //                         });)
-                    // },
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      hintText: "I-type ang iyong review...",
-                      hintStyle: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide.none,
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide.none,
-                      ),
-                      errorBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                        borderSide: BorderSide(color: Colors.red),
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value.isEmpty || value == null) {
-                        return 'Required ang field na ito.';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                SizedBox(height: 10),
-                Row(children: [
-                  Container(
-                    padding: EdgeInsets.only(left: 20),
-                    alignment: Alignment.centerLeft,
-                    decoration:
-                        BoxDecoration(borderRadius: BorderRadius.circular(5)),
-                    child: ButtonTheme(
-                      padding: EdgeInsets.symmetric(
-                          vertical: 6.0,
-                          horizontal: 10.0), //adds padding inside the button
-                      materialTapTargetSize: MaterialTapTargetSize
-                          .shrinkWrap, //limits the touch area to the button area
-                      minWidth: 0, //wraps child's width
-                      height: 0,
-                      child: FlatButton(
-                        color: Colors.lightBlue,
-                        onPressed: () async {
-                          focusNode.unfocus();
+  //                         // submit post and save into db
+  //                         var model = ReviewViewModel();
+  //                         final response = await model.addReview(
+  //                             reviewId: userReview?.reviewId ?? "0",
+  //                             movieId: movie.movieId.toString(),
+  //                             userId: currentUser.userId.toString(),
+  //                             rating: rate.toString(),
+  //                             review: reviewController.text);
 
-                          // submit post and save into db
-                          // TO DO: FIX FOR UPDATE
-                          var model = ReviewViewModel();
-                          final response = await model.addReview(
-                              reviewId: userReview?.reviewId ?? "0",
-                              movieId: movie.movieId.toString(),
-                              userId: currentUser.userId.toString(),
-                              // rating: _rating.toString(),
-                              rating: rate.toString(),
-                              review: reviewController.text);
+  //                         if (response != null) {
+  //                           // show success snackbar
+  //                           _sKey.currentState.showSnackBar(mySnackBar(context,
+  //                               'Your review has been posted.', Colors.green));
 
-                          if (response != null) {
-                            // show success snackbar
-                            // _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                            //     context,
-                            //     'Your review has been posted.',
-                            //     Colors.green));
-                            _sKey.currentState.showSnackBar(mySnackBar(context,
-                                'Your review has been posted.', Colors.green));
+  //                           Timer(const Duration(milliseconds: 2000), () {
+  //                             // fetch reviews again
+  //                             model.getAllReviews(
+  //                                 movieId: movie.movieId.toString(),
+  //                                 accountId: currentUser.userId.toString());
 
-                            // fetch reviews again
-                            model.getAllReviews(
-                                movieId: movie.movieId.toString(),
-                                accountId: currentUser.userId.toString());
-                            // Navigator.pop(context);
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        MovieView(
-                                          movieId: movie.movieId.toString(),
-                                        )));
-                          } else {
-                            // show error snackbar
-                            // _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                            //     context,
-                            //     'Something went wrong. Please try again later.',
-                            //     Colors.red));
-                            _sKey.currentState.showSnackBar(mySnackBar(
-                                context,
-                                'Something went wrong. Please try again later.',
-                                Colors.red));
-                          }
-                        },
-                        child: Text(
-                          "POST",
-                          style: TextStyle(fontSize: 14, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
-                  _edit == true
-                      ? Container(
-                          padding: EdgeInsets.only(left: 20),
-                          alignment: Alignment.centerLeft,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(5)),
-                          child: ButtonTheme(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 6.0,
-                                  horizontal:
-                                      10.0), //adds padding inside the button
-                              materialTapTargetSize: MaterialTapTargetSize
-                                  .shrinkWrap, //limits the touch area to the button area
-                              minWidth: 0, //wraps child's width
-                              height: 0,
-                              child: FlatButton(
-                                color: Colors.lightBlue,
-                                onPressed: () {
-                                  focusNode.unfocus();
-                                  setState(() {
-                                    _edit = false;
-                                  });
-                                },
-                                child: Text(
-                                  "Cancel",
-                                  style: TextStyle(
-                                      fontSize: 14, color: Colors.white),
-                                ),
-                              )))
-                      : SizedBox(),
-                ]),
-                SizedBox(height: 10),
-              ],
-            )));
-  }
+  //                             _edit = false;
+  //                             setState(() {});
+  //                             // Navigator.pop(context);
+  //                             // Navigator.pushReplacement(
+  //                             //     context,
+  //                             //     MaterialPageRoute(
+  //                             //         builder: (BuildContext context) =>
+  //                             //             MovieView(
+  //                             //               movieId: movie.movieId.toString(),
+  //                             //             )));
+  //                           });
+  //                         } else {
+  //                           _sKey.currentState.showSnackBar(mySnackBar(
+  //                               context,
+  //                               'Something went wrong. Please try again later.',
+  //                               Colors.red));
+  //                         }
+  //                       },
+  //                       child: Text(
+  //                         "POST",
+  //                         style: TextStyle(fontSize: 14, color: Colors.white),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 _edit == true
+  //                     ? Container(
+  //                         padding: EdgeInsets.only(left: 20),
+  //                         alignment: Alignment.centerLeft,
+  //                         decoration: BoxDecoration(
+  //                             borderRadius: BorderRadius.circular(5)),
+  //                         child: ButtonTheme(
+  //                             padding: EdgeInsets.symmetric(
+  //                                 vertical: 6.0,
+  //                                 horizontal:
+  //                                     10.0), //adds padding inside the button
+  //                             materialTapTargetSize: MaterialTapTargetSize
+  //                                 .shrinkWrap, //limits the touch area to the button area
+  //                             minWidth: 0, //wraps child's width
+  //                             height: 0,
+  //                             child: FlatButton(
+  //                               color: Colors.lightBlue,
+  //                               onPressed: () {
+  //                                 focusNode.unfocus();
+  //                                 _edit = false;
+  //                                 setState(() {});
+  //                               },
+  //                               child: Text(
+  //                                 "Cancel",
+  //                                 style: TextStyle(
+  //                                     fontSize: 14, color: Colors.white),
+  //                               ),
+  //                             )))
+  //                     : SizedBox(),
+  //               ]),
+  //               SizedBox(height: 10),
+  //             ],
+  //           )));
+  // }
 
   @override
   void initState() {
@@ -837,12 +833,14 @@ class _MovieViewState extends State<MovieView>
   GlobalKey _toolTipKey = GlobalKey();
 
   @override
+  void didUpdateWidget(MovieView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    print("didUpdateWidget");
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // TO DO: pag nag-sscroll down yung user, dapat makikita pa rin yung back arrow at add to favorites icon
     final _scaffoldKey = GlobalKey<ScaffoldState>();
-    num _rating;
-    // MediaQueryData queryData;
-    // queryData = MediaQuery.of(context);
 
     if (movie == null) return Center(child: CircularProgressIndicator());
 
@@ -912,20 +910,16 @@ class _MovieViewState extends State<MovieView>
                                 'Movie deleted successfully.',
                                 Colors.green));
 
-                            fetchMovie();
-                            _saving = false;
+                            Timer(const Duration(milliseconds: 2000), () {
+                              _saving = false;
 
-                            // TO DO: not sure what to do here huhu -- redirect to homepage if user is not an admin
-
-                            if (currentUser != null &&
-                                currentUser.isAdmin != true) {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => HomeView(),
                                 ),
                               );
-                            }
+                            });
                           } else {
                             _saving = false;
 
@@ -968,19 +962,16 @@ class _MovieViewState extends State<MovieView>
                                 'This movie is now restored.',
                                 Colors.green));
 
-                            _saving = false;
-                            fetchMovie();
-                            print("is deleted: ");
-                            print(movie.isDeleted);
-
-                            // redirect to homepage
-
-                            // Navigator.pushReplacement(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => HomeView(),
-                            //   ),
-                            // );
+                            Timer(const Duration(milliseconds: 2000), () {
+                              _saving = false;
+                              // redirect to homepage
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => HomeView(),
+                                ),
+                              );
+                            });
                           } else {
                             _saving = false;
 
@@ -1297,18 +1288,25 @@ class _MovieViewState extends State<MovieView>
                         padding: EdgeInsets.symmetric(horizontal: 20),
                         child: Column(
                           children: [
-                            !model.busy &&
-                                    (model.reviews
-                                                .where((review) =>
-                                                    review.userId ==
-                                                    currentUser.userId)
-                                                .length !=
-                                            0 &&
-                                        model.isEditing == false)
-                                ? checkReview(
-                                    model.userReview, _scaffoldKey, _rating)
-                                : showReviewForm(
-                                    model.userReview, _scaffoldKey, _rating)
+                            // !model.busy &&
+                            //         (model.reviews
+                            //                     .where((review) =>
+                            //                         review.userId ==
+                            //                         currentUser.userId)
+                            //                     .length !=
+                            //                 0 &&
+                            //             model.isEditing == false)
+                            //     ? checkReview(model.userReview, _scaffoldKey)
+                            //     : ReviewForm(
+                            //         userReview: model.userReview,
+                            //         sKey: _scaffoldKey,
+                            //         movie: movie,
+                            //         currentUser: currentUser)
+                            ReviewForm(
+                                userReview: model.userReview,
+                                sKey: _scaffoldKey,
+                                movie: movie,
+                                currentUser: currentUser)
                           ],
                         ),
                       )
@@ -1327,5 +1325,562 @@ class _MovieViewState extends State<MovieView>
         ),
       ),
     );
+  }
+}
+
+// CLASS REVIEW FORM
+class ReviewForm extends StatefulWidget {
+  final Review userReview;
+  final GlobalKey<ScaffoldState> sKey;
+  final Movie movie;
+  final User currentUser;
+
+  const ReviewForm(
+      {Key key,
+      @required this.userReview,
+      this.sKey,
+      this.movie,
+      this.currentUser})
+      : super(key: key);
+
+  @override
+  ReviewFormState createState() => ReviewFormState();
+}
+
+class ReviewFormState extends State<ReviewForm> {
+  final reviewController = TextEditingController();
+  final reviewFocusNode = FocusNode();
+  var model = ReviewViewModel();
+  final DialogService _dialogService = locator<DialogService>();
+  num rate;
+  bool _edit = false;
+  bool upvoted;
+  int upvoteCount;
+  int downvoteCount;
+
+  String timeAgo(String formattedString) {
+    final timestamp = DateTime.parse(formattedString);
+    final difference = DateTime.now().difference(timestamp);
+    final timeAgo =
+        DateTime.now().subtract(Duration(minutes: difference.inMinutes));
+    return timeago.format(timeAgo, locale: 'en_short');
+  }
+
+  @override
+  void initState() {
+    reviewController.text = widget.userReview?.review ?? '';
+    rate = widget.userReview?.rating ?? 0.00;
+    upvoted = widget.userReview?.upvoted;
+    upvoteCount = widget.userReview?.upvoteCount;
+    downvoteCount = widget.userReview?.downvoteCount;
+    super.initState();
+  }
+
+  Widget build(BuildContext context) {
+    return _edit == false
+        ? Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  margin: EdgeInsets.only(left: 10),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        // TO DO: Warning sign na need mag-sign in pag tinatry ng guest user magvote
+                        onTap: widget.currentUser != null
+                            ? () async {
+                                // categories: insert, update, delete
+                                if (upvoted == null) {
+                                  var res = await model.vote(
+                                      movieId: widget.movie.movieId,
+                                      reviewId: widget.userReview.reviewId,
+                                      type: 'insert',
+                                      value: true,
+                                      userId: widget.currentUser.userId);
+
+                                  setState(() {
+                                    upvoted = res.upvoted;
+                                    upvoteCount = res.upvoteCount;
+                                    downvoteCount = res.downvoteCount;
+                                  });
+                                } else if (upvoted == false) {
+                                  var res = await model.vote(
+                                      movieId: widget.movie.movieId,
+                                      reviewId: widget.userReview.reviewId,
+                                      type: 'update',
+                                      value: true,
+                                      userId: widget.currentUser.userId);
+
+                                  setState(() {
+                                    upvoted = res.upvoted;
+                                    upvoteCount = res.upvoteCount;
+                                    downvoteCount = res.downvoteCount;
+                                  });
+                                } else {
+                                  var res = await model.vote(
+                                      movieId: widget.movie.movieId,
+                                      reviewId: widget.userReview.reviewId,
+                                      type: 'delete',
+                                      value: null,
+                                      userId: widget.currentUser.userId);
+
+                                  Timer(Duration(seconds: 1),
+                                      () => print(res.upvoted ?? 'test'));
+
+                                  setState(() {
+                                    upvoted = res.upvoted;
+                                    upvoteCount = res.upvoteCount;
+                                    downvoteCount = res.downvoteCount;
+                                  });
+                                }
+                              }
+                            : null,
+                        child: Image.network(
+                          'https://res.cloudinary.com/mubidibi-sp/image/upload/v1619075331/images/up-arrow_aouhte.png',
+                          height: 15,
+                          width: 20,
+                          color: upvoted == true
+                              ? Colors.green
+                              : Color.fromRGBO(192, 192, 192, 1),
+                        ),
+                      ),
+                      Text((upvoteCount - downvoteCount).toString()),
+                      GestureDetector(
+                        onTap: widget.currentUser != null
+                            ? () async {
+                                // categories: insert, update, delete
+                                if (upvoted == null) {
+                                  var res = await model.vote(
+                                      movieId: widget.movie.movieId,
+                                      reviewId: widget.userReview.reviewId,
+                                      type: 'insert',
+                                      value: false,
+                                      userId: widget.currentUser.userId);
+
+                                  setState(() {
+                                    upvoted = res.upvoted;
+                                    upvoteCount = res.upvoteCount;
+                                    downvoteCount = res.downvoteCount;
+                                  });
+                                } else if (upvoted == true) {
+                                  var res = await model.vote(
+                                      movieId: widget.movie.movieId,
+                                      reviewId: widget.userReview.reviewId,
+                                      type: 'update',
+                                      value: false,
+                                      userId: widget.currentUser.userId);
+
+                                  setState(() {
+                                    upvoted = res.upvoted;
+                                    upvoteCount = res.upvoteCount;
+                                    downvoteCount = res.downvoteCount;
+                                  });
+                                } else {
+                                  var res = await model.vote(
+                                      movieId: widget.movie.movieId,
+                                      reviewId: widget.userReview.reviewId,
+                                      type: 'delete',
+                                      value: null,
+                                      userId: widget.currentUser.userId);
+
+                                  setState(() {
+                                    upvoted = res.upvoted;
+                                    upvoteCount = res.upvoteCount;
+                                    downvoteCount = res.downvoteCount;
+                                  });
+                                }
+                              }
+                            : null,
+                        child: Image.network(
+                          'https://res.cloudinary.com/mubidibi-sp/image/upload/v1619075332/images/down-arrow_lb8dht.png',
+                          height: 15,
+                          color: upvoted == false
+                              ? Colors.red
+                              : Color.fromRGBO(192, 192, 192, 1),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Card(
+                        shadowColor: Colors.transparent,
+                        margin: EdgeInsets.zero,
+                        clipBehavior: Clip.none,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            ListTile(
+                              title: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      // NOTE: putting text in a container and setting overflow to ellipsis fixes the overflow problem
+                                      Container(
+                                        width: 200,
+                                        child: Text(
+                                          widget.userReview.firstName +
+                                              " " +
+                                              (widget.userReview.middleName !=
+                                                      null
+                                                  ? widget.userReview
+                                                          .middleName +
+                                                      " " +
+                                                      widget.userReview.lastName
+                                                  : widget
+                                                      .userReview.lastName) +
+                                              (widget.userReview.suffix != null
+                                                  ? " " +
+                                                      widget.userReview.suffix
+                                                  : ""),
+                                          style: TextStyle(fontSize: 14),
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: true,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 10,
+                                      ),
+                                      Container(
+                                        child: Text(
+                                          timeAgo(widget.userReview.addedAt) +
+                                                  " ago" ??
+                                              ' ',
+                                          style: TextStyle(
+                                              color: Colors.grey, fontSize: 12),
+                                          overflow: TextOverflow.clip,
+                                          softWrap: true,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    margin: EdgeInsets.zero,
+                                    padding: EdgeInsets.zero,
+                                    child: PopupMenuButton(
+                                      padding: EdgeInsets.zero,
+                                      itemBuilder: (BuildContext context) => [
+                                        PopupMenuItem(
+                                            child: Text('Edit'), value: 'edit'),
+                                        PopupMenuItem(
+                                            child: Text('Delete'),
+                                            value: 'delete'),
+                                      ],
+                                      onSelected: (value) async {
+                                        if (value == 'edit') {
+                                          setState(() {
+                                            _edit = true;
+                                          });
+                                        } else {
+                                          var response = await _dialogService
+                                              .showConfirmationDialog(
+                                                  title: "Confirm Deletion",
+                                                  cancelTitle: "No",
+                                                  confirmationTitle: "Yes",
+                                                  description:
+                                                      "Are you sure you want to delete your review?");
+                                          if (response.confirmed == true) {
+                                            var model = ReviewViewModel();
+
+                                            var deleteRes =
+                                                await model.deleteReview(
+                                                    id: widget.userReview
+                                                            ?.reviewId
+                                                            .toString() ??
+                                                        '0');
+
+                                            if (deleteRes != 0) {
+                                              widget.sKey.currentState
+                                                  .showSnackBar(mySnackBar(
+                                                      context,
+                                                      'Your review has been deleted.',
+                                                      Colors.green));
+
+                                              Timer(
+                                                  const Duration(
+                                                      milliseconds: 2000), () {
+                                                model.getAllReviews(
+                                                    movieId: widget
+                                                        .movie.movieId
+                                                        .toString(),
+                                                    accountId: widget
+                                                        .currentUser.userId
+                                                        .toString());
+
+                                                Navigator.pushReplacement(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          MovieView(
+                                                        movieId: widget
+                                                            .movie.movieId
+                                                            .toString(),
+                                                      ),
+                                                    ));
+                                              });
+                                            }
+                                          }
+
+                                          setState(() {});
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              subtitle: IgnorePointer(
+                                ignoring: true,
+                                child: widget.userReview.rating != 0.00
+                                    ? RatingBar.builder(
+                                        direction: Axis.horizontal,
+                                        allowHalfRating: true,
+                                        itemCount: 5,
+                                        itemSize: 20,
+                                        initialRating: rate,
+                                        unratedColor:
+                                            Color.fromRGBO(192, 192, 192, 1),
+                                        itemBuilder: (context, _) => Icon(
+                                          Icons.star,
+                                          color: Colors.amber,
+                                        ),
+                                        onRatingUpdate: (rating) {},
+                                        updateOnDrag: true,
+                                      )
+                                    : Text("No rating",
+                                        style: TextStyle(
+                                            fontSize: 14,
+                                            fontStyle: FontStyle.italic)),
+                              ),
+                            ),
+                            Container(
+                              alignment: Alignment.centerLeft,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    widget.userReview.review,
+                                    style: TextStyle(fontSize: 14),
+                                    // textAlign: TextAlign.justify,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          )
+        : Container(
+            decoration: BoxDecoration(
+              color: Color.fromRGBO(240, 240, 240, 1),
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: InkWell(
+                // to dismiss the keyboard when the user taps out of the TextField
+                splashColor: Colors.transparent,
+                onTap: () {
+                  FocusScope.of(context).requestFocus(FocusNode());
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 10),
+                          child: Row(
+                            children: [
+                              Text("Rating: ", style: TextStyle(fontSize: 16)),
+                              RatingBar.builder(
+                                initialRating: rate,
+                                direction: Axis.horizontal,
+                                allowHalfRating: true,
+                                itemCount: 5,
+                                itemSize: 25,
+                                unratedColor: Color.fromRGBO(192, 192, 192, 1),
+                                itemPadding:
+                                    EdgeInsets.symmetric(horizontal: 2.0),
+                                itemBuilder: (context, _) => Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                ),
+                                onRatingUpdate: (rating) {
+                                  rate = rating;
+                                },
+                                updateOnDrag: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Padding(
+                      padding: EdgeInsets.only(left: 10),
+                      child: Text("Review:", style: TextStyle(fontSize: 16)),
+                    ),
+                    SizedBox(height: 5),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      child: TextFormField(
+                        controller: reviewController,
+                        focusNode: reviewFocusNode,
+                        style: TextStyle(
+                          color: Colors.black,
+                        ),
+                        maxLines: null,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          hintText: "I-type ang iyong review...",
+                          hintStyle: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 16,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide.none,
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(5),
+                            borderSide: BorderSide(color: Colors.red),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value.isEmpty || value == null) {
+                            return 'Required ang field na ito.';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Row(children: [
+                      Container(
+                        padding: EdgeInsets.only(left: 20),
+                        alignment: Alignment.centerLeft,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(5)),
+                        child: ButtonTheme(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 6.0,
+                              horizontal:
+                                  10.0), //adds padding inside the button
+                          materialTapTargetSize: MaterialTapTargetSize
+                              .shrinkWrap, //limits the touch area to the button area
+                          minWidth: 0, //wraps child's width
+                          height: 0,
+                          child: FlatButton(
+                            color: Colors.lightBlue,
+                            onPressed: () async {
+                              reviewFocusNode.unfocus();
+
+                              // submit post and save into db
+                              var model = ReviewViewModel();
+                              final response = await model.addReview(
+                                  reviewId: widget.userReview?.reviewId ?? "0",
+                                  movieId: widget.movie.movieId.toString(),
+                                  userId: widget.currentUser.userId.toString(),
+                                  rating: rate.toString(),
+                                  review: reviewController.text);
+
+                              if (response != null) {
+                                // show success snackbar
+                                widget.sKey.currentState.showSnackBar(
+                                    mySnackBar(
+                                        context,
+                                        'Your review has been posted.',
+                                        Colors.green));
+
+                                Timer(const Duration(milliseconds: 2000), () {
+                                  // fetch reviews again
+                                  model.getAllReviews(
+                                      movieId: widget.movie.movieId.toString(),
+                                      accountId:
+                                          widget.currentUser.userId.toString());
+
+                                  setState(() {
+                                    _edit = false;
+                                  });
+                                  // Navigator.pop(context);
+                                  // Navigator.pushReplacement(
+                                  //     context,
+                                  //     MaterialPageRoute(
+                                  //         builder: (BuildContext context) =>
+                                  //             MovieView(
+                                  //               movieId: movie.movieId.toString(),
+                                  //             )));
+                                });
+                              } else {
+                                widget.sKey.currentState.showSnackBar(mySnackBar(
+                                    context,
+                                    'Something went wrong. Please try again later.',
+                                    Colors.red));
+                              }
+                            },
+                            child: Text(
+                              "POST",
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                      _edit == true
+                          ? Container(
+                              padding: EdgeInsets.only(left: 20),
+                              alignment: Alignment.centerLeft,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5)),
+                              child: ButtonTheme(
+                                  padding: EdgeInsets.symmetric(
+                                      vertical: 6.0,
+                                      horizontal:
+                                          10.0), //adds padding inside the button
+                                  materialTapTargetSize: MaterialTapTargetSize
+                                      .shrinkWrap, //limits the touch area to the button area
+                                  minWidth: 0, //wraps child's width
+                                  height: 0,
+                                  child: FlatButton(
+                                    color: Colors.lightBlue,
+                                    onPressed: () {
+                                      reviewFocusNode.unfocus();
+                                      setState(() {
+                                        _edit = false;
+                                      });
+                                    },
+                                    child: Text(
+                                      "Cancel",
+                                      style: TextStyle(
+                                          fontSize: 14, color: Colors.white),
+                                    ),
+                                  )))
+                          : SizedBox(),
+                    ]),
+                    SizedBox(height: 10),
+                  ],
+                )));
   }
 }

@@ -90,7 +90,7 @@ class ReviewViewModel extends BaseModel {
   }
 
   // vote for a review
-  void vote(
+  Future<Review> vote(
       {@required int reviewId,
       @required int movieId,
       @required String userId,
@@ -115,13 +115,13 @@ class ReviewViewModel extends BaseModel {
     if (response.statusCode == 200) {
       // returns freshly fetched set of reviews
       // calls reviewFromJson method from the model to convert from JSON to Review datatype
-      print("HERE");
       var items = reviewFromJson(response.body);
       var userReview = items.singleWhere((review) => review.userId == userId,
           orElse: () => null);
 
       setReviews(items);
       setUserReview(userReview);
+      return userReview;
     } else {
       throw Exception('Failed to get updated reviews');
     }
