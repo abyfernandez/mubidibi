@@ -6,13 +6,16 @@ exports.review = app => {
     app.pg.connect(onConnect);
 
     async function onConnect(err, client, release) {
-      const { rows } = await client.query("SELECT review.*, account.first_name, account.middle_name, account.last_name, account.suffix FROM review LEFT JOIN account ON review.account_id = account.id WHERE review.movie_id = $1 ORDER BY review.created_at", [parseInt(req.body.movie_id)]);
+
+      const { rows } = await client.query("SELECT review.*, account.first_name, account.middle_name, account.last_name, account.suffix FROM review LEFT JOIN account ON review.account_id = account.id WHERE review.movie_id = $1 ORDER BY review.created_at desc", [parseInt(req.body.movie_id)]);
 
       // iterate over the reviews and count the numbers of total votes (upvotes and downvotes)
       for (var i = 0; i < rows.length; i++) {
         var rev_id = rows[i].id;
         var upvote_count = await client.query(`select count(*) as upvote_count from review_vote where review_id = $1 and upvote = true`, [rev_id]);
+
         var downvote_count = await client.query(`select count(*) as downvote_count from review_vote where review_id = $1 and upvote = false`, [rev_id]);
+
 
         rows[i]['upvote_count'] = parseInt(upvote_count.rows[0].upvote_count);
         rows[i]['downvote_count'] = parseInt(downvote_count.rows[0].downvote_count);
@@ -21,8 +24,28 @@ exports.review = app => {
         var vote = await client.query(`select upvote from review_vote where account_id = $1 and review_id = $2`, [req.body.account_id, rows[i].id]);
         rows[i]['upvoted'] = vote.rows && vote.rows.length ? vote.rows[0].upvote : null;
       }
+
       release();
       res.send(err || JSON.stringify(rows));
+    }
+  });
+
+
+  // GET ONE Review
+  app.post('/mubidibi/review/', (req, res) => {
+    app.pg.connect(onConnect)
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err)
+
+      client.query(
+        'SELECT review.*, account.first_name, account.middle_name, account.last_name, account.suffix FROM review LEFT JOIN account ON review.account_id = account.id WHERE review.account_id = $1 and review.movie_id = $2', [req.body.account_id, req.body.movie_id],
+        function onResult(err, result) {
+          release()
+          if (result) res.send(JSON.stringify(result.rows[0]));
+          else res.send(err);
+        }
+      )
     }
   });
 
@@ -37,7 +60,9 @@ exports.review = app => {
     // build query
     var query;
 
-    if (req.body.review_id == "0") {
+    console.log(req.body);
+
+    if (req.body.review_id == 0) {
       query = `call add_review (
         ${parseInt(req.body.movie_id)},
         '${req.body.account_id}',
@@ -50,7 +75,7 @@ exports.review = app => {
       if (err) return res.send(err);
 
       var reviews;
-      if (req.body.review_id == "0") {
+      if (req.body.review_id == 0) {
         reviews = await client.query(query);
       } else {
         reviews = await client.query(`update review set rating = $1, review = $2 where id = $3`, [req.body.rating == "null" || req.body.rating == 0 ? 0.00 : parseFloat(req.body.rating).toFixed(2), req.body.review, req.body.review_id]);
@@ -111,6 +136,21 @@ exports.review = app => {
       }
       release();
       res.send(err || JSON.stringify(rows));
+    }
+  });
+
+  // change review status 
+  app.post('/mubidibi/change-status/:id', async (req, res) => {
+    app.pg.connect(onConnect);
+
+    async function onConnect(err, client, release) {
+      if (err) return res.send(err);
+
+      await client.query('update review set is_approved = $1 where id = $2 returning id', [req.body.status, req.body.id], function onResult(err, result) {
+        console.log(result.rows);
+        release();
+        res.send(err || JSON.stringify(result.rows[0].id));
+      });
     }
   });
 }

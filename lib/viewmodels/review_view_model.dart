@@ -90,7 +90,7 @@ class ReviewViewModel extends BaseModel {
   }
 
   // vote for a review
-  Future<Review> vote(
+  Future<List<Review>> vote(
       {@required int reviewId,
       @required int movieId,
       @required String userId,
@@ -121,7 +121,7 @@ class ReviewViewModel extends BaseModel {
 
       setReviews(items);
       setUserReview(userReview);
-      return userReview;
+      return items;
     } else {
       throw Exception('Failed to get updated reviews');
     }
@@ -142,5 +142,50 @@ class ReviewViewModel extends BaseModel {
       return (json.decode(response.body));
     }
     return 0;
+  }
+
+  // APPROVE / HIDE A REVIEW
+  Future<int> changeReviewStatus(
+      {@required int id, @required bool status}) async {
+    final response = await http.post(
+      Config.api + 'change-status/',
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'id': id,
+        'status': status,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return (json.decode(response.body));
+    }
+    return 0;
+  }
+
+  // Get one review
+  Future<Review> getReview(
+      {@required String accountId, @required int movieId}) async {
+    setBusy(true);
+
+    final response = await http.post(
+      Config.api + 'review/',
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, dynamic>{
+        'account_id': accountId,
+        'movie_id': movieId,
+      }),
+    );
+
+    setBusy(false);
+
+    if (response.statusCode == 200) {
+      return Review.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to load review');
+    }
   }
 }

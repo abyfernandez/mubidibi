@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
+import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/views/signin_category_view.dart';
@@ -39,8 +40,12 @@ class _ContentHeaderMobile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final NavigationService _navigationService = locator<NavigationService>();
+    final AuthenticationService _authenticationService =
+        locator<AuthenticationService>();
     MediaQueryData queryData;
     queryData = MediaQuery.of(context);
+    var currentUser = _authenticationService.currentUser;
+
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -110,8 +115,9 @@ class _ContentHeaderMobile extends StatelessWidget {
               VerticalIconButton(
                 icon: Icons.add,
                 title: 'My Favorites',
-                onTap: () =>
-                    _navigationService.navigateTo(SignInCategoryViewRoute),
+                onTap: () => currentUser == null
+                    ? _navigationService.navigateTo(SignInCategoryViewRoute)
+                    : print("Add to Favorites"),
               ),
               VerticalIconButton(
                 icon: Icons.info_outline,

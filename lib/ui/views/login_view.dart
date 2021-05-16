@@ -189,13 +189,6 @@ class _LoginViewState extends State<LoginView> {
                               width: double.infinity,
                               child: FlatButton(
                                 focusNode: loginButtonNode,
-                                // onPressed: () async {
-                                //   if (_formKey.currentState.validate()) {
-                                //     model.login(
-                                //         email: emailController.text,
-                                //         password: passwordController.text);
-                                //   }
-                                // },
                                 onPressed: isButtonDisabled()
                                     ? null
                                     : () async {

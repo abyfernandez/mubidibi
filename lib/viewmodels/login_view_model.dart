@@ -29,7 +29,6 @@ class LoginViewModel extends BaseModel {
 
     if (result is bool) {
       if (result) {
-        // _navigationService.navigateTo(HomeViewRoute);
         return true;
       } else {
         await _dialogService.showDialog(

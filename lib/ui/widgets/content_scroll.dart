@@ -20,7 +20,7 @@ class ContentScroll extends StatelessWidget {
     this.imageWidth,
   });
 
-  String dislayRoles(crew) {
+  String displayRoles(crew) {
     var role = '';
     for (var i = 0; i < crew.role.length; i++) {
       role = role + crew.role[i];
@@ -131,10 +131,11 @@ class ContentScroll extends StatelessWidget {
                               ),
                             ),
                             Positioned(
-                              bottom: 1,
+                              bottom: 0, // 1
                               left: 1,
                               right: 1,
                               child: Container(
+                                padding: EdgeInsets.all(5),
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
                                   crew[index].firstName +
@@ -149,8 +150,13 @@ class ContentScroll extends StatelessWidget {
                                           : "") +
                                       " " +
                                       (title == "Mga Aktor"
-                                          ? "bilang " + dislayRoles(crew[index])
+                                          ? "(" +
+                                              displayRoles(crew[index]) +
+                                              ")"
                                           : ""),
+                                  // (title == "Mga Aktor"
+                                  //     ? "bilang " + displayRoles(crew[index])
+                                  //     : ""),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,
@@ -164,7 +170,7 @@ class ContentScroll extends StatelessWidget {
                                     BoxShadow(
                                       color: Colors.black54,
                                       offset: Offset(0.0, 0.0),
-                                      blurRadius: 4.0, // 6
+                                      blurRadius: 0.0, // 4
                                     ),
                                   ],
                                 ),

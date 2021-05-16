@@ -239,10 +239,11 @@ class ContentList extends StatelessWidget {
                               ),
                             ),
                             Positioned(
-                              bottom: 1,
+                              bottom: 0,
                               left: 9,
                               right: 9,
                               child: Container(
+                                padding: EdgeInsets.all(5),
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
                                   content.firstName +
@@ -268,7 +269,7 @@ class ContentList extends StatelessWidget {
                                     BoxShadow(
                                       color: Colors.black54,
                                       offset: Offset(0.0, 0.0),
-                                      blurRadius: 4.0, // 6
+                                      blurRadius: 0.0, // 6
                                     ),
                                   ],
                                 ),

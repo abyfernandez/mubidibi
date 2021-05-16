@@ -416,6 +416,7 @@ class _SearchViewState extends State<SearchView> {
                                                 left: 9,
                                                 right: 9,
                                                 child: Container(
+                                                  padding: EdgeInsets.all(5),
                                                   alignment:
                                                       Alignment.bottomLeft,
                                                   child: Text(
@@ -441,11 +442,11 @@ class _SearchViewState extends State<SearchView> {
                                                   decoration: BoxDecoration(
                                                     boxShadow: [
                                                       BoxShadow(
-                                                        color: Colors.black54,
-                                                        offset:
-                                                            Offset(0.0, 0.0),
-                                                        blurRadius: 4.0, // 6
-                                                      ),
+                                                          color: Colors.black54,
+                                                          offset:
+                                                              Offset(0.0, 0.0),
+                                                          blurRadius:
+                                                              0.0), // 4                                                      ),
                                                     ],
                                                   ),
                                                 ),
