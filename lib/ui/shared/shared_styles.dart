@@ -23,7 +23,11 @@ const TextStyle buttonTitleTextStyle =
     const TextStyle(fontWeight: FontWeight.w700, color: Colors.white);
 
 // Snackbar
-Widget mySnackBar(BuildContext context, String message, Color bgColor) {
+Widget mySnackBar(
+  BuildContext context,
+  String message,
+  Color bgColor,
+) {
   return SnackBar(
     content: Text(message,
         style:

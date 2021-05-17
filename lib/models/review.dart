@@ -21,7 +21,6 @@ class Review {
   bool upvoted;
   final bool isApproved;
   final String addedAt;
-  bool edit;
 
   Review(
       {this.reviewId,
@@ -37,27 +36,24 @@ class Review {
       this.addedAt,
       this.upvoteCount,
       this.downvoteCount,
-      this.upvoted,
-      this.edit});
+      this.upvoted});
 
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
-      reviewId: json['id'],
-      movieId: json['movie_id'],
-      userId: json['account_id'],
-      firstName: json['first_name'],
-      middleName: json['middle_name'],
-      lastName: json['last_name'],
-      suffix: json['suffix'],
-      rating: json['rating'] != null ? double.parse(json['rating']) : 0.0,
-      review: json['review'],
-      upvoteCount: json['upvote_count'],
-      downvoteCount: json['downvote_count'],
-      upvoted: json['upvoted'],
-      isApproved: json['is_approved'],
-      addedAt: json['created_at'],
-      edit: false,
-    );
+        reviewId: json['id'],
+        movieId: json['movie_id'],
+        userId: json['account_id'],
+        firstName: json['first_name'],
+        middleName: json['middle_name'],
+        lastName: json['last_name'],
+        suffix: json['suffix'],
+        rating: json['rating'] != null ? double.parse(json['rating']) : 0.0,
+        review: json['review'],
+        upvoteCount: json['upvote_count'],
+        downvoteCount: json['downvote_count'],
+        upvoted: json['upvoted'],
+        isApproved: json['is_approved'],
+        addedAt: json['created_at']);
   }
 
   Map<String, dynamic> toJson() => {
@@ -67,5 +63,6 @@ class Review {
         "rating": rating,
         "review": review,
         "created_at": addedAt,
+        "is_approved": isApproved
       };
 }

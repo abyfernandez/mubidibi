@@ -10,6 +10,8 @@ class ReviewViewModel extends BaseModel {
   Review userReview;
   Review _editingReview;
   bool isEditing = false;
+  bool isEmpty = false;
+  num overAllRating = 0.0;
 
   void setReviews(List<Review> response) {
     reviews = response;
@@ -36,8 +38,20 @@ class ReviewViewModel extends BaseModel {
     notifyListeners();
   }
 
+  void setLength(bool empty) {
+    isEmpty = empty;
+    notifyListeners();
+  }
+
+  void setOverAllRating(num rating) {
+    overAllRating = rating;
+    notifyListeners();
+    print('listeneres');
+  }
+
   // Function: GET ALL REVIEWS OF A SPECIFIC MOVIE
-  void getAllReviews({@required String movieId, String accountId}) async {
+  Future<bool> getAllReviews(
+      {@required String movieId, String accountId}) async {
     setBusy(true);
 
     // send API request
@@ -57,9 +71,11 @@ class ReviewViewModel extends BaseModel {
       var items = reviewFromJson(response.body);
       var userReview = items.singleWhere((review) => review.userId == accountId,
           orElse: () => null);
-
+      var empty = items.every((item) => item.isApproved == false);
+      setLength(empty);
       setReviews(items);
       setUserReview(userReview);
+      return Future.value(true);
     } else {
       throw Exception('Failed to get reviews');
     }
@@ -183,6 +199,10 @@ class ReviewViewModel extends BaseModel {
     setBusy(false);
 
     if (response.statusCode == 200) {
+      print(json.decode(response.body));
+      if (json.decode(response.body).is_approved == true) {
+        setLength(false);
+      }
       return Review.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to load review');

@@ -41,6 +41,7 @@ exports.review = app => {
       client.query(
         'SELECT review.*, account.first_name, account.middle_name, account.last_name, account.suffix FROM review LEFT JOIN account ON review.account_id = account.id WHERE review.account_id = $1 and review.movie_id = $2', [req.body.account_id, req.body.movie_id],
         function onResult(err, result) {
+          console.log(result.rows[0])
           release()
           if (result) res.send(JSON.stringify(result.rows[0]));
           else res.send(err);
