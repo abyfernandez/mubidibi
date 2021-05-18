@@ -37,8 +37,7 @@ ValueNotifier<double> rating = ValueNotifier<double>(0.0);
 var tempRating = 0.0;
 var numItems = 0;
 
-Future<bool> computeOverallRating(
-    String movieId, GlobalKey<ScaffoldState> sKey) async {
+void computeOverallRating(String movieId, GlobalKey<ScaffoldState> sKey) async {
   rating = ValueNotifier<double>(0.0);
   tempRating = 0.0;
   numItems = 0;
@@ -54,12 +53,9 @@ Future<bool> computeOverallRating(
       }
     }
     tempRating = tempRating != 0 ? tempRating / numItems : 0.0;
-
     model.setOverAllRating(tempRating);
     rating.value = tempRating;
-    return true;
   }
-  return false;
 }
 
 class MovieView extends StatefulWidget {
@@ -131,36 +127,6 @@ class _MovieViewState extends State<MovieView>
     return timeago.format(timeAgo, locale: 'en_short');
   }
 
-  // Widget computeOverallRating(List<Review> reviews) {
-  //   var rating = 0.0;
-  //   var numItems = 0;
-  //   for (var i = 0; i < reviews.length; i++) {
-  //     if (reviews[i].isApproved == true) {
-  //       rating += reviews[i].rating;
-  //       numItems += 1;
-  //     }
-  //   }
-  //   rating = rating != 0 ? rating / numItems : 0.0;
-
-  //   // TO DO: accurate display of overall rating
-  //   return IgnorePointer(
-  //       ignoring: true,
-  //       child: RatingBar.builder(
-  //         direction: Axis.horizontal,
-  //         allowHalfRating: true,
-  //         itemCount: 5,
-  //         itemSize: 25,
-  //         initialRating: rating,
-  //         unratedColor: Color.fromRGBO(192, 192, 192, 1),
-  //         itemBuilder: (context, _) => Icon(
-  //           Icons.star,
-  //           color: Colors.amber,
-  //         ),
-  //         onRatingUpdate: (rating) {},
-  //         updateOnDrag: true,
-  //       ));
-  // }
-
   String displayRuntime() {
     var hours = 0;
     var minutes = 0;
@@ -211,13 +177,11 @@ class _MovieViewState extends State<MovieView>
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
       onModelReady: (model) async {
-        var isReady = await model.getAllReviews(
+        await model.getAllReviews(
             movieId: movie.movieId.toString(),
             accountId: currentUser != null ? currentUser.userId : "0");
-        if (isReady == true) {
-          var test = await computeOverallRating(
-              movie.movieId.toString(), _scaffoldKey);
-        }
+
+        computeOverallRating(movie.movieId.toString(), _scaffoldKey);
       },
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
@@ -505,13 +469,13 @@ class _MovieViewState extends State<MovieView>
                                   ),
                                 ])
                           : Container(),
-                      ValueListenableBuilder(
-                        valueListenable: rating,
-                        builder: (context, value, widget) {
-                          print(value);
-                          return Text(value.toString());
-                        },
-                      ),
+                      // ValueListenableBuilder(
+                      //   valueListenable: rating,
+                      //   builder: (context, value, widget) {
+                      //     print("VALUE: $value");
+                      //     return Text(value.toString());
+                      //   },
+                      // ),
                       SizedBox(height: 25),
                       SizedBox(
                         height: 15,
@@ -675,7 +639,7 @@ class _MovieViewState extends State<MovieView>
                         child: Column(
                           children: [
                             ReviewForm(
-                                review: model.userReview,
+                                // review: model.userReview,
                                 sKey: _scaffoldKey,
                                 movie: movie,
                                 currentUser: currentUser,
@@ -690,7 +654,7 @@ class _MovieViewState extends State<MovieView>
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: !model.busy && model.reviews.isNotEmpty
                         ? DisplayReviews(
-                            reviews: model.reviews,
+                            // reviews: model.reviews,
                             movie: movie,
                             currentUser: currentUser,
                             sKey: _scaffoldKey,
@@ -708,7 +672,7 @@ class _MovieViewState extends State<MovieView>
 
 // CLASS REVIEW FORM
 class ReviewForm extends StatefulWidget {
-  final Review review;
+  // final Review review;
   final GlobalKey<ScaffoldState> sKey;
   final Movie movie;
   final User currentUser;
@@ -716,7 +680,7 @@ class ReviewForm extends StatefulWidget {
 
   const ReviewForm(
       {Key key,
-      @required this.review,
+      // @required this.review,
       this.sKey,
       this.movie,
       this.currentUser,
@@ -732,7 +696,10 @@ class ReviewFormState extends State<ReviewForm> {
   final reviewFocusNode = FocusNode();
   var model = ReviewViewModel();
   final DialogService _dialogService = locator<DialogService>();
-  num rate;
+  final NavigationService _navigationService = locator<NavigationService>();
+
+  Review review;
+  num rate = 0.0;
   bool _edit;
   bool upvoted;
   int upvoteCount;
@@ -749,21 +716,46 @@ class ReviewFormState extends State<ReviewForm> {
     return timeago.format(timeAgo, locale: 'en_short');
   }
 
+  void fetchUserReview() async {
+    var model = ReviewViewModel();
+
+    var reviews = await model.getAllReviews(
+        movieId: widget.movie.movieId.toString(),
+        accountId: widget.currentUser.userId);
+    setState(() {
+      userReview = model.userReview;
+      reviewController.text = userReview?.review ?? '';
+      rate = userReview?.rating ?? 0.0;
+      upvoted = userReview?.upvoted ?? null;
+      upvoteCount = userReview?.upvoteCount ?? 0;
+      downvoteCount = userReview?.downvoteCount ?? 0;
+      isApproved = userReview?.isApproved;
+      _edit = userReview != null ? false : true;
+    });
+  }
+
   @override
   void initState() {
-    userReview = widget.review;
-    reviewController.text = userReview?.review ?? '';
-    rate = userReview?.rating ?? 0.00;
-    upvoted = userReview?.upvoted ?? null;
-    upvoteCount = userReview?.upvoteCount ?? 0;
-    downvoteCount = userReview?.downvoteCount ?? 0;
-    isApproved = userReview?.isApproved ?? false;
-    _edit = userReview != null ? false : true;
+    fetchUserReview();
+    print('initstate: $rate');
+
+    // userReview = widget.review;
+    // var model = ReviewViewModel();
+    // reviewController.text = userReview?.review ?? '';
+    // rate = userReview?.rating ?? 0.00;
+    // upvoted = userReview?.upvoted ?? null;
+    // upvoteCount = userReview?.upvoteCount ?? 0;
+    // downvoteCount = userReview?.downvoteCount ?? 0;
+    // isApproved = userReview?.isApproved;
+    // _edit = userReview != null ? false : true;
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    print('build: $rate');
+
     return _edit == false && userReview != null
         ?
         // display currentUser's review
@@ -775,155 +767,6 @@ class ReviewFormState extends State<ReviewForm> {
                 ),
                 child: Row(
                   children: [
-                    // Container(
-                    //   margin: EdgeInsets.only(left: 10),
-                    //   child: Column(
-                    //     mainAxisAlignment: MainAxisAlignment.center,
-                    //     crossAxisAlignment: CrossAxisAlignment.center,
-                    // children: [
-                    // GestureDetector(
-                    //   // TO DO: Warning sign na need mag-sign in pag tinatry ng guest user magvote
-                    //   onTap: widget.currentUser != null
-                    //       ? () async {
-                    //           // categories: insert, update, delete
-                    //           if (upvoted == null) {
-                    //             var res = await model.vote(
-                    //                 movieId: widget.movie.movieId,
-                    //                 reviewId: widget.userReview.reviewId,
-                    //                 type: 'insert',
-                    //                 value: true,
-                    //                 userId: widget.currentUser.userId);
-
-                    //             var itemRes = res.singleWhere(
-                    //                 (review) =>
-                    //                     review.userId ==
-                    //                     widget.currentUser.userId,
-                    //                 orElse: () => null);
-
-                    //             setState(() {
-                    //               upvoted = itemRes?.upvoted ?? null;
-                    //               upvoteCount = itemRes?.upvoteCount ?? 0;
-                    //               downvoteCount = itemRes?.downvoteCount ?? 0;
-                    //             });
-                    //           } else if (upvoted == false) {
-                    //             var res = await model.vote(
-                    //                 movieId: widget.movie.movieId,
-                    //                 reviewId: widget.userReview.reviewId,
-                    //                 type: 'update',
-                    //                 value: true,
-                    //                 userId: widget.currentUser.userId);
-
-                    //             var itemRes = res.singleWhere(
-                    //                 (review) =>
-                    //                     review.userId ==
-                    //                     widget.currentUser.userId,
-                    //                 orElse: () => null);
-
-                    //             setState(() {
-                    //               upvoted = itemRes?.upvoted ?? null;
-                    //               upvoteCount = itemRes?.upvoteCount ?? 0;
-                    //               downvoteCount = itemRes?.downvoteCount ?? 0;
-                    //             });
-                    //           } else {
-                    //             var res = await model.vote(
-                    //                 movieId: widget.movie.movieId,
-                    //                 reviewId: widget.userReview.reviewId,
-                    //                 type: 'delete',
-                    //                 value: null,
-                    //                 userId: widget.currentUser.userId);
-
-                    //             var itemRes = res.singleWhere(
-                    //                 (review) =>
-                    //                     review.userId ==
-                    //                     widget.currentUser.userId,
-                    //                 orElse: () => null);
-
-                    //             setState(() {
-                    //               upvoted = itemRes?.upvoted ?? null;
-                    //               upvoteCount = itemRes?.upvoteCount ?? 0;
-                    //               downvoteCount = itemRes?.downvoteCount ?? 0;
-                    //             });
-                    //           }
-                    //         }
-                    //       : null,
-                    //   child: Icon(Icons.thumb_up_off_alt,
-                    //       color: upvoted == true
-                    //           ? Colors.green
-                    //           : Color.fromRGBO(192, 192, 192, 1)),
-                    // ),
-                    // Text((upvoteCount - downvoteCount).toString()),
-                    // GestureDetector(
-                    //   onTap: widget.currentUser != null
-                    //       ? () async {
-                    //           // categories: insert, update, delete
-                    //           if (upvoted == null) {
-                    //             var res = await model.vote(
-                    //                 movieId: widget.movie.movieId,
-                    //                 reviewId: widget.userReview.reviewId,
-                    //                 type: 'insert',
-                    //                 value: false,
-                    //                 userId: widget.currentUser.userId);
-
-                    //             var itemRes = res.singleWhere(
-                    //                 (review) =>
-                    //                     review.userId ==
-                    //                     widget.currentUser.userId,
-                    //                 orElse: () => null);
-
-                    //             setState(() {
-                    //               upvoted = itemRes?.upvoted ?? null;
-                    //               upvoteCount = itemRes?.upvoteCount ?? 0;
-                    //               downvoteCount = itemRes?.downvoteCount ?? 0;
-                    //             });
-                    //           } else if (upvoted == true) {
-                    //             var res = await model.vote(
-                    //                 movieId: widget.movie.movieId,
-                    //                 reviewId: widget.userReview.reviewId,
-                    //                 type: 'update',
-                    //                 value: false,
-                    //                 userId: widget.currentUser.userId);
-
-                    //             var itemRes = res.singleWhere(
-                    //                 (review) =>
-                    //                     review.userId ==
-                    //                     widget.currentUser.userId,
-                    //                 orElse: () => null);
-
-                    //             setState(() {
-                    //               upvoted = itemRes?.upvoted ?? null;
-                    //               upvoteCount = itemRes?.upvoteCount ?? 0;
-                    //               downvoteCount = itemRes?.downvoteCount ?? 0;
-                    //             });
-                    //           } else {
-                    //             var res = await model.vote(
-                    //                 movieId: widget.movie.movieId,
-                    //                 reviewId: widget.userReview.reviewId,
-                    //                 type: 'delete',
-                    //                 value: null,
-                    //                 userId: widget.currentUser.userId);
-
-                    //             var itemRes = res.singleWhere(
-                    //                 (review) =>
-                    //                     review.userId ==
-                    //                     widget.currentUser.userId,
-                    //                 orElse: () => null);
-
-                    //             setState(() {
-                    //               upvoted = itemRes?.upvoted ?? null;
-                    //               upvoteCount = itemRes?.upvoteCount ?? 0;
-                    //               downvoteCount = itemRes?.downvoteCount ?? 0;
-                    //             });
-                    //           }
-                    //         }
-                    //       : null,
-                    //   child: Icon(Icons.thumb_down_off_alt,
-                    //       color: upvoted == false
-                    //           ? Colors.red
-                    //           : Color.fromRGBO(192, 192, 192, 1)),
-                    // ),
-                    // ],
-                    // ),
-                    // ),
                     Expanded(
                       child: Column(
                         children: [
@@ -1026,30 +869,13 @@ class ReviewFormState extends State<ReviewForm> {
                                               var res = await model
                                                   .changeReviewStatus(
                                                       id: userReview.reviewId,
-                                                      status: !isApproved);
+                                                      status: !isApproved,
+                                                      movieId:
+                                                          widget.movie.movieId);
 
-                                              if (res != 0) {
+                                              if (res != null) {
                                                 setState(() {
-                                                  isApproved =
-                                                      value == 'approve'
-                                                          ? true
-                                                          : false;
-
-                                                  var test =
-                                                      computeOverallRating(
-                                                          widget.movie.movieId
-                                                              .toString(),
-                                                          widget.sKey);
-                                                  // var test =
-                                                  //     computeOverallRating(
-                                                  //             widget
-                                                  //                 .movie.movieId
-                                                  //                 .toString(),
-                                                  //             widget.sKey)
-                                                  //         .then((t) {
-                                                  //   if (t == true)
-                                                  //     widget.notifyParent();
-                                                  // });
+                                                  isApproved = res;
                                                 });
 
                                                 widget.sKey.currentState
@@ -1124,7 +950,7 @@ class ReviewFormState extends State<ReviewForm> {
                                   ),
                                   subtitle: IgnorePointer(
                                     ignoring: true,
-                                    child: userReview.rating != 0.00
+                                    child: rate != null
                                         ? RatingBar.builder(
                                             direction: Axis.horizontal,
                                             allowHalfRating: true,
@@ -1173,144 +999,171 @@ class ReviewFormState extends State<ReviewForm> {
                                                 children: [
                                                   GestureDetector(
                                                     // TO DO: Warning sign na need mag-sign in pag tinatry ng guest user magvote
-                                                    onTap: widget.currentUser !=
-                                                            null
-                                                        ? () async {
-                                                            // categories: insert, update, delete
-                                                            if (upvoted ==
-                                                                null) {
-                                                              var res = await model.vote(
-                                                                  movieId: widget
-                                                                      .movie
-                                                                      .movieId,
-                                                                  reviewId:
-                                                                      userReview
-                                                                          .reviewId,
-                                                                  type:
-                                                                      'insert',
-                                                                  value: true,
-                                                                  userId: widget
-                                                                      .currentUser
-                                                                      .userId);
-
-                                                              var itemRes = res.singleWhere(
-                                                                  (review) =>
-                                                                      review
-                                                                          .userId ==
-                                                                      widget
+                                                    onTap:
+                                                        widget.currentUser !=
+                                                                null
+                                                            ? () async {
+                                                                // categories: insert, update, delete
+                                                                if (upvoted ==
+                                                                    null) {
+                                                                  var res = await model.vote(
+                                                                      movieId: widget
+                                                                          .movie
+                                                                          .movieId,
+                                                                      reviewId:
+                                                                          userReview
+                                                                              .reviewId,
+                                                                      type:
+                                                                          'insert',
+                                                                      value:
+                                                                          true,
+                                                                      userId: widget
                                                                           .currentUser
-                                                                          .userId,
-                                                                  orElse: () =>
-                                                                      null);
+                                                                          .userId);
 
-                                                              setState(() {
-                                                                upvoted = itemRes
-                                                                        ?.upvoted ??
-                                                                    null;
-                                                                upvoteCount =
-                                                                    itemRes?.upvoteCount ??
-                                                                        0;
-                                                                downvoteCount =
-                                                                    itemRes?.downvoteCount ??
-                                                                        0;
-                                                              });
-                                                            } else if (upvoted ==
-                                                                false) {
-                                                              var res = await model.vote(
-                                                                  movieId: widget
-                                                                      .movie
-                                                                      .movieId,
-                                                                  reviewId:
-                                                                      userReview
-                                                                          .reviewId,
-                                                                  type:
-                                                                      'update',
-                                                                  value: true,
-                                                                  userId: widget
-                                                                      .currentUser
-                                                                      .userId);
+                                                                  var itemRes = res.singleWhere(
+                                                                      (review) =>
+                                                                          review
+                                                                              .userId ==
+                                                                          widget
+                                                                              .currentUser
+                                                                              .userId,
+                                                                      orElse: () =>
+                                                                          null);
 
-                                                              var itemRes = res.singleWhere(
-                                                                  (review) =>
-                                                                      review
-                                                                          .userId ==
-                                                                      widget
+                                                                  setState(() {
+                                                                    upvoted =
+                                                                        itemRes?.upvoted ??
+                                                                            null;
+                                                                    upvoteCount =
+                                                                        itemRes?.upvoteCount ??
+                                                                            0;
+                                                                    downvoteCount =
+                                                                        itemRes?.downvoteCount ??
+                                                                            0;
+                                                                  });
+                                                                } else if (upvoted ==
+                                                                    false) {
+                                                                  var res = await model.vote(
+                                                                      movieId: widget
+                                                                          .movie
+                                                                          .movieId,
+                                                                      reviewId:
+                                                                          userReview
+                                                                              .reviewId,
+                                                                      type:
+                                                                          'update',
+                                                                      value:
+                                                                          true,
+                                                                      userId: widget
                                                                           .currentUser
-                                                                          .userId,
-                                                                  orElse: () =>
-                                                                      null);
+                                                                          .userId);
 
-                                                              setState(() {
-                                                                upvoted = itemRes
-                                                                        ?.upvoted ??
-                                                                    null;
-                                                                upvoteCount =
-                                                                    itemRes?.upvoteCount ??
-                                                                        0;
-                                                                downvoteCount =
-                                                                    itemRes?.downvoteCount ??
-                                                                        0;
-                                                              });
-                                                            } else {
-                                                              var res = await model.vote(
-                                                                  movieId: widget
-                                                                      .movie
-                                                                      .movieId,
-                                                                  reviewId:
-                                                                      userReview
-                                                                          .reviewId,
-                                                                  type:
-                                                                      'delete',
-                                                                  value: null,
-                                                                  userId: widget
-                                                                      .currentUser
-                                                                      .userId);
+                                                                  var itemRes = res.singleWhere(
+                                                                      (review) =>
+                                                                          review
+                                                                              .userId ==
+                                                                          widget
+                                                                              .currentUser
+                                                                              .userId,
+                                                                      orElse: () =>
+                                                                          null);
 
-                                                              var itemRes = res.singleWhere(
-                                                                  (review) =>
-                                                                      review
-                                                                          .userId ==
-                                                                      widget
+                                                                  setState(() {
+                                                                    upvoted =
+                                                                        itemRes?.upvoted ??
+                                                                            null;
+                                                                    upvoteCount =
+                                                                        itemRes?.upvoteCount ??
+                                                                            0;
+                                                                    downvoteCount =
+                                                                        itemRes?.downvoteCount ??
+                                                                            0;
+                                                                  });
+                                                                } else {
+                                                                  var res = await model.vote(
+                                                                      movieId: widget
+                                                                          .movie
+                                                                          .movieId,
+                                                                      reviewId:
+                                                                          userReview
+                                                                              .reviewId,
+                                                                      type:
+                                                                          'delete',
+                                                                      value:
+                                                                          null,
+                                                                      userId: widget
                                                                           .currentUser
-                                                                          .userId,
-                                                                  orElse: () =>
-                                                                      null);
+                                                                          .userId);
 
-                                                              setState(() {
-                                                                upvoted = itemRes
-                                                                        ?.upvoted ??
-                                                                    null;
-                                                                upvoteCount =
-                                                                    itemRes?.upvoteCount ??
-                                                                        0;
-                                                                downvoteCount =
-                                                                    itemRes?.downvoteCount ??
-                                                                        0;
-                                                              });
-                                                            }
-                                                          }
-                                                        : () {
-                                                            print('clicked');
-                                                            widget.sKey
-                                                                .currentState
-                                                                .showSnackBar(
-                                                                    SnackBar(
-                                                              backgroundColor:
-                                                                  Colors.orange,
-                                                              content: Text(
-                                                                  "You're not signed in."),
-                                                              action:
-                                                                  SnackBarAction(
-                                                                label:
-                                                                    'Login or Create account here.',
-                                                                onPressed: () {
-                                                                  // some code
-                                                                  print(
-                                                                      'Action in Snackbar has been pressed.');
-                                                                },
-                                                              ),
-                                                            ));
-                                                          },
+                                                                  var itemRes = res.singleWhere(
+                                                                      (review) =>
+                                                                          review
+                                                                              .userId ==
+                                                                          widget
+                                                                              .currentUser
+                                                                              .userId,
+                                                                      orElse: () =>
+                                                                          null);
+
+                                                                  setState(() {
+                                                                    upvoted =
+                                                                        itemRes?.upvoted ??
+                                                                            null;
+                                                                    upvoteCount =
+                                                                        itemRes?.upvoteCount ??
+                                                                            0;
+                                                                    downvoteCount =
+                                                                        itemRes?.downvoteCount ??
+                                                                            0;
+                                                                  });
+                                                                }
+                                                              }
+                                                            : () {
+                                                                widget.sKey
+                                                                    .currentState
+                                                                    .showSnackBar(
+                                                                  SnackBar(
+                                                                    duration:
+                                                                        Duration(
+                                                                            days:
+                                                                                1),
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .red,
+                                                                    content:
+                                                                        Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .spaceBetween,
+                                                                      children: [
+                                                                        Row(
+                                                                          children: [
+                                                                            Text(
+                                                                              "You're not signed in. Click ",
+                                                                              style: Theme.of(context).textTheme.subtitle1.apply(color: Colors.white),
+                                                                            ),
+                                                                            InkWell(
+                                                                                onTap: () {
+                                                                                  _navigationService.navigateTo(SignInCategoryViewRoute);
+                                                                                },
+                                                                                child: Text(
+                                                                                  'here',
+                                                                                  style: Theme.of(context).textTheme.subtitle1.apply(color: Colors.blue, decoration: TextDecoration.underline),
+                                                                                )),
+                                                                          ],
+                                                                        ),
+                                                                        GestureDetector(
+                                                                            child:
+                                                                                Icon(Icons.close),
+                                                                            onTap: () {
+                                                                              widget.sKey.currentState.hideCurrentSnackBar();
+                                                                            }),
+                                                                      ],
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              },
                                                     child: Icon(
                                                         Icons.thumb_up_off_alt,
                                                         color: upvoted == true
@@ -1696,7 +1549,7 @@ class ReviewFormState extends State<ReviewForm> {
 // CLASS DISPLAY REVIEWS
 
 class DisplayReviews extends StatefulWidget {
-  final List<Review> reviews;
+  // final List<Review> reviews;
   final Movie movie;
   final User currentUser;
   final GlobalKey<ScaffoldState> sKey;
@@ -1704,7 +1557,7 @@ class DisplayReviews extends StatefulWidget {
 
   const DisplayReviews(
       {Key key,
-      @required this.reviews,
+      // @required this.reviews,
       this.movie,
       this.currentUser,
       this.sKey,
@@ -1734,20 +1587,42 @@ class DisplayReviewsState extends State<DisplayReviews> {
     return timeago.format(timeAgo, locale: 'en_short');
   }
 
+  void fetchReviews() async {
+    var res = await model.getAllReviews(
+        movieId: widget.movie.movieId.toString(),
+        accountId: widget.currentUser.userId);
+
+    setState(() {
+      userReviews = widget.currentUser != null
+          ? model.reviews
+              .where((review) => review.userId != widget.currentUser.userId)
+              .toList()
+          : model.reviews;
+
+      for (var i = 0; i < userReviews?.length ?? 0; i++) {
+        upvoted.add(userReviews[i]?.upvoted);
+        upvoteCount.add(userReviews[i]?.upvoteCount ?? 0);
+        downvoteCount.add(userReviews[i]?.downvoteCount ?? 0);
+        isApproved.add(userReviews[i]?.isApproved ?? false);
+      }
+    });
+  }
+
   @override
   void initState() {
-    userReviews = widget.currentUser != null
-        ? widget.reviews
-            .where((review) => review.userId != widget.currentUser.userId)
-            .toList()
-        : widget.reviews;
+    fetchReviews();
+    // userReviews = widget.currentUser != null
+    //     ? widget.reviews
+    //         .where((review) => review.userId != widget.currentUser.userId)
+    //         .toList()
+    //     : widget.reviews;
 
-    for (var i = 0; i < userReviews?.length ?? 0; i++) {
-      upvoted.add(userReviews[i]?.upvoted);
-      upvoteCount.add(userReviews[i]?.upvoteCount ?? 0);
-      downvoteCount.add(userReviews[i]?.downvoteCount ?? 0);
-      isApproved.add(userReviews[i]?.isApproved ?? false);
-    }
+    // for (var i = 0; i < userReviews?.length ?? 0; i++) {
+    //   upvoted.add(userReviews[i]?.upvoted);
+    //   upvoteCount.add(userReviews[i]?.upvoteCount ?? 0);
+    //   downvoteCount.add(userReviews[i]?.downvoteCount ?? 0);
+    //   isApproved.add(userReviews[i]?.isApproved ?? false);
+    // }
     super.initState();
   }
 
@@ -1879,35 +1754,15 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                                   .reviewId,
                                                               status:
                                                                   !isApproved[
-                                                                      index]);
+                                                                      index],
+                                                              movieId: widget
+                                                                  .movie
+                                                                  .movieId);
 
-                                                      if (res != 0) {
+                                                      if (res != null) {
                                                         setState(() {
                                                           isApproved[index] =
-                                                              value == 'approve'
-                                                                  ? true
-                                                                  : false;
-
-                                                          var test =
-                                                              computeOverallRating(
-                                                                  widget.movie
-                                                                      .movieId
-                                                                      .toString(),
-                                                                  widget.sKey);
-
-                                                          // var test =
-                                                          //     computeOverallRating(
-                                                          //             widget
-                                                          //                 .movie
-                                                          //                 .movieId
-                                                          //                 .toString(),
-                                                          //             widget
-                                                          //                 .sKey)
-                                                          //         .then((t) {
-                                                          //   if (t == true)
-                                                          //     widget
-                                                          //         .notifyParent();
-                                                          // });
+                                                              res;
                                                         });
 
                                                         widget.sKey.currentState
@@ -2008,7 +1863,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                     ),
                                     subtitle: IgnorePointer(
                                       ignoring: true,
-                                      child: review.rating != 0.00
+                                      child: review.rating != null
                                           ? RatingBar.builder(
                                               direction: Axis.horizontal,
                                               allowHalfRating: true,
@@ -2244,8 +2099,6 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                           widget.currentUser !=
                                                                   null
                                                               ? () async {
-                                                                  print(upvoted[
-                                                                      index]);
                                                                   // categories: insert, update, delete
                                                                   if (upvoted[
                                                                           index] ==

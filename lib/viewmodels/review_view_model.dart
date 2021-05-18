@@ -15,24 +15,21 @@ class ReviewViewModel extends BaseModel {
 
   void setReviews(List<Review> response) {
     reviews = response;
-    print(jsonEncode(reviews));
     notifyListeners();
-    print("notified listeners");
   }
 
   void setUserReview(Review review) {
     userReview = review;
-    print('userReview');
-    print(jsonEncode(userReview));
     notifyListeners();
-    print("notified listeners");
   }
 
+  // TO DO: Deprecate
   void setEditing(Review editingReview) {
     _editingReview = editingReview;
     notifyListeners();
   }
 
+  // TO DO: Deprecate
   void setEdit(bool value) {
     isEditing = value;
     notifyListeners();
@@ -46,12 +43,10 @@ class ReviewViewModel extends BaseModel {
   void setOverAllRating(num rating) {
     overAllRating = rating;
     notifyListeners();
-    print('listeneres');
   }
 
   // Function: GET ALL REVIEWS OF A SPECIFIC MOVIE
-  Future<bool> getAllReviews(
-      {@required String movieId, String accountId}) async {
+  Future getAllReviews({@required String movieId, String accountId}) async {
     setBusy(true);
 
     // send API request
@@ -75,7 +70,6 @@ class ReviewViewModel extends BaseModel {
       setLength(empty);
       setReviews(items);
       setUserReview(userReview);
-      return Future.value(true);
     } else {
       throw Exception('Failed to get reviews');
     }
@@ -161,8 +155,8 @@ class ReviewViewModel extends BaseModel {
   }
 
   // APPROVE / HIDE A REVIEW
-  Future<int> changeReviewStatus(
-      {@required int id, @required bool status}) async {
+  Future<bool> changeReviewStatus(
+      {@required int id, @required bool status, int movieId}) async {
     final response = await http.post(
       Config.api + 'change-status/',
       headers: <String, String>{
@@ -176,8 +170,9 @@ class ReviewViewModel extends BaseModel {
 
     if (response.statusCode == 200) {
       return (json.decode(response.body));
+    } else {
+      throw Exception('Failed to change review status');
     }
-    return 0;
   }
 
   // Get one review

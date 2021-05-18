@@ -147,10 +147,10 @@ exports.review = app => {
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      await client.query('update review set is_approved = $1 where id = $2 returning id', [req.body.status, req.body.id], function onResult(err, result) {
+      await client.query('update review set is_approved = $1 where id = $2 returning is_approved', [req.body.status, req.body.id], function onResult(err, result) {
         console.log(result.rows);
         release();
-        res.send(err || JSON.stringify(result.rows[0].id));
+        res.send(err || JSON.stringify(result.rows[0].is_approved));
       });
     }
   });
