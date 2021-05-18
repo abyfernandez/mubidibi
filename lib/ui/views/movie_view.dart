@@ -33,31 +33,6 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'home_view.dart';
 import 'package:mubidibi/globals.dart' as Config;
 
-ValueNotifier<double> rating = ValueNotifier<double>(0.0);
-var tempRating = 0.0;
-var numItems = 0;
-
-void computeOverallRating(String movieId, GlobalKey<ScaffoldState> sKey) async {
-  rating = ValueNotifier<double>(0.0);
-  tempRating = 0.0;
-  numItems = 0;
-
-  var model = ReviewViewModel();
-  var isReady = await model.getAllReviews(movieId: movieId);
-
-  if (isReady == true) {
-    for (var i = 0; i < model.reviews.length; i++) {
-      if (model.reviews[i].isApproved == true) {
-        tempRating += model.reviews[i].rating;
-        numItems += 1;
-      }
-    }
-    tempRating = tempRating != 0 ? tempRating / numItems : 0.0;
-    model.setOverAllRating(tempRating);
-    rating.value = tempRating;
-  }
-}
-
 class MovieView extends StatefulWidget {
   final String movieId;
 
@@ -88,7 +63,9 @@ class _MovieViewState extends State<MovieView>
 
   // local variables
   bool _saving = false;
-  var overAllRating = rating;
+  ValueNotifier<double> rating = ValueNotifier<double>(0.0);
+  var tempRating = 0.0;
+  var numItems = 0;
 
   // variables needed for adding reviews
   final reviewController = TextEditingController();
@@ -102,6 +79,36 @@ class _MovieViewState extends State<MovieView>
       crewEdit = crew;
     });
     return crew;
+  }
+
+  void computeOverallRating(
+      String movieId, GlobalKey<ScaffoldState> sKey) async {
+    tempRating = 0.0;
+    numItems = 0;
+
+    var model = ReviewViewModel();
+    var isReady = await model.getAllReviews(
+        movieId: movieId,
+        accountId: currentUser != null ? currentUser.userId : "0");
+
+    if (isReady == true) {
+      for (var i = 0; i < model.reviews.length; i++) {
+        if (model.reviews[i].isApproved == true) {
+          tempRating += model.reviews[i].rating;
+          numItems += 1;
+        }
+      }
+      tempRating = tempRating != 0 ? tempRating / numItems : 0.0;
+      model.setOverAllRating(tempRating);
+
+      // setState(() {
+      rating.value = tempRating;
+      // });
+    } else {
+      // setState(() {
+      rating.value = 0.0;
+      // });
+    }
   }
 
 // refresh page when over all rating is changed
@@ -177,7 +184,7 @@ class _MovieViewState extends State<MovieView>
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
       onModelReady: (model) async {
-        await model.getAllReviews(
+        var res = await model.getAllReviews(
             movieId: movie.movieId.toString(),
             accountId: currentUser != null ? currentUser.userId : "0");
 
@@ -469,13 +476,22 @@ class _MovieViewState extends State<MovieView>
                                   ),
                                 ])
                           : Container(),
-                      // ValueListenableBuilder(
-                      //   valueListenable: rating,
-                      //   builder: (context, value, widget) {
-                      //     print("VALUE: $value");
-                      //     return Text(value.toString());
-                      //   },
-                      // ),
+                      ValueListenableBuilder(
+                        valueListenable: rating,
+                        builder: (context, value, widget) {
+                          print("VALUE: $value");
+                          return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  value.toString(),
+                                  style: TextStyle(fontSize: 17),
+                                ),
+                                Icon(Icons.star_rate_rounded,
+                                    color: Colors.yellow, size: 25),
+                              ]);
+                        },
+                      ),
                       SizedBox(height: 25),
                       SizedBox(
                         height: 15,
@@ -639,7 +655,7 @@ class _MovieViewState extends State<MovieView>
                         child: Column(
                           children: [
                             ReviewForm(
-                                // review: model.userReview,
+                                computeOverallRating: computeOverallRating,
                                 sKey: _scaffoldKey,
                                 movie: movie,
                                 currentUser: currentUser,
@@ -654,7 +670,7 @@ class _MovieViewState extends State<MovieView>
                     padding: EdgeInsets.symmetric(horizontal: 20),
                     child: !model.busy && model.reviews.isNotEmpty
                         ? DisplayReviews(
-                            // reviews: model.reviews,
+                            computeOverallRating: computeOverallRating,
                             movie: movie,
                             currentUser: currentUser,
                             sKey: _scaffoldKey,
@@ -672,7 +688,7 @@ class _MovieViewState extends State<MovieView>
 
 // CLASS REVIEW FORM
 class ReviewForm extends StatefulWidget {
-  // final Review review;
+  final Function computeOverallRating;
   final GlobalKey<ScaffoldState> sKey;
   final Movie movie;
   final User currentUser;
@@ -680,7 +696,7 @@ class ReviewForm extends StatefulWidget {
 
   const ReviewForm(
       {Key key,
-      // @required this.review,
+      this.computeOverallRating,
       this.sKey,
       this.movie,
       this.currentUser,
@@ -722,6 +738,7 @@ class ReviewFormState extends State<ReviewForm> {
     var reviews = await model.getAllReviews(
         movieId: widget.movie.movieId.toString(),
         accountId: widget.currentUser.userId);
+
     setState(() {
       userReview = model.userReview;
       reviewController.text = userReview?.review ?? '';
@@ -737,25 +754,11 @@ class ReviewFormState extends State<ReviewForm> {
   @override
   void initState() {
     fetchUserReview();
-    print('initstate: $rate');
-
-    // userReview = widget.review;
-    // var model = ReviewViewModel();
-    // reviewController.text = userReview?.review ?? '';
-    // rate = userReview?.rating ?? 0.00;
-    // upvoted = userReview?.upvoted ?? null;
-    // upvoteCount = userReview?.upvoteCount ?? 0;
-    // downvoteCount = userReview?.downvoteCount ?? 0;
-    // isApproved = userReview?.isApproved;
-    // _edit = userReview != null ? false : true;
-
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    print('build: $rate');
-
     return _edit == false && userReview != null
         ?
         // display currentUser's review
@@ -876,6 +879,19 @@ class ReviewFormState extends State<ReviewForm> {
                                               if (res != null) {
                                                 setState(() {
                                                   isApproved = res;
+                                                  var reviews = model
+                                                      .getAllReviews(
+                                                          movieId: widget
+                                                              .movie.movieId
+                                                              .toString(),
+                                                          accountId: widget
+                                                              .currentUser
+                                                              .userId);
+
+                                                  widget.computeOverallRating(
+                                                      widget.movie.movieId
+                                                          .toString(),
+                                                      widget.sKey);
                                                 });
 
                                                 widget.sKey.currentState
@@ -1549,7 +1565,7 @@ class ReviewFormState extends State<ReviewForm> {
 // CLASS DISPLAY REVIEWS
 
 class DisplayReviews extends StatefulWidget {
-  // final List<Review> reviews;
+  final Function computeOverallRating;
   final Movie movie;
   final User currentUser;
   final GlobalKey<ScaffoldState> sKey;
@@ -1557,7 +1573,7 @@ class DisplayReviews extends StatefulWidget {
 
   const DisplayReviews(
       {Key key,
-      // @required this.reviews,
+      this.computeOverallRating,
       this.movie,
       this.currentUser,
       this.sKey,
@@ -1611,18 +1627,6 @@ class DisplayReviewsState extends State<DisplayReviews> {
   @override
   void initState() {
     fetchReviews();
-    // userReviews = widget.currentUser != null
-    //     ? widget.reviews
-    //         .where((review) => review.userId != widget.currentUser.userId)
-    //         .toList()
-    //     : widget.reviews;
-
-    // for (var i = 0; i < userReviews?.length ?? 0; i++) {
-    //   upvoted.add(userReviews[i]?.upvoted);
-    //   upvoteCount.add(userReviews[i]?.upvoteCount ?? 0);
-    //   downvoteCount.add(userReviews[i]?.downvoteCount ?? 0);
-    //   isApproved.add(userReviews[i]?.isApproved ?? false);
-    // }
     super.initState();
   }
 
@@ -1763,6 +1767,22 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                         setState(() {
                                                           isApproved[index] =
                                                               res;
+
+                                                          var reviews = model
+                                                              .getAllReviews(
+                                                                  movieId: widget
+                                                                      .movie
+                                                                      .movieId
+                                                                      .toString(),
+                                                                  accountId: widget
+                                                                      .currentUser
+                                                                      .userId);
+
+                                                          widget.computeOverallRating(
+                                                              widget
+                                                                  .movie.movieId
+                                                                  .toString(),
+                                                              widget.sKey);
                                                         });
 
                                                         widget.sKey.currentState
@@ -1807,7 +1827,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                                     '0');
 
                                                         if (deleteRes != 0) {
-                                                          model.getAllReviews(
+                                                          var res = model.getAllReviews(
                                                               movieId: widget
                                                                   .movie.movieId
                                                                   .toString(),

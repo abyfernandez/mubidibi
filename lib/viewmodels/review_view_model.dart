@@ -70,6 +70,7 @@ class ReviewViewModel extends BaseModel {
       setLength(empty);
       setReviews(items);
       setUserReview(userReview);
+      return true;
     } else {
       throw Exception('Failed to get reviews');
     }
