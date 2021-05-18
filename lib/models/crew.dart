@@ -1,10 +1,15 @@
 import 'dart:convert';
+import './movie.dart';
 
 List<Crew> crewFromJson(String str) =>
     List<Crew>.from(json.decode(str).map((x) => Crew.fromJson(x)));
 
 String crewToJson(List<Crew> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
+
+// Crew crewFromJson(String str) => Crew.fromJson(json.decode(str));
+
+// String crewToJson(Crew data) => json.encode(data.toJson());
 
 class Crew {
   final int crewId;
@@ -20,7 +25,8 @@ class Crew {
   final List<String> photos;
   final String description;
   final List<String> role; // roles in movies
-  final List<String> type; // actor/director/writer
+  final List<String> type; // direktor/manunulat/aktor
+  final List<List<Movie>> movies;
   final bool isDeleted;
 
   Crew(
@@ -38,6 +44,7 @@ class Crew {
       this.description,
       this.role,
       this.type,
+      this.movies,
       this.isDeleted});
 
   factory Crew.fromJson(Map<String, dynamic> json) {
@@ -62,6 +69,10 @@ class Crew {
       type: json["type"] == null
           ? []
           : List<String>.from(json["type"].map((x) => x)),
+      movies: json['movies'] == null
+          ? []
+          : List<List<Movie>>.from(json["movies"]
+              .map((x) => List<Movie>.from(x.map((x) => Movie.fromJson(x))))),
       isDeleted: json['is_deleted'],
     );
   }
@@ -81,6 +92,7 @@ class Crew {
         "description": description,
         "role": role,
         "type": type,
+        "movies": movies,
         "is_deleted": isDeleted
       };
 }

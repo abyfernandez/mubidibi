@@ -43,7 +43,7 @@ exports.crew = app => {
     }
   });
 
-  // GET CREW BY MOVIE ID
+  // GET CREW BY MOVIE ID -- MOVIE VIEW
   app.get('/mubidibi/crew/:id', (req, res) => {
     app.pg.connect(onConnect);
 
@@ -74,7 +74,7 @@ exports.crew = app => {
     }
   });
 
-  // GET ONE CREW
+  // GET ONE CREW FOR A CERTAIN MOVIE -- CREW VIEW
   app.get('/mubidibi/one-crew/:id', (req, res) => {
     app.pg.connect(onConnect)
 
@@ -86,6 +86,7 @@ exports.crew = app => {
         async function onResult(err, result) {
           var crew = result.rows[0];
           var type = [];
+          var movies = [];
 
           var director = await client.query(`select exists(select 1 from movie_director where director_id=$1)`, [parseInt(req.params.id)]);
           var writer = await client.query(`select exists(select 1 from movie_writer where writer_id=$1)`, [parseInt(req.params.id)]);
@@ -96,6 +97,17 @@ exports.crew = app => {
           if (actor.rows[0].exists) type.push("Aktor");
 
           crew['type'] = type;
+
+          // get the movies associated to this crew according to crew type
+          var movies_directed = await client.query(`select movie.* from movie left join movie_director as md on movie.id = md.movie_id where md.director_id = $1`, [parseInt(req.params.id)]);
+          var movies_written = await client.query(`select movie.* from movie left join movie_writer as mw on movie.id = mw.movie_id where mw.writer_id = $1`, [parseInt(req.params.id)]);
+          var movies_acted = await client.query(`select movie.* from movie left join movie_actor as ma on movie.id = ma.movie_id where ma.actor_id = $1`, [parseInt(req.params.id)]);
+
+          movies.push(movies_directed.rows);
+          movies.push(movies_written.rows);
+          movies.push(movies_acted.rows);
+
+          crew['movies'] = movies;
 
           release()
           if (result) res.send(JSON.stringify(crew));

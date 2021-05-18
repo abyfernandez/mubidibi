@@ -479,16 +479,22 @@ class _MovieViewState extends State<MovieView>
                       ValueListenableBuilder(
                         valueListenable: rating,
                         builder: (context, value, widget) {
-                          print("VALUE: $value");
                           return Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  value.toString(),
-                                  style: TextStyle(fontSize: 17),
-                                ),
-                                Icon(Icons.star_rate_rounded,
-                                    color: Colors.yellow, size: 25),
+                                    value != 0
+                                        ? value.toString()
+                                        : "No ratings yet",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontStyle: value != 0
+                                            ? FontStyle.normal
+                                            : FontStyle.italic)),
+                                value != 0
+                                    ? Icon(Icons.star_rate_rounded,
+                                        color: Colors.yellow, size: 25)
+                                    : SizedBox(),
                               ]);
                         },
                       ),

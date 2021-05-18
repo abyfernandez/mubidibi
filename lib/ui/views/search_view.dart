@@ -312,6 +312,37 @@ class _SearchViewState extends State<SearchView> {
                                                   ),
                                                 ),
                                               ),
+                                              Positioned(
+                                                bottom: 9,
+                                                left: 9,
+                                                right: 9,
+                                                child: Container(
+                                                  padding: EdgeInsets.all(5),
+                                                  alignment:
+                                                      Alignment.bottomLeft,
+                                                  child: Text(
+                                                    movie.title,
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                    ),
+                                                    softWrap: true,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 3,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    boxShadow: [
+                                                      BoxShadow(
+                                                          color: Colors.black54,
+                                                          offset:
+                                                              Offset(0.0, 0.0),
+                                                          blurRadius:
+                                                              0.0), // 4                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
@@ -353,43 +384,6 @@ class _SearchViewState extends State<SearchView> {
                                           height: 210.0,
                                           child: Stack(
                                             children: [
-                                              // Container(
-                                              //   alignment: Alignment.center,
-                                              //   margin:
-                                              //       const EdgeInsets.symmetric(
-                                              //           horizontal: 8.0),
-                                              //   height: 200.0,
-                                              //   width: 120.0,
-                                              //   decoration: BoxDecoration(
-                                              //     boxShadow: [
-                                              //       BoxShadow(
-                                              //         color: Colors.black54,
-                                              //         offset: Offset(0.0, 0.0),
-                                              //         blurRadius: 2.0,
-                                              //       ),
-                                              //     ],
-                                              //     borderRadius:
-                                              //         BorderRadius.circular(5),
-                                              //   ),
-                                              //   child: Text(
-                                              //     c.firstName +
-                                              //         (c.middleName != null
-                                              //             ? " " +
-                                              //                 c.middleName +
-                                              //                 " "
-                                              //             : " ") +
-                                              //         c.lastName +
-                                              //         (c.suffix != null
-                                              //             ? " " + c.suffix
-                                              //             : ""),
-                                              //     textAlign: TextAlign.center,
-                                              //     style: TextStyle(
-                                              //       color: Colors.white,
-                                              //       fontSize: 14,
-                                              //       fontWeight: FontWeight.bold,
-                                              //     ),
-                                              //   ),
-                                              // ),
                                               Container(
                                                 margin:
                                                     const EdgeInsets.symmetric(

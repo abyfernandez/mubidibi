@@ -68,6 +68,7 @@ class CrewViewModel extends BaseModel {
     setBusy(false);
 
     if (response.statusCode == 200) {
+      print(json.decode(response.body));
       return Crew.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to load crew');

@@ -84,6 +84,48 @@ class _CrewViewState extends State<CrewView>
             : []);
   }
 
+  Widget displayMovies(List crewMovies) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+          children: crewMovies.isNotEmpty
+              ? crewMovies.map((movie) {
+                  return Container(
+                    height: 150,
+                    width: 120,
+                    margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey,
+                            blurRadius: 2, // 7
+                          )
+                        ]),
+                    child: GestureDetector(
+                        onTap: () {
+                          // Navigator.push(
+                          //   context,
+                          //   MaterialPageRoute(
+                          //     builder: (context) => FullPhoto(
+                          //         url: movie.poster ?? Config.imgNotFound),
+                          //   ),
+                          // );
+                          print(movie.title);
+                        },
+                        child: Image.network(
+                          movie.poster,
+                          height: 250,
+                          width: 230,
+                          alignment: Alignment.topCenter,
+                          fit: BoxFit.cover,
+                        )),
+                  );
+                }).toList()
+              : []),
+    );
+  }
+
   Widget displayPhotos() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -446,6 +488,126 @@ class _CrewViewState extends State<CrewView>
                             ),
                           ),
                         ),
+                  SizedBox(height: 10),
+                  crew.movies.isNotEmpty
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            crew.movies[0].length != 0
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Mga Pelikula bilang Direktor",
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          crew.movies[0].length >= 4
+                                              ? GestureDetector(
+                                                  // child: Text(
+                                                  //   'Tingnan Lahat',
+                                                  //   style: TextStyle(
+                                                  //       fontSize: 14,
+                                                  //       fontWeight: FontWeight.bold),
+                                                  // ),
+                                                  child: Icon(Icons
+                                                      .arrow_forward_ios_outlined),
+                                                  onTap: () {},
+                                                )
+                                              : Container(),
+                                        ],
+                                      ),
+                                      displayMovies(crew.movies[0])
+                                    ],
+                                  )
+                                : SizedBox(),
+                            crew.movies[1].length != 0
+                                ? SizedBox(height: 10)
+                                : SizedBox(),
+                            crew.movies[1].length != 0
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Mga Pelikula bilang Manunulat",
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          crew.movies[1].length >= 4
+                                              ? GestureDetector(
+                                                  // child: Text(
+                                                  //   'Tingnan Lahat',
+                                                  //   style: TextStyle(
+                                                  //       fontSize: 14,
+                                                  //       fontWeight: FontWeight.bold),
+                                                  // ),
+                                                  child: Icon(Icons
+                                                      .arrow_forward_ios_outlined),
+                                                  onTap: () {},
+                                                )
+                                              : Container(),
+                                        ],
+                                      ),
+                                      displayMovies(crew.movies[1])
+                                    ],
+                                  )
+                                : SizedBox(),
+                            crew.movies[2].length != 0
+                                ? SizedBox(height: 10)
+                                : SizedBox(),
+                            crew.movies[2].length != 0
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            "Mga Pelikula bilang Aktor",
+                                            style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          crew.movies[2].length >= 4
+                                              ? GestureDetector(
+                                                  // child: Text(
+                                                  //   'Tingnan Lahat',
+                                                  //   style: TextStyle(
+                                                  //       fontSize: 14,
+                                                  //       fontWeight: FontWeight.bold),
+                                                  // ),
+                                                  child: Icon(Icons
+                                                      .arrow_forward_ios_outlined),
+                                                  onTap: () {},
+                                                )
+                                              : Container(),
+                                        ],
+                                      ),
+                                      displayMovies(crew.movies[2])
+                                    ],
+                                  )
+                                : SizedBox(),
+                          ],
+                        )
+                      : SizedBox(),
                   SizedBox(height: 10),
                   crew.photos.isNotEmpty
                       ? Column(
