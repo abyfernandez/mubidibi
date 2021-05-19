@@ -626,10 +626,13 @@ class _CrewViewState extends State<CrewView>
                                 // TO DO: MAKE A PAGE TO VIEW ALL PHOTOS / IMAGE VIEWER (FOR MULTIPLE IMAGES)
                                 crew.photos.length >= 4
                                     ? GestureDetector(
-                                        child: Text('Tingnan Lahat',
-                                            style: TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold)),
+                                        child: Icon(
+                                            Icons.arrow_forward_ios_outlined),
+
+                                        // child: Text('Tingnan Lahat',
+                                        //     style: TextStyle(
+                                        //         fontSize: 18,
+                                        //         fontWeight: FontWeight.bold)),
                                         onTap: () {},
                                       )
                                     : Container(),

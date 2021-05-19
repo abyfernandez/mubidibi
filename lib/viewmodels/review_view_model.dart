@@ -195,11 +195,11 @@ class ReviewViewModel extends BaseModel {
     setBusy(false);
 
     if (response.statusCode == 200) {
-      print(json.decode(response.body));
-      if (json.decode(response.body).is_approved == true) {
+      var res = Review.fromJson(json.decode(response.body));
+      if (res.isApproved == true) {
         setLength(false);
       }
-      return Review.fromJson(json.decode(response.body));
+      return res;
     } else {
       throw Exception('Failed to load review');
     }

@@ -61,6 +61,7 @@ class ContentList extends StatelessWidget {
                                 ),
                               );
                             },
+                            // child: Icon(Icons.arrow_forward_ios_outlined),
                             child: Text(
                               seeAll,
                               style: const TextStyle(
@@ -83,6 +84,8 @@ class ContentList extends StatelessWidget {
                                 ),
                               );
                             },
+                            // child: Icon(Icons.arrow_forward_ios_outlined),
+
                             child: Text(
                               seeAll,
                               style: const TextStyle(
@@ -211,7 +214,16 @@ class ContentList extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
-                                content.firstName,
+                                content.firstName +
+                                    " " +
+                                    (content.middleName != null
+                                        ? " " + content.middleName
+                                        : "") +
+                                    " " +
+                                    content.lastName +
+                                    (content.suffix != null
+                                        ? " " + content.suffix
+                                        : ""),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white,

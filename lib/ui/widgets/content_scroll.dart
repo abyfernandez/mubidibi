@@ -58,6 +58,7 @@ class ContentScroll extends StatelessWidget {
                         ),
                       );
                     },
+                    // child: Icon(Icons.arrow_forward_ios_outlined),
                     child: Text(
                       "Tingnan Lahat",
                       style:
