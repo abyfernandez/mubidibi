@@ -1,8 +1,9 @@
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
-import 'package:mubidibi/ui/widgets/searchable_dropdown.dart';
+// import 'package:mubidibi/ui/widgets/searchable_dropdown.dart';
 // import 'package:flutter_chips_input/flutter_chips_input.dart'; -- working widget
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
@@ -13,7 +14,7 @@ import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
-import 'package:mubidibi/ui/widgets/chips_input.dart'; // test -- for roles and possibly genres
+// import 'package:mubidibi/ui/widgets/chips_input.dart'; // test -- for roles and possibly genres
 import 'package:mubidibi/ui/widgets/input_chips.dart'; // test -- should be working
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -21,16 +22,18 @@ import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
-import 'package:modal_progress_hud/modal_progress_hud.dart';
+// import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
 import 'dart:convert';
+import 'package:flutter_document_picker/flutter_document_picker.dart';
 
 // FOR DYNAMIC WIDGET ACTOR
 List<ActorWidget> dynamicList = [];
 List<int> actors = [];
 List<List<String>> roles = [];
 var size;
+List<bool> opened = []; // state values of actors in listview
 
 class AddMovie extends StatefulWidget {
   final Movie movie;
@@ -142,7 +145,10 @@ class _AddMovieState extends State<AddMovie> {
     crewList = await model.getAllCrew();
     // converts from List<Crew> to List<DropdownMenuItem>
     crewItems = crewList.map<DropdownMenuItem<dynamic>>((Crew value) {
-      String name = value.firstName + " " + value.lastName;
+      String name = value.firstName +
+          (value.middleName != null ? " " + value.middleName : "") +
+          (value.lastName != null ? " " + value.lastName : "") +
+          (value.suffix != null ? " " + value.suffix : "");
       return DropdownMenuItem<dynamic>(
         key: ValueKey(value.crewId),
         value: name,
@@ -199,15 +205,45 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: get image using image picker for movie poster
   Future getImage() async {
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      imageFile = File(pickedFile.path);
+    // final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    // if (pickedFile != null) {
+    //   imageFile = File(pickedFile.path);
+    //   setState(() {
+    //     imageFile = imageFile;
+    //     mimetype = lookupMimeType(pickedFile.path);
+    //   });
+    // } else {
+    //   print('No image selected.');
+    // }
+
+    // // File Picker ver. 2
+    // FlutterDocumentPickerParams params = FlutterDocumentPickerParams(
+    //   allowedFileExtensions: ['jpg', 'jpeg', 'png'],
+    // );
+
+    // final path = await FlutterDocumentPicker.openDocument(params: params);
+    // if (path != null) {
+    //   imageFile = File(path);
+    //   setState(() {
+    //     imageFile = imageFile;
+    //     mimetype = lookupMimeType(path);
+    //   });
+    // } else {
+    //   print('No image selected.');
+    // }
+
+    // File Picker ver. 3
+    FilePickerResult result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      imageFile = File(result.files.single.path);
       setState(() {
         imageFile = imageFile;
-        mimetype = lookupMimeType(pickedFile.path);
+        mimetype = lookupMimeType(result.files.single.path);
       });
     } else {
-      print('No image selected.');
+      // User canceled the picker
+      print("No image selected.");
     }
   }
 
@@ -259,12 +295,12 @@ class _AddMovieState extends State<AddMovie> {
                           },
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5.0),
+                          borderRadius: BorderRadius.circular(50.0),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey,
-                              offset: Offset(0.0, 1.0),
-                              blurRadius: 6.0,
+                              color: Colors.white,
+                              offset: Offset(0.0, 0.0),
+                              blurRadius: 0.0,
                             ),
                           ],
                         ),
@@ -291,6 +327,8 @@ class _AddMovieState extends State<AddMovie> {
           crewItems: crewItems,
           crewList: crewList,
           size: size));
+      opened.add(
+          true); // when an actor widget is added, it defaults to an open/editable widget
     });
   }
 
@@ -416,6 +454,11 @@ class _AddMovieState extends State<AddMovie> {
                                     if (_formKeys[currentStep]
                                         .currentState
                                         .validate()) {
+                                      titleNode.unfocus();
+                                      dateNode.unfocus();
+                                      runtimeNode.unfocus();
+                                      synopsisNode.unfocus();
+
                                       currentStep++;
                                     }
                                   });
@@ -427,10 +470,16 @@ class _AddMovieState extends State<AddMovie> {
                                   });
                                   break;
                                 case 2: // crew members
-                                  setState(() => ++currentStep);
+                                  setState(() {
+                                    directorNode.unfocus();
+                                    writerNode.unfocus();
+                                    // TO DO: unfocus keyboard when an actor/role textfield is currently active
+                                    currentStep++;
+                                  });
                                   break;
                                 case 3: // genre
-                                  setState(() => ++currentStep);
+                                  // TO DO: unfocus keyboard when a genre textfield is currently active
+                                  setState(() => currentStep++);
                                   break;
                               }
                             } else {
@@ -690,7 +739,7 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              Text('Poster',
+              Text('Mga Poster',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 10,
@@ -752,12 +801,12 @@ class _AddMovieState extends State<AddMovie> {
                             },
                           ),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5.0),
+                            borderRadius: BorderRadius.circular(50.0),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey,
-                                offset: Offset(0.0, 2.0),
-                                blurRadius: 6.0,
+                                color: Colors.white,
+                                offset: Offset(0.0, 0.0),
+                                blurRadius: 0.0,
                               ),
                             ],
                           ),
@@ -881,6 +930,7 @@ class _AddMovieState extends State<AddMovie> {
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: ChipsInput(
+                  initialValue: directors,
                   focusNode: directorNode,
                   nextFocusNode: writerNode,
                   keyboardAppearance: Brightness.dark,
@@ -897,11 +947,10 @@ class _AddMovieState extends State<AddMovie> {
                       var lowercaseQuery = query.toLowerCase();
                       return crewList.where((item) {
                         var fullName = item.firstName +
-                            " " +
                             (item.middleName != null
-                                ? item.middleName + " "
+                                ? " " + item.middleName
                                 : "") +
-                            item.lastName +
+                            (item.lastName != null ? " " + item.lastName : "") +
                             (item.suffix != null ? " " + item.suffix : "");
                         // return item.firstName
                         //         .toLowerCase()
@@ -933,9 +982,8 @@ class _AddMovieState extends State<AddMovie> {
                     return InputChip(
                       key: ObjectKey(c),
                       label: Text(c.firstName +
-                          " " +
-                          (c.middleName != null ? c.middleName + " " : "") +
-                          c.lastName +
+                          (c.middleName != null ? " " + c.middleName : "") +
+                          (c.lastName != null ? " " + c.lastName : "") +
                           (c.suffix != null ? " " + c.suffix : "")),
                       onDeleted: () => state.deleteChip(c),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -945,9 +993,8 @@ class _AddMovieState extends State<AddMovie> {
                     return ListTile(
                       key: ObjectKey(c),
                       title: Text(c.firstName +
-                          " " +
-                          (c.middleName != null ? c.middleName + " " : "") +
-                          c.lastName +
+                          (c.middleName != null ? " " + c.middleName : "") +
+                          (c.lastName != null ? " " + c.lastName : "") +
                           (c.suffix != null ? " " + c.suffix : "")),
                       onTap: () => state.selectSuggestion(c),
                     );
@@ -1030,6 +1077,7 @@ class _AddMovieState extends State<AddMovie> {
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: ChipsInput(
+                  initialValue: writers,
                   focusNode: writerNode,
                   nextFocusNode: addActorNode,
                   keyboardAppearance: Brightness.dark,
@@ -1046,11 +1094,10 @@ class _AddMovieState extends State<AddMovie> {
                       var lowercaseQuery = query.toLowerCase();
                       return crewList.where((item) {
                         var fullName = item.firstName +
-                            " " +
                             (item.middleName != null
-                                ? item.middleName + " "
+                                ? " " + item.middleName
                                 : "") +
-                            item.lastName +
+                            (item.lastName != null ? " " + item.lastName : "") +
                             (item.suffix != null ? " " + item.suffix : "");
                         return fullName
                             .toLowerCase()
@@ -1076,9 +1123,9 @@ class _AddMovieState extends State<AddMovie> {
                     return InputChip(
                       key: ObjectKey(c),
                       label: Text(c.firstName +
-                          " " +
-                          (c.middleName != null ? c.middleName + " " : "") +
-                          c.lastName +
+                         
+                          (c.middleName != null ? " " + c.middleName : "") +
+                          (c.lastName != null ? " " + c.lastName : "") +
                           (c.suffix != null ? " " + c.suffix : "")),
                       onDeleted: () => state.deleteChip(c),
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -1088,9 +1135,9 @@ class _AddMovieState extends State<AddMovie> {
                     return ListTile(
                       key: ObjectKey(c),
                       title: Text(c.firstName +
-                          " " +
-                          (c.middleName != null ? c.middleName + " " : "") +
-                          c.lastName +
+                        
+                          (c.middleName != null ? " " + c.middleName : "") +
+                          (c.lastName != null ? " " + c.lastName : "") +
                           (c.suffix != null ? " " + c.suffix : "")),
                       onTap: () => state.selectSuggestion(c),
                     );
@@ -1343,7 +1390,7 @@ class _AddMovieState extends State<AddMovie> {
                   imageFile != null
                       ? Container(
                           alignment: Alignment.topLeft,
-                          child: Text("Poster: ",
+                          child: Text("Poster/s: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -1409,8 +1456,9 @@ class _AddMovieState extends State<AddMovie> {
                                       (direk.middleName != null
                                           ? " " + direk.middleName
                                           : "") +
-                                      " " +
-                                      direk.lastName +
+                                      (direk.lastName != null
+                                          ? " " + direk.lastName
+                                          : "") +
                                       (direk.suffix != null
                                           ? " " + direk.suffix
                                           : ""),
@@ -1450,8 +1498,9 @@ class _AddMovieState extends State<AddMovie> {
                                       (writer.middleName != null
                                           ? " " + writer.middleName
                                           : "") +
-                                      " " +
-                                      writer.lastName +
+                                      (writer.lastName != null
+                                          ? " " + writer.lastName
+                                          : "") +
                                       (writer.suffix != null
                                           ? " " + writer.suffix
                                           : ""),
@@ -1495,8 +1544,9 @@ class _AddMovieState extends State<AddMovie> {
                                           (item.middleName != null
                                               ? " " + item.middleName
                                               : "") +
-                                          " " +
-                                          item.lastName +
+                                          (item.lastName != null
+                                              ? " " + item.lastName
+                                              : "") +
                                           (item.suffix != null
                                               ? " " + item.suffix
                                               : ""),
@@ -1573,135 +1623,191 @@ class ActorWidget extends StatefulWidget {
 class ActorWidgetState extends State<ActorWidget> {
   var temp;
   var tempActor;
-  List<String> tempRoles;
+  List<String> tempRoles = [];
+  bool closed = false;
+  Crew actor;
 
   final testController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(children: [
-        SizedBox(
-          height: 15,
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Color.fromRGBO(240, 240, 240, 1),
-            borderRadius: BorderRadius.circular(5),
-          ),
-          // TO DO: make every widget collapsible to reduce space
-          child: ChipsInput(
-            maxChips: 1,
-            keyboardAppearance: Brightness.dark,
-            textCapitalization: TextCapitalization.words,
-            enabled: true,
-            textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
-            decoration: const InputDecoration(
-              labelText: 'Pumili ng aktor',
-              contentPadding: EdgeInsets.all(10),
-            ),
-            findSuggestions: (String query) {
-              if (query.isNotEmpty) {
-                var lowercaseQuery = query.toLowerCase();
-                return widget.crewList.where((item) {
-                  var fullName = item.firstName +
-                      " " +
-                      (item.middleName != null ? item.middleName + " " : "") +
-                      item.lastName +
-                      (item.suffix != null ? " " + item.suffix : "");
-                  return fullName.toLowerCase().contains(query.toLowerCase());
-                }).toList(growable: false)
-                  ..sort((a, b) => a.firstName
-                      .toLowerCase()
-                      .indexOf(lowercaseQuery)
-                      .compareTo(
-                          b.firstName.toLowerCase().indexOf(lowercaseQuery)));
-              }
-              return widget.crewList;
-            },
-            onChanged: (data) {
-              setState(() {
-                if (dynamicList.length > actors.length) {
-                  // actor is not yet added to list
-                  actors.add(data[0].crewId);
-                } else {
-                  actors[widget.size] = data[0]
-                      .crewId; // replace the value in the list if it already exists.
-                }
-              });
-            },
-            chipBuilder: (context, state, c) {
-              return InputChip(
-                key: ObjectKey(c),
-                label: Text(c.firstName +
-                    " " +
-                    (c.middleName != null ? c.middleName + " " : "") +
-                    c.lastName +
-                    (c.suffix != null ? " " + c.suffix : "")),
-                onDeleted: () => state.deleteChip(c),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              );
-            },
-            suggestionBuilder: (context, state, c) {
-              return ListTile(
-                key: ObjectKey(c),
-                title: Text(c.firstName +
-                    " " +
-                    (c.middleName != null ? c.middleName + " " : "") +
-                    c.lastName +
-                    (c.suffix != null ? " " + c.suffix : "")),
-                onTap: () => state.selectSuggestion(c),
-              );
-            },
-          ),
-        ),
-        SizedBox(
-          height: 15,
-        ),
-        Container(
-          color: Color.fromRGBO(240, 240, 240, 1),
-          child: TestChipsInput(
-            key: ObjectKey(widget.size),
-            keyboardAppearance: Brightness.dark,
-            textCapitalization: TextCapitalization.words,
-            enabled: true,
-            textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
-            decoration: const InputDecoration(
-              labelText: 'Role',
-              contentPadding: EdgeInsets.all(10),
-            ),
-            findSuggestions: (String query) {
-              setState(() {
-                temp = query;
-              });
-              return [];
-            },
-            submittedText: temp != null ? temp.trimLeft().trimRight() : "",
-            onChanged: (data) {
-              List<String> tempList =
-                  data.map((role) => role.toString()).toList();
+    return closed == false
+        ? Container(
+            child: Column(children: [
+              SizedBox(
+                height: 15,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                // TO DO: make every widget collapsible to reduce space
+                child: ChipsInput(
+                  maxChips: 1,
+                  keyboardAppearance: Brightness.dark,
+                  textCapitalization: TextCapitalization.words,
+                  enabled: true,
+                  textStyle:
+                      const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                  decoration: const InputDecoration(
+                    labelText: 'Pumili ng aktor',
+                    contentPadding: EdgeInsets.all(10),
+                  ),
+                  findSuggestions: (String query) {
+                    if (query.isNotEmpty) {
+                      var lowercaseQuery = query.toLowerCase();
+                      return widget.crewList.where((item) {
+                        var fullName = item.firstName +
+                       
+                            (item.middleName != null
+                                ? " " + item.middleName
+                                : "") +
+                            (item.lastName != null ? " " + item.lastName : "") +
+                            (item.suffix != null ? " " + item.suffix : "");
+                        return fullName
+                            .toLowerCase()
+                            .contains(query.toLowerCase());
+                      }).toList(growable: false)
+                        ..sort((a, b) => a.firstName
+                            .toLowerCase()
+                            .indexOf(lowercaseQuery)
+                            .compareTo(b.firstName
+                                .toLowerCase()
+                                .indexOf(lowercaseQuery)));
+                    }
+                    return widget.crewList;
+                  },
+                  onChanged: (data) {
+                    setState(() {
+                      actor = data[0]; // set actor locally
+                      if (dynamicList.length > actors.length) {
+                        // actor is not yet added to list
+                        actors.add(data[0].crewId);
+                      } else {
+                        actors[widget.size] = data[0]
+                            .crewId; // replace the value in the list if it already exists.
+                      }
+                    });
+                  },
+                  chipBuilder: (context, state, c) {
+                    return InputChip(
+                      key: ObjectKey(c),
+                      label: Text(c.firstName +
+                          (c.middleName != null ? " " + c.middleName : "") +
+                          (c.lastName != null ? " " + c.lastName : "") +
+                          (c.suffix != null ? " " + c.suffix : "")),
+                      onDeleted: () => state.deleteChip(c),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    );
+                  },
+                  suggestionBuilder: (context, state, c) {
+                    return ListTile(
+                      key: ObjectKey(c),
+                      title: Text(c.firstName +
+                          (c.middleName != null ? " " + c.middleName : "") +
+                          (c.lastName != null ? " " + c.lastName : "") +
+                          (c.suffix != null ? " " + c.suffix : "")),
+                      onTap: () => state.selectSuggestion(c),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(
+                height: 15,
+              ),
+              Container(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                child: TestChipsInput(
+                  key: ObjectKey(widget.size),
+                  keyboardAppearance: Brightness.dark,
+                  textCapitalization: TextCapitalization.words,
+                  enabled: true,
+                  textStyle:
+                      const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                  decoration: const InputDecoration(
+                    labelText: 'Role',
+                    contentPadding: EdgeInsets.all(10),
+                  ),
+                  findSuggestions: (String query) {
+                    setState(() {
+                      temp = query;
+                    });
+                    return [];
+                  },
+                  submittedText:
+                      temp != null ? temp.trimLeft().trimRight() : "",
+                  onChanged: (data) {
+                    List<String> tempList =
+                        data.map((role) => role.toString()).toList();
 
-              setState(() {
-                roles[widget.size] = tempList; // replace
-              });
-            },
-            chipBuilder: (context, state, c) {
-              return InputChip(
-                key: ObjectKey(c),
-                label: Text(c),
-                onDeleted: () => state.deleteChip(c),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              );
-            },
-            suggestionBuilder: (context, state, c) {
-              return null;
-            },
-          ),
-        ),
-        SizedBox(height: 5),
-        Text("Pindutin ang 'ENTER' para i-save ang role."),
-        SizedBox(height: 15),
-      ]),
-    );
+                    setState(() {
+                      roles[widget.size] = tempList; // replace
+                      tempRoles.addAll(tempList);
+                    });
+                  },
+                  chipBuilder: (context, state, c) {
+                    return InputChip(
+                      key: ObjectKey(c),
+                      label: Text(c),
+                      onDeleted: () => state.deleteChip(c),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    );
+                  },
+                  suggestionBuilder: (context, state, c) {
+                    return null;
+                  },
+                ),
+              ),
+              SizedBox(height: 5),
+              Text("Pindutin ang 'ENTER' para i-save ang role."),
+              SizedBox(height: 15),
+              Container(
+                child: OutlineButton(
+                  padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                  color: Colors.white,
+                  onPressed: () {
+                    // FocusScope.of(context).unfocus();
+                    setState(() {
+                      closed = true;
+                    });
+                  },
+                  child: Text('Save'),
+                ),
+                alignment: Alignment.center,
+              ),
+            ]),
+          )
+        :
+        // display this instead if closed == true
+        ListTile(
+            contentPadding: EdgeInsets.all(10),
+            tileColor: Color.fromRGBO(240, 240, 240, 1),
+            title: Text(
+                (actor != null
+                    ? (actor.firstName +
+                        (actor.middleName != null
+                            ? " " + actor.middleName
+                            : "") +
+                        (actor.lastName != null ? " " + actor.lastName : "") +
+                        (actor.suffix != null ? " " + actor.suffix : ""))
+                    : ""),
+                softWrap: true,
+                overflow: TextOverflow.clip),
+            subtitle: Text(
+              tempRoles.join(", "),
+              style: TextStyle(
+                fontSize: 14,
+              ),
+            ),
+            trailing: GestureDetector(
+              child: Icon(Icons.edit),
+              onTap: () {
+                setState(() {
+                  closed = false;
+                });
+              },
+            ),
+          );
   }
 }

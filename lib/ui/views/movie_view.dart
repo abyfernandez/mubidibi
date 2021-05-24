@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -22,7 +23,6 @@ import '../../locator.dart';
 import 'full_photo.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'home_view.dart';
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:mubidibi/ui/views/review_form.dart';
 import 'package:mubidibi/ui/views/display_reviews.dart';
@@ -216,7 +216,7 @@ class _MovieViewState extends State<MovieView>
                       onPress: () async {
                         _animationController.reverse();
 
-                        // TO DO: if user is an admin, they can soft delete movies
+                        // if user is an admin, they can soft delete movies
                         var response = await _dialogService.showConfirmationDialog(
                             title: "Confirm Deletion",
                             cancelTitle: "No",
@@ -232,7 +232,6 @@ class _MovieViewState extends State<MovieView>
                               id: movie.movieId.toString());
                           if (deleteRes != 0) {
                             // show success snackbar
-                            // TO DO: show snackbar; di na sya nagpapakita ever since i added the fetchMovie() line
                             _scaffoldKey.currentState.showSnackBar(mySnackBar(
                                 context,
                                 'Movie deleted successfully.',
@@ -244,7 +243,8 @@ class _MovieViewState extends State<MovieView>
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => HomeView(),
+                                  builder: (context) => MovieView(
+                                      movieId: movie.movieId.toString()),
                                 ),
                               );
                             });
@@ -268,7 +268,6 @@ class _MovieViewState extends State<MovieView>
                       onPress: () async {
                         _animationController.reverse();
 
-                        // TO DO: if user is an admin, they can restore delete movies
                         var response = await _dialogService.showConfirmationDialog(
                             title: "Confirm Restoration",
                             cancelTitle: "No",
@@ -284,7 +283,6 @@ class _MovieViewState extends State<MovieView>
                               id: movie.movieId.toString());
                           if (restoreRes != 0) {
                             // show success snackbar
-                            // TO DO: show snackbar; di na sya nagpapakita ever since i added the fetchMovie() line
                             _scaffoldKey.currentState.showSnackBar(mySnackBar(
                                 context,
                                 'This movie is now restored.',
@@ -296,7 +294,9 @@ class _MovieViewState extends State<MovieView>
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => HomeView(),
+                                  builder: (context) => MovieView(
+                                    movieId: movie.movieId.toString(),
+                                  ),
                                 ),
                               );
                             });
@@ -338,67 +338,156 @@ class _MovieViewState extends State<MovieView>
               children: <Widget>[
                 Stack(
                   children: <Widget>[
-                    Container(
-                      // height: (queryData.size.height / 2) + 60,   -> using mediaquery causes the widgets to rebuild once it detected change in size (e.g. height of the widget changes when onscreen keyboard opens) so i removed it for the meantime
-                      height: 400,
-                      decoration: new BoxDecoration(
-                        image: new DecorationImage(
-                          image: CachedNetworkImageProvider(
-                              movie.poster ?? Config.imgNotFound),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          new BackdropFilter(
-                            filter:
-                                new ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
-                            child: new Container(
-                              decoration: new BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3)),
-                            ),
-                          ),
-                          GestureDetector(
-                            child: Center(
-                              child: CachedNetworkImage(
-                                placeholder: (context, url) => Container(
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Theme.of(context).accentColor),
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) => Material(
-                                  child: Image.network(
-                                    Config.imgNotFound,
-                                    height: 350,
-                                    width: 250,
+                    CarouselSlider(
+                      options: CarouselOptions(height: 400),
+                      items: movie.poster.map((p) {
+                        return Builder(
+                          builder: (BuildContext context) {
+                            return Container(
+                              width: MediaQuery.of(context).size.width,
+                              margin: EdgeInsets.symmetric(horizontal: 5.0),
+                              decoration: BoxDecoration(color: Colors.amber),
+                              child: Container(
+                                // height: (queryData.size.height / 2) + 60,   -> using mediaquery causes the widgets to rebuild once it detected change in size (e.g. height of the widget changes when onscreen keyboard opens) so i removed it for the meantime
+                                height: 400,
+                                decoration: new BoxDecoration(
+                                  image: new DecorationImage(
+                                    image: CachedNetworkImageProvider(
+                                        p ?? Config.imgNotFound),
                                     fit: BoxFit.cover,
-                                    alignment: Alignment.center,
                                   ),
                                 ),
-                                imageUrl: movie.poster ?? Config.imgNotFound,
-                                width: 250,
-                                height: 350,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FullPhoto(
-                                      url: movie.poster ?? Config.imgNotFound),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // new BackdropFilter(
+                                    //   filter: new ImageFilter.blur(
+                                    //       sigmaX: 7.0, sigmaY: 7.0),
+                                    //   child: new Container(
+                                    //     decoration: new BoxDecoration(
+                                    //         color:
+                                    //             Colors.black.withOpacity(0.3)),
+                                    //   ),
+                                    // ),
+                                    GestureDetector(
+                                      child: Center(
+                                        child: CachedNetworkImage(
+                                          placeholder: (context, url) =>
+                                              Container(
+                                            child: Container(
+                                              alignment: Alignment.center,
+                                              child: CircularProgressIndicator(
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                            Color>(
+                                                        Theme.of(context)
+                                                            .accentColor),
+                                              ),
+                                            ),
+                                          ),
+                                          errorWidget: (context, url, error) =>
+                                              Material(
+                                            child: Image.network(
+                                              Config.imgNotFound,
+                                              height: 350,
+                                              width: 250,
+                                              fit: BoxFit.cover,
+                                              alignment: Alignment.center,
+                                            ),
+                                          ),
+                                          imageUrl: p ?? Config.imgNotFound,
+                                          width: 250,
+                                          height: 350,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => FullPhoto(
+                                                url: p ?? Config.imgNotFound),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
                     ),
+                    // Container(
+                    //   // height: (queryData.size.height / 2) + 60,   -> using mediaquery causes the widgets to rebuild once it detected change in size (e.g. height of the widget changes when onscreen keyboard opens) so i removed it for the meantime
+                    //   height: 400,
+                    //   decoration: new BoxDecoration(
+                    //     image: new DecorationImage(
+                    //       image: CachedNetworkImageProvider(
+                    //           movie.poster != null && movie.poster.length != 0
+                    //               ? movie.poster[0]
+                    //               : Config.imgNotFound),
+                    //       fit: BoxFit.cover,
+                    //     ),
+                    //   ),
+                    //   child: Stack(
+                    //     alignment: Alignment.center,
+                    //     children: [
+                    //       new BackdropFilter(
+                    //         filter:
+                    //             new ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
+                    //         child: new Container(
+                    //           decoration: new BoxDecoration(
+                    //               color: Colors.black.withOpacity(0.3)),
+                    //         ),
+                    //       ),
+                    //       GestureDetector(
+                    //         child: Center(
+                    //           child: CachedNetworkImage(
+                    //             placeholder: (context, url) => Container(
+                    //               child: Container(
+                    //                 alignment: Alignment.center,
+                    //                 child: CircularProgressIndicator(
+                    //                   valueColor: AlwaysStoppedAnimation<Color>(
+                    //                       Theme.of(context).accentColor),
+                    //                 ),
+                    //               ),
+                    //             ),
+                    //             errorWidget: (context, url, error) => Material(
+                    //               child: Image.network(
+                    //                 Config.imgNotFound,
+                    //                 height: 350,
+                    //                 width: 250,
+                    //                 fit: BoxFit.cover,
+                    //                 alignment: Alignment.center,
+                    //               ),
+                    //             ),
+                    //             imageUrl: movie.poster != null &&
+                    //                     movie.poster.length != 0
+                    //                 ? movie.poster[0]
+                    //                 : Config.imgNotFound,
+                    //             width: 250,
+                    //             height: 350,
+                    //             fit: BoxFit.cover,
+                    //           ),
+                    //         ),
+                    //         onTap: () {
+                    //           Navigator.push(
+                    //             context,
+                    //             MaterialPageRoute(
+                    //               builder: (context) => FullPhoto(
+                    //                   url: movie.poster != null &&
+                    //                           movie.poster.length != 0
+                    //                       ? movie.poster[0]
+                    //                       : Config.imgNotFound),
+                    //             ),
+                    //           );
+                    //         },
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
@@ -415,15 +504,21 @@ class _MovieViewState extends State<MovieView>
                         // if user is not an admin, show "add to favorite" button instead.
                         currentUser != null && currentUser.isAdmin == true
                             ? movie.isDeleted == true
-                                ? IconButton(
+                                ? MyTooltip(
+                                    child: Container(
+                                        child: Icon(
+                                            Icons.error_outline_outlined,
+                                            size: 30,
+                                            color: Colors.red),
+                                        padding: EdgeInsets.only(right: 20)),
+                                    message: 'This movie is currently hidden.')
+                                : IconButton(
                                     padding: EdgeInsets.only(right: 20.0),
-                                    onPressed: () => print(
-                                        "This movie is currently hidden."),
-                                    icon: Icon(Icons.error_outline_outlined),
+                                    onPressed: () => print('Add to Favorites'),
+                                    icon: Icon(Icons.add),
                                     iconSize: 30.0,
                                     color: Colors.white,
                                   )
-                                : SizedBox()
                             : currentUser != null
                                 ? IconButton(
                                     padding: EdgeInsets.only(right: 20.0),
@@ -741,5 +836,31 @@ class _MovieViewState extends State<MovieView>
         ),
       ),
     );
+  }
+}
+
+class MyTooltip extends StatelessWidget {
+  final Widget child;
+  final String message;
+
+  MyTooltip({@required this.message, @required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final key = GlobalKey<State<Tooltip>>();
+    return Tooltip(
+      key: key,
+      message: message,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _onTap(key),
+        child: child,
+      ),
+    );
+  }
+
+  void _onTap(GlobalKey key) {
+    final dynamic tooltip = key.currentState;
+    tooltip?.ensureTooltipVisible();
   }
 }

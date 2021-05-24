@@ -71,7 +71,6 @@ exports.movie = app => {
         if (!pic.file && movieData.length == 0) {
           movieData = JSON.parse(pic.fields.movie.value); // movie data sent from the frontend
         } else {
-          // TO DO: Fix ---> this currently only works if there is a poster added. However if poster is not provided, this might crash --> (?)
           var buffer = await pic.toBuffer();
           var image = await buffer.toString('base64');
           image = image.replace(/(\r\n|\n|\r)/gm, "");

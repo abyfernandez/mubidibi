@@ -117,7 +117,6 @@ class ReviewFormState extends State<ReviewForm> {
 
   @override
   Widget build(BuildContext context) {
-    print("build: $rate");
     return _edit == false && userReview != null
         ?
         // display currentUser's review
@@ -151,12 +150,8 @@ class ReviewFormState extends State<ReviewForm> {
                                         width: 200,
                                         child: Text(
                                           userReview.firstName +
-                                              " " +
                                               (userReview.middleName != null
-                                                  ? userReview.middleName +
-                                                      " " +
-                                                      userReview.lastName
-                                                  : userReview.lastName) +
+                                                  ? " " +userReview.middleName : "") + (userReview.lastName != null ? " " + userReview.lastName : "") +
                                               (userReview.suffix != null
                                                   ? " " + userReview.suffix
                                                   : ""),
@@ -894,8 +889,6 @@ class ReviewFormState extends State<ReviewForm> {
                         infoProperties: InfoProperties(
                           modifier: (double value) {
                             final display = rate % 1 != 0 ? rate : rate.toInt();
-                            print("display: $display");
-
                             return display.toString();
                           },
                           mainLabelStyle: TextStyle(fontSize: 18),
@@ -913,7 +906,6 @@ class ReviewFormState extends State<ReviewForm> {
                         ),
                       ),
                       onChange: (double value) {
-                        print(value);
                         final newValue = (value * 2).ceil() / 2;
                         setState(() {
                           rate = newValue;

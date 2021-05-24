@@ -3,7 +3,6 @@ import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/full_photo.dart';
-import 'package:mubidibi/ui/views/signin_category_view.dart';
 import 'package:mubidibi/ui/widgets/responsive.dart';
 import 'package:mubidibi/ui/widgets/vertical_icon_button.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
@@ -52,7 +51,6 @@ class _ContentHeaderMobile extends StatelessWidget {
         Container(
           alignment: Alignment.center,
           margin: const EdgeInsets.symmetric(horizontal: 8.0),
-          // height: 500.0,
           height: (queryData.size.height / 2) + 100,
           decoration: BoxDecoration(
             boxShadow: [
@@ -74,11 +72,13 @@ class _ContentHeaderMobile extends StatelessWidget {
           ),
         ),
         Container(
-          // height: 500.0,
           height: (queryData.size.height / 2) + 100,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(featuredContent.poster ?? Config.imgNotFound),
+              image: NetworkImage(featuredContent.poster != null &&
+                      featuredContent.poster.length != 0
+                  ? featuredContent.poster[0]
+                  : Config.imgNotFound),
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
             ),
@@ -86,7 +86,6 @@ class _ContentHeaderMobile extends StatelessWidget {
         ),
         GestureDetector(
           child: Container(
-            // height: 500.0,
             height: (queryData.size.height / 2) + 100,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -100,7 +99,10 @@ class _ContentHeaderMobile extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => FullPhoto(
-                    url: featuredContent.poster ?? Config.imgNotFound),
+                    url: featuredContent.poster != null &&
+                            featuredContent.poster.length != 0
+                        ? featuredContent.poster[0]
+                        : Config.imgNotFound),
               ),
             );
           },

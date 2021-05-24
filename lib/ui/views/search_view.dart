@@ -135,11 +135,12 @@ class _SearchViewState extends State<SearchView> {
                                                 crewQueryResult =
                                                     crew.where((c) {
                                                   var name = c.firstName +
-                                                      " " +
                                                       (c.middleName != null
-                                                          ? c.middleName
+                                                          ? " " + c.middleName
                                                           : "") +
-                                                      c.lastName +
+                                                      (c.lastName != null
+                                                          ? " " + c.lastName
+                                                          : "") +
                                                       (c.suffix != null
                                                           ? " " + c.suffix
                                                           : "");
@@ -304,8 +305,11 @@ class _SearchViewState extends State<SearchView> {
                                                   image: DecorationImage(
                                                     image:
                                                         CachedNetworkImageProvider(
-                                                      movie.poster != null
-                                                          ? movie.poster
+                                                      movie.poster != null &&
+                                                              movie.poster
+                                                                      .length !=
+                                                                  0
+                                                          ? movie.poster[0]
                                                           : Config.imgNotFound,
                                                     ),
                                                     fit: BoxFit.cover,
@@ -415,12 +419,12 @@ class _SearchViewState extends State<SearchView> {
                                                       Alignment.bottomLeft,
                                                   child: Text(
                                                     c.firstName +
-                                                        " " +
                                                         (c.middleName != null
                                                             ? " " + c.middleName
                                                             : "") +
-                                                        " " +
-                                                        c.lastName +
+                                                        (c.lastName != null
+                                                            ? c.lastName
+                                                            : "") +
                                                         (c.suffix != null
                                                             ? " " + c.suffix
                                                             : ""),

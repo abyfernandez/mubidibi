@@ -140,12 +140,12 @@ class ContentScroll extends StatelessWidget {
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
                                   crew[index].firstName +
-                                      " " +
                                       (crew[index].middleName != null
                                           ? " " + crew[index].middleName
                                           : "") +
-                                      " " +
-                                      crew[index].lastName +
+                                      (crew[index].lastName != null
+                                          ? " " + crew[index].lastName
+                                          : "") +
                                       (crew[index].suffix != null
                                           ? " " + crew[index].suffix
                                           : "") +

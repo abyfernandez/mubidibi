@@ -38,9 +38,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         viewToShow: SignUpFirstPage(),
       );
     case DashboardViewRoute:
+      var filter = settings.arguments as String;
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: DashboardView(),
+        viewToShow: DashboardView(filter: filter),
       );
     case HomeViewRoute:
       return _getPageRoute(
@@ -82,15 +83,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       var photos = settings.arguments as List<String>;
       var screenshots = settings.arguments as List<String>;
       var type = settings.arguments as String;
+      var filter = settings.arguments as String;
 
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: SeeAllView(
-            movies: movies,
-            crew: crew,
-            photos: photos,
-            screenshots: screenshots,
-            type: type),
+          movies: movies,
+          crew: crew,
+          photos: photos,
+          screenshots: screenshots,
+          type: type,
+          filter: filter,
+        ),
       );
     default:
       return MaterialPageRoute(

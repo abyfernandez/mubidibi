@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:mubidibi/services/authentication_service.dart';
-import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import '../locator.dart';
 import 'base_model.dart';
 import 'package:flutter/foundation.dart';

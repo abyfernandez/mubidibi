@@ -1,16 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/my_drawer.dart';
 import 'package:mubidibi/ui/views/search_view.dart';
-import 'package:provider_architecture/provider_architecture.dart';
-import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
+import 'package:mubidibi/ui/views/see_all_view.dart';
 
 class HomeView extends StatefulWidget {
   HomeView({Key key}) : super(key: key);
@@ -27,17 +25,18 @@ class _HomeViewState extends State<HomeView> {
   List<dynamic> genres = [];
   String sortBy = "";
   Widget _showPage;
+  ValueNotifier<String> filterBy = ValueNotifier<String>(null);
 
   // Initialize Pages
   final SearchView _searchView = SearchView();
-  // final DashboardView _dashboardView = DashboardView();
 
   Widget _pageChooser(int page) {
     switch (page) {
       case 0:
         return new DashboardView(
-          filter: sortBy,
-        );
+            filter: filterBy.value == null || filterBy.value == ""
+                ? null
+                : filterBy.value);
         break;
       case 1:
         return _searchView;
@@ -80,7 +79,10 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     fetchGenres();
-    _showPage = DashboardView();
+    _showPage = DashboardView(
+        filter: filterBy.value == null || filterBy.value == ""
+            ? null
+            : filterBy.value);
 
     super.initState();
   }
@@ -133,11 +135,20 @@ class _HomeViewState extends State<HomeView> {
                       style: TextStyle(color: Colors.white),
                     ),
                     items: genreItems,
-                    onChanged: (value) {
+                    onChanged: (val) {
+                      filterBy.value = val;
                       setState(() {
-                        sortBy = value;
+                        sortBy = val;
                         _showPage = _pageChooser(pageIndex);
                       });
+
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (BuildContext context) => SeeAllView(
+                                  movies: null,
+                                  type: "movies",
+                                  filter: filterBy.value)));
                     },
                     underline: Container(),
                   ),
@@ -165,7 +176,7 @@ class _HomeViewState extends State<HomeView> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        items: const <BottomNavigationBarItem>[
+        items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
             label: 'Home',
@@ -176,7 +187,41 @@ class _HomeViewState extends State<HomeView> {
           ),
           // TO DO: changes in design kapag guest lang yung user
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_outlined),
+            icon: Stack(
+              children: [
+                Icon(Icons.notifications_outlined),
+                new Positioned(
+                  right: 0,
+                  top: 0,
+                  child: new Container(
+                    padding: EdgeInsets.all(0),
+                    decoration: new BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 12,
+                      minHeight: 12,
+                    ),
+                    child: new Text(
+                      '10',
+                      style: new TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                // Positioned(
+                //   // draw a red marble
+                //   top: 0.0,
+                //   right: 0.0,
+                //   child: new Icon(Icons.brightness_1,
+                //       size: 8.0, color: Colors.redAccent),
+                // )
+              ],
+            ),
             label: 'Notifications',
           ),
         ],

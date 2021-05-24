@@ -11,37 +11,52 @@ exports.crew = app => {
 
       client.query(
         'SELECT * FROM crew',
-        function onResult(err, result) {
+        async function onResult(err, result) {
+          var crew = result.rows;
+
+          for (var i = 0; i < crew.length; i++) {
+            var type = [];
+
+            var director = await client.query(`select exists(select 1 from movie_director where director_id=$1)`, [(crew[i].id)]);
+            var writer = await client.query(`select exists(select 1 from movie_writer where writer_id=$1)`, [(crew[i].id)]);
+            var actor = await client.query(`select exists(select 1 from movie_actor where actor_id=$1)`, [(crew[i].id)]);
+
+            if (director.rows[0].exists) type.push("Direktor");
+            if (writer.rows[0].exists) type.push("Manunulat");
+            if (actor.rows[0].exists) type.push("Aktor");
+
+            crew[i]['type'] = type;
+          }
           release()
-          res.send(err || JSON.stringify(result.rows));
+          res.send(err || JSON.stringify(crew));
         }
       )
     }
   });
 
-  // GET ALL CREW -- // TO DO: might get deprecated
-  app.get('/mubidibi/all-crew/', (req, res) => {
-    app.pg.connect(onConnect)
+  // // GET ALL CREW -- // TO DO: might get deprecated
+  // app.get('/mubidibi/all-crew/', (req, res) => {
+  //   app.pg.connect(onConnect)
 
-    async function onConnect(err, client, release) {
-      if (err) return res.send(err)
+  //   async function onConnect(err, client, release) {
+  //     if (err) return res.send(err)
 
-      var crew = [];
+  //     var crew = [];
 
-      var directors = await client.query('select distinct(crew.*) from crew left join movie_director on crew.id = movie_director.director_id where id in (select distinct(director_id) from movie_director)');
+  //     var directors = await client.query('select distinct(crew.*) from crew left join movie_director on crew.id = movie_director.director_id where id in (select distinct(director_id) from movie_director)');
 
-      var writers = await client.query('select distinct(crew.*) from crew left join movie_writer on crew.id = movie_writer.writer_id where id in (select distinct(writer_id) from movie_writer)');
+  //     var writers = await client.query('select distinct(crew.*) from crew left join movie_writer on crew.id = movie_writer.writer_id where id in (select distinct(writer_id) from movie_writer)');
 
-      var actors = await client.query('select distinct(crew.*) from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (select distinct(actor_id) from movie_actor)');
+  //     var actors = await client.query('select distinct(crew.*) from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (select distinct(actor_id) from movie_actor)');
 
-      crew.push(directors.rows);
-      crew.push(writers.rows);
-      crew.push(actors.rows);
+  //     crew.push(directors.rows);
+  //     crew.push(writers.rows);
+  //     crew.push(actors.rows);
 
-      release();
-      res.send(err || JSON.stringify(crew));
-    }
-  });
+  //     release();
+  //     res.send(err || JSON.stringify(crew));
+  //   }
+  // });
 
   // GET CREW BY MOVIE ID -- MOVIE VIEW
   app.get('/mubidibi/crew/:id', (req, res) => {

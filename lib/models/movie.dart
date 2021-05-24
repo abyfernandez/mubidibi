@@ -11,7 +11,7 @@ class Movie {
   final String title;
   final String synopsis;
   final num runtime;
-  final String poster;
+  final List<String> poster;
   final List<dynamic> genre;
   final List<String> screenshot;
   final String releaseDate;
@@ -36,7 +36,9 @@ class Movie {
         title: json['title'],
         synopsis: json['synopsis'],
         runtime: json['runtime'],
-        poster: json['poster'],
+        poster: json['poster'] == null
+            ? null
+            : List<String>.from(json["poster"].map((x) => x)),
         genre: json['genre'],
         screenshot: json['screenshot'] == null
             ? null

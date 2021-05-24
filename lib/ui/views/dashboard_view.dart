@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/services/authentication_service.dart';
@@ -82,12 +81,12 @@ class _DashboardViewState extends State<DashboardView>
         slivers: [
           SliverToBoxAdapter(
             child: ContentList(
-              key: PageStorageKey('crew'),
-              title: 'Mga Personalidad',
-              seeAll: 'Tingnan Lahat',
-              crew: values,
-              type: 'crew',
-            ),
+                key: PageStorageKey('crew'),
+                title: 'Mga Personalidad',
+                seeAll: 'Tingnan Lahat',
+                type: 'crew',
+                filter: filter,
+                showFilter: true),
           ),
         ],
       );
@@ -101,11 +100,11 @@ class _DashboardViewState extends State<DashboardView>
   @override
   void initState() {
     currentUser = _authenticationService.currentUser;
-    print("FILTER: $filter");
-
     fetchMovies();
     fetchCrew();
     fabIcon = Icons.add;
+
+    print(filter);
 
     _animationController = AnimationController(
       vsync: this,
@@ -121,8 +120,6 @@ class _DashboardViewState extends State<DashboardView>
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
-
     if (movies == null || crew == null || index == null) {
       return CircularProgressIndicator();
     }
@@ -211,6 +208,8 @@ class _DashboardViewState extends State<DashboardView>
                       seeAll: 'Tingnan Lahat',
                       movies: movies,
                       type: 'movies',
+                      filter: filter,
+                      showFilter: true,
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -220,6 +219,8 @@ class _DashboardViewState extends State<DashboardView>
                       seeAll: 'Tingnan Lahat',
                       movies: movies,
                       type: 'movies',
+                      filter: filter,
+                      showFilter: true,
                     ),
                   ),
                   SliverToBoxAdapter(
@@ -229,6 +230,8 @@ class _DashboardViewState extends State<DashboardView>
                       seeAll: 'Tingnan Lahat',
                       crew: crew,
                       type: 'crew',
+                      filter: filter,
+                      showFilter: true,
                     ),
                   ),
                 ],

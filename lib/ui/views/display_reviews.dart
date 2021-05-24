@@ -144,12 +144,9 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                       width: 200,
                                       child: Text(
                                         review.firstName +
-                                            " " +
                                             (review.middleName != null
-                                                ? review.middleName +
-                                                    " " +
-                                                    review.lastName
-                                                : review.lastName) +
+                                                ? " " + review.middleName : "") +
+                                                 (review.lastName != null ? " " + review.lastName : "") +
                                             (review.suffix != null
                                                 ? " " + review.suffix
                                                 : ""),

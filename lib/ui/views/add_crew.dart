@@ -232,7 +232,7 @@ class _AddCrewState extends State<AddCrew> {
 
   Widget displayAwards() {
     var count = 1;
-    return Container();
+    // return Container();
     return Column(
         children: dynamicList.map((item) {
       return Text(count.toString() + ". " + item.item.name != null
@@ -295,7 +295,6 @@ class _AddCrewState extends State<AddCrew> {
         body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
           child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
             child: Stack(
               children: <Widget>[
                 Container(
@@ -456,9 +455,7 @@ class _AddCrewState extends State<AddCrew> {
                                 content: LimitedBox(
                                   maxWidth: 300,
                                   child: Form(
-                                      // TO DO: fix this when you wake up
-                                      key: _formKeys[i],
-                                      child: getContent(i)),
+                                      key: _formKeys[i], child: getContent(i)),
                                 ),
                               ),
                           ],

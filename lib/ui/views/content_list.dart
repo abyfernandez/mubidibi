@@ -17,15 +17,19 @@ class ContentList extends StatelessWidget {
   final List<Crew> crew;
   final String seeAll;
   final String type;
+  final String filter;
+  final bool showFilter;
 
-  const ContentList(
-      {Key key,
-      this.title,
-      this.movies,
-      this.crew,
-      this.seeAll,
-      @required this.type})
-      : super(key: key);
+  const ContentList({
+    Key key,
+    this.title,
+    this.movies,
+    this.crew,
+    this.seeAll,
+    @required this.type,
+    this.filter,
+    this.showFilter,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +60,15 @@ class ContentList extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => type == "movies"
-                                      ? SeeAllView(movies: movies, type: type)
-                                      : SeeAllView(crew: crew, type: type),
+                                      ? SeeAllView(
+                                          type: type,
+                                          filter: filter,
+                                          showFilter: true,
+                                        )
+                                      : SeeAllView(
+                                          type: type,
+                                          filter: filter,
+                                          showFilter: true),
                                 ),
                               );
                             },
@@ -79,8 +90,16 @@ class ContentList extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => type == "movies"
-                                      ? SeeAllView(movies: movies, type: type)
-                                      : SeeAllView(crew: crew, type: type),
+                                      ? SeeAllView(
+                                          type: type,
+                                          filter: filter,
+                                          showFilter: true,
+                                        )
+                                      : SeeAllView(
+                                          type: type,
+                                          filter: filter,
+                                          showFilter: true,
+                                        ),
                                 ),
                               );
                             },
@@ -135,7 +154,7 @@ class ContentList extends StatelessWidget {
                                   BoxShadow(
                                     color: Colors.black54,
                                     offset: Offset(0.0, 0.0),
-                                    blurRadius: 2.0,
+                                    blurRadius: 2.0, // 2
                                   ),
                                 ],
                                 borderRadius: BorderRadius.circular(5),
@@ -159,8 +178,9 @@ class ContentList extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(5),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(
-                                    content.poster != null
-                                        ? content.poster
+                                    content.poster != null &&
+                                            content.poster.length != 0
+                                        ? content.poster[0]
                                         : Config.imgNotFound,
                                   ),
                                   fit: BoxFit.cover,
@@ -215,12 +235,12 @@ class ContentList extends StatelessWidget {
                               ),
                               child: Text(
                                 content.firstName +
-                                    " " +
                                     (content.middleName != null
                                         ? " " + content.middleName
                                         : "") +
-                                    " " +
-                                    content.lastName +
+                                    (content.lastName != null
+                                        ? " " + content.lastName
+                                        : "") +
                                     (content.suffix != null
                                         ? " " + content.suffix
                                         : ""),
@@ -259,12 +279,12 @@ class ContentList extends StatelessWidget {
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
                                   content.firstName +
-                                      " " +
                                       (content.middleName != null
                                           ? " " + content.middleName
                                           : "") +
-                                      " " +
-                                      content.lastName +
+                                      (content.lastName != null
+                                          ? " " + content.lastName
+                                          : "") +
                                       (content.suffix != null
                                           ? " " + content.suffix
                                           : ""),

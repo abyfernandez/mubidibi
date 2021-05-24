@@ -113,8 +113,12 @@ class _CrewViewState extends State<CrewView>
                           // );
                           print(movie.title);
                         },
+
+                        // Make this a stack/ conditional statement so that the movie title can still be seen if poster is not available
                         child: Image.network(
-                          movie.poster,
+                          movie.poster != null && movie.poster.length != 0
+                              ? movie.poster[0]
+                              : Config.imgNotFound,
                           height: 250,
                           width: 230,
                           alignment: Alignment.topCenter,
@@ -359,10 +363,9 @@ class _CrewViewState extends State<CrewView>
                     children: <Widget>[
                       Text(
                         crew.firstName +
-                            ' ' +
                             (crew.middleName != null
-                                ? (crew.middleName + ' ' + crew.lastName)
-                                : crew.lastName) +
+                                ? " " + crew.middleName : "") +
+                                (crew.lastName != null ?  " " + crew.lastName : "") +
                             (crew.suffix != null ? ' ' + crew.suffix : ''),
                         softWrap: true,
                         overflow: TextOverflow.fade,
