@@ -51,15 +51,15 @@ exports.movie = app => {
 
     // upload image to cloudinary 
     // TO DO: create centralized cloudinary (for both mobile and web use)
-    // var cloudinary = require('cloudinary');
+    var cloudinary = require('cloudinary');
 
-    // cloudinary.config({
-    //   cloud_name: "mubidibi-sp",
-    //   api_key: '385294841727974',
-    //   api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
-    // });
+    cloudinary.config({
+      cloud_name: "mubidibi-sp",
+      api_key: '385294841727974',
+      api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
+    });
 
-    // MOVIE SCREENSHOTS AND POSTER UPLOAD   -- poster first element in the array
+    // MOVIE SCREENSHOTS AND POSTER UPLOAD   -- poster first elements in the array
 
     var images = [];
     var movieData = [];    // movie data sent from the frontend
@@ -70,7 +70,7 @@ exports.movie = app => {
 
         if (!pic.file && movieData.length == 0) {
           movieData = JSON.parse(pic.fields.movie.value); // movie data sent from the frontend
-        } else {
+        } else {     // upload images to cloudinary
           var buffer = await pic.toBuffer();
           var image = await buffer.toString('base64');
           image = image.replace(/(\r\n|\n|\r)/gm, "");
@@ -148,8 +148,15 @@ exports.movie = app => {
     // append poster if provided by user 
     query = query.concat(`_poster => `)
 
-    if (movieData.poster == true && images.length != 0) {
-      query = query.concat(`'${images[0]}', 
+    if (movieData.poster == true && movieData.poster_count != 0) {
+      query = query.concat(`array [`)
+      for (var i = 0; i < movieData.poster_count; i++) {
+        query = query.concat(`'`, images[i], `'`)
+        if (i != movieData.poster_count - 1 && images[i] != images[movieData.poster_count - 1]) { // if poster is more than 1, add comma
+          query = query.concat(',')
+        }
+      }
+      query = query.concat(`], 
       `)
     } else {
       query = query.concat(`null, 
@@ -159,20 +166,17 @@ exports.movie = app => {
     // append screenshot if provided by user 
     query = query.concat(`_screenshot => `)
 
-    if (images.length > 1 && movieData.poster == true) {  // both poster and screenshots exist
+    if (images.length != 0 && movieData.poster_count != 0 && movieData.poster == true) {  // both poster and screenshots exist
       query = query.concat(`array [`)
-      images.forEach(pic => {
-        if (pic != images[0]) {
-          query = query.concat(`'`, pic, `'`)
-        }
-        if (pic != images[images.length - 1] && pic != images[0]) {
+      for (var i = movieData.poster_count - 1; i < images.length; i++) {
+        query = query.concat(`'`, images[i], `'`)
+        if (images[i] != images[images.length - 1]) {
           query = query.concat(',')
         }
-      });
+      }
       query = query.concat(`], 
       `)
-
-    } else if (images.length > 0 && movieData.poster == false) {  // only screenshots were provided
+    } else if (images.length > 0 && movieData.poster_count == 0 && movieData.poster == false) {  // only screenshots were provided
       query = query.concat(`array [`)
       images.forEach(pic => {
         query = query.concat(`'`, pic, `'`)
@@ -182,10 +186,9 @@ exports.movie = app => {
       });
       query = query.concat(`], 
       `)
-
-    } else {
+    } else {   // no screenshots provided
       query = query.concat(`null, 
-      `);  // no screenshots were provided
+      `);
     }
 
     query = query.concat(`_added_by => '${movieData.added_by}'
@@ -259,13 +262,13 @@ exports.movie = app => {
   // UPDATE MOVIE
   app.put('/mubidibi/update-movie/:id', async (req, res) => {
     // upload image to cloudinary 
-    // var cloudinary = require('cloudinary');
+    var cloudinary = require('cloudinary');
 
-    // cloudinary.config({
-    //   cloud_name: "mubidibi-sp",
-    //   api_key: '385294841727974',
-    //   api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
-    // });
+    cloudinary.config({
+      cloud_name: "mubidibi-sp",
+      api_key: '385294841727974',
+      api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
+    });
 
     // MOVIE SCREENSHOTS AND POSTER UPLOAD   -- poster first element in the array
 

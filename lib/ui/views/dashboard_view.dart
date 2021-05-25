@@ -102,7 +102,7 @@ class _DashboardViewState extends State<DashboardView>
     currentUser = _authenticationService.currentUser;
     fetchMovies();
     fetchCrew();
-    fabIcon = Icons.add;
+    fabIcon = Icons.admin_panel_settings;
 
     print(filter);
 
@@ -146,7 +146,9 @@ class _DashboardViewState extends State<DashboardView>
                   _animationController.reverse();
                   await _navigationService.navigateTo(AddMovieRoute);
                   setState(() {
-                    fabIcon = fabIcon == Icons.add ? Icons.close : Icons.add;
+                    fabIcon = fabIcon == Icons.admin_panel_settings
+                        ? Icons.close
+                        : Icons.admin_panel_settings;
                   });
                 },
               ),
@@ -161,7 +163,9 @@ class _DashboardViewState extends State<DashboardView>
                   _animationController.reverse();
                   await _navigationService.navigateTo(AddCrewRoute);
                   setState(() {
-                    fabIcon = fabIcon == Icons.add ? Icons.close : Icons.add;
+                    fabIcon = fabIcon == Icons.admin_panel_settings
+                        ? Icons.close
+                        : Icons.admin_panel_settings;
                   });
                 },
               ),
@@ -176,7 +180,9 @@ class _DashboardViewState extends State<DashboardView>
                   ? _animationController.reverse()
                   : _animationController.forward(),
               setState(() {
-                fabIcon = fabIcon == Icons.add ? Icons.close : Icons.add;
+                fabIcon = fabIcon == Icons.admin_panel_settings
+                    ? Icons.close
+                    : Icons.admin_panel_settings;
               })
             },
 
@@ -185,6 +191,7 @@ class _DashboardViewState extends State<DashboardView>
 
             // Floating Action button Icon
             iconData: fabIcon,
+
             backGroundColor: Colors.lightBlue,
           ),
         ),
@@ -201,17 +208,19 @@ class _DashboardViewState extends State<DashboardView>
                   SliverToBoxAdapter(
                     child: SizedBox(height: 10),
                   ),
-                  SliverToBoxAdapter(
-                    child: ContentList(
-                      key: PageStorageKey('myFavorites'),
-                      title: 'Mga Favorite',
-                      seeAll: 'Tingnan Lahat',
-                      movies: movies,
-                      type: 'movies',
-                      filter: filter,
-                      showFilter: true,
-                    ),
-                  ),
+                  currentUser != null
+                      ? SliverToBoxAdapter(
+                          child: ContentList(
+                            key: PageStorageKey('myFavorites'),
+                            title: 'Mga Favorite',
+                            seeAll: 'Tingnan Lahat',
+                            movies: movies,
+                            type: 'movies',
+                            filter: filter,
+                            showFilter: true,
+                          ),
+                        )
+                      : SliverToBoxAdapter(),
                   SliverToBoxAdapter(
                     child: ContentList(
                       key: PageStorageKey('movies'),

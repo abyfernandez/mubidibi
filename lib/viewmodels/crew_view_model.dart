@@ -17,7 +17,6 @@ class CrewViewModel extends BaseModel {
     setBusy(false);
     if (response.statusCode == 200) {
       // calls crewFromJson method from the model to convert from JSON to Crew datatype
-      print(jsonDecode(response.body));
       return crewFromJson(response.body);
     } else {
       throw Exception('Failed to get crew');

@@ -1,6 +1,8 @@
 // FORM VIEW: CREW (DIRECTORS, WRITERS, ACTORS)
 
+import 'dart:async';
 import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +17,7 @@ import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
@@ -54,6 +57,8 @@ class _AddCrewState extends State<AddCrew> {
   String base64Image; // picked image in base64 format
   var photos = List(); // for uploading crew photos
   var imageURI = ''; // for crew edit
+  List<Movie> movieOptions;
+  List<int> movies = [];
 
   // CREW FIELD CONTROLLERS
   final firstNameController = TextEditingController();
@@ -85,11 +90,18 @@ class _AddCrewState extends State<AddCrew> {
     GlobalKey<FormState>(),
     GlobalKey<FormState>(),
     GlobalKey<FormState>(),
+    GlobalKey<FormState>(),
   ];
 
   // STEPPER TITLES
   int currentStep = 0;
-  List<String> stepperTitle = ["Basic Details", "Photos", "Awards", "Review"];
+  List<String> stepperTitle = [
+    "Mga Basic na Detalye",
+    "Mga Pelikula",
+    "Mga Litrato",
+    "Mga Award",
+    "Review"
+  ];
 
   // SERVICES
   final AuthenticationService _authenticationService =
@@ -140,32 +152,54 @@ class _AddCrewState extends State<AddCrew> {
 
   // Function: get image using image picker for crew's display photo
   Future getImage() async {
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      imageFile = File(pickedFile.path);
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+        type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png']);
+
+    if (result != null) {
+      imageFile = File(result.files.single.path);
       setState(() {
         imageFile = imageFile;
-        mimetype = lookupMimeType(pickedFile.path);
+        mimetype = lookupMimeType(result.files.single.path);
       });
     } else {
-      print('No image selected.');
+      // User canceled the picker
+      print("No image selected.");
     }
   }
 
   // Function: get images using image picker for movie screenshots
   Future getPhotos() async {
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      var image = File(pickedFile.path);
-      setState(() {
-        photos.add(image);
-      });
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png']);
+
+    if (result != null) {
+      List imagePaths =
+          photos.isNotEmpty ? photos.map((img) => img.path).toList() : [];
+
+      List toUpload = result.paths.map((path) {
+        if (imagePaths.contains(path) == false) {
+          return File(path);
+        }
+      }).toList();
+
+      if (toUpload.isNotEmpty) {
+        setState(() {
+          for (var i = 0; i < toUpload.length; i++) {
+            if (toUpload[i] != null) {
+              photos.add(toUpload[i]);
+            }
+          }
+        });
+      }
     } else {
+      // User canceled the picker
       print('No image selected.');
     }
   }
 
-  // Function: display screenshots in a scrollable horizontal view
+  // Function: display photos in a scrollable horizontal view
   Widget displayPhotos(String mode) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,13 +238,13 @@ class _AddCrewState extends State<AddCrew> {
                           boxShadow: [
                             BoxShadow(
                               color: Colors.grey,
-                              offset: Offset(0.0, 1.0),
-                              blurRadius: 6.0,
+                              offset: Offset(0.0, 0.0),
+                              blurRadius: 0.0,
                             ),
                           ],
                         ),
                       )
-                    : Container(),
+                    : SizedBox(),
               ],
             ),
           )
@@ -239,6 +273,17 @@ class _AddCrewState extends State<AddCrew> {
           ? item.item.name
           : "test" + " ");
     }).toList());
+  }
+
+  void fetchMovies() async {
+    var model = MovieViewModel();
+    movieOptions = await model.getAllMovies();
+  }
+
+  @override
+  void initState() {
+    fetchMovies();
+    super.initState();
   }
 
   @override
@@ -295,6 +340,7 @@ class _AddCrewState extends State<AddCrew> {
         body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
           child: GestureDetector(
+            onTap: () => FocusScope.of(context).unfocus(),
             child: Stack(
               children: <Widget>[
                 Container(
@@ -304,7 +350,6 @@ class _AddCrewState extends State<AddCrew> {
                     padding: EdgeInsets.symmetric(
                       horizontal: 30.0,
                     ),
-                    // TO DO: UI IDEA -> gawing collapsible yung add photo pag nagscroll para di masyadong matakaw sa space
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -348,14 +393,19 @@ class _AddCrewState extends State<AddCrew> {
                                   });
                                   break;
 
-                                case 1: // photos
+                                case 1: // movies
                                   setState(() {
                                     FocusScope.of(context).unfocus();
                                     currentStep++;
                                   });
                                   break;
 
-                                case 2: // awards
+                                case 2: // photos
+                                  FocusScope.of(context).unfocus();
+                                  setState(() => ++currentStep);
+                                  break;
+
+                                case 3: // awards
                                   FocusScope.of(context).unfocus();
                                   setState(() => ++currentStep);
                                   break;
@@ -417,13 +467,17 @@ class _AddCrewState extends State<AddCrew> {
                                   if (crewRes != null) {
                                     _saving =
                                         false; // set saving to false to trigger circular progress indicator
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => CrewView(
-                                            crewId: crewRes.crewId.toString()),
-                                      ),
-                                    );
+                                    Timer(const Duration(milliseconds: 2000),
+                                        () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => CrewView(
+                                              crewId:
+                                                  crewRes.crewId.toString()),
+                                        ),
+                                      );
+                                    });
                                   }
                                 } else {
                                   _saving =
@@ -564,17 +618,11 @@ class _AddCrewState extends State<AddCrew> {
                     suffixNode.requestFocus();
                   },
                   decoration: InputDecoration(
-                    labelText: "Last Name *",
+                    labelText: "Last Name",
                     filled: true,
                     fillColor: Color.fromRGBO(240, 240, 240, 1),
                     contentPadding: EdgeInsets.all(10),
                   ),
-                  validator: (value) {
-                    if (value.isEmpty || value == null) {
-                      return 'Required ang field na ito.';
-                    }
-                    return null;
-                  },
                 ),
               ),
               SizedBox(height: 15),
@@ -646,7 +694,7 @@ class _AddCrewState extends State<AddCrew> {
                               },
                             ),
                           )
-                        : Container(),
+                        : SizedBox(),
                   ],
                 ),
               ),
@@ -758,7 +806,77 @@ class _AddCrewState extends State<AddCrew> {
             ],
           ),
         );
-      case 1: // photos
+      case 1: // Movies
+        return Container(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(height: 10),
+            Text('Mga Pelikula:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(
+              height: 10,
+            ),
+
+            // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
+            Container(
+              decoration: BoxDecoration(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: ChipsInput(
+                initialValue: movies,
+                keyboardAppearance: Brightness.dark,
+                textCapitalization: TextCapitalization.words,
+                enabled: true,
+                textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                decoration: const InputDecoration(
+                  labelText: 'Pumili ng pelikula',
+                  contentPadding: EdgeInsets.all(10),
+                ),
+                findSuggestions: (String query) {
+                  if (query.isNotEmpty) {
+                    var lowercaseQuery = query.toLowerCase();
+                    return movieOptions.where((item) {
+                      return item.title
+                          .toLowerCase()
+                          .contains(query.toLowerCase());
+                    }).toList(growable: false)
+                      ..sort((a, b) => a.title
+                          .toLowerCase()
+                          .indexOf(lowercaseQuery)
+                          .compareTo(
+                              b.title.toLowerCase().indexOf(lowercaseQuery)));
+                  }
+                  return movieOptions;
+                },
+                onChanged: (data) {
+                  List<int> ids = [];
+                  for (var c in data) {
+                    ids.add(c.crewId);
+                  }
+                  movies = ids;
+                },
+                chipBuilder: (context, state, c) {
+                  return InputChip(
+                    key: ObjectKey(c),
+                    label: Text(c.title),
+                    onDeleted: () => state.deleteChip(c),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, c) {
+                  return ListTile(
+                    key: ObjectKey(c),
+                    title: Text(c.title),
+                    onTap: () => state.selectSuggestion(c),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 10),
+          ]),
+        );
+      case 2: // Photos
         return Container(
           alignment: Alignment.topLeft,
           child: Column(
@@ -833,13 +951,13 @@ class _AddCrewState extends State<AddCrew> {
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey,
-                                offset: Offset(0.0, 2.0),
-                                blurRadius: 6.0,
+                                offset: Offset(0.0, 0.0),
+                                blurRadius: 0.0,
                               ),
                             ],
                           ),
                         )
-                      : Container(),
+                      : SizedBox(),
                 ],
               ),
               SizedBox(
@@ -850,7 +968,6 @@ class _AddCrewState extends State<AddCrew> {
               SizedBox(
                 height: 10,
               ),
-              // TO DO: multiple files for screenshots
               Padding(
                 padding: EdgeInsets.only(left: 15),
                 child: Container(
@@ -867,9 +984,7 @@ class _AddCrewState extends State<AddCrew> {
                             width: 70,
                             height: 70,
                             color: Color.fromRGBO(240, 240, 240, 1)),
-                        photos.length != 0
-                            ? displayPhotos("edit")
-                            : Container(),
+                        photos.length != 0 ? displayPhotos("edit") : SizedBox(),
                       ],
                     ),
                   ),
@@ -878,7 +993,7 @@ class _AddCrewState extends State<AddCrew> {
             ],
           ),
         );
-      case 2: // awards
+      case 3: // awards
         return Container(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -968,7 +1083,7 @@ class _AddCrewState extends State<AddCrew> {
             ],
           ),
         );
-      case 3: // review
+      case 4: // review
         return Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(5),
@@ -1126,7 +1241,7 @@ class _AddCrewState extends State<AddCrew> {
                       photos.isNotEmpty ? displayPhotos("display") : SizedBox(),
 
                       // TO DO: add awards
-                      dynamicList.isNotEmpty ? displayAwards() : SizedBox()
+                      // dynamicList.isNotEmpty ? displayAwards() : SizedBox()
                     ],
                   )),
             ));

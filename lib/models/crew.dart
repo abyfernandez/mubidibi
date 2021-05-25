@@ -12,11 +12,11 @@ String crewToJson(List<Crew> data) =>
 // String crewToJson(Crew data) => json.encode(data.toJson());
 
 class Crew {
-  final int crewId;
-  final String firstName;
-  final String middleName;
-  final String lastName;
-  final String suffix;
+  int crewId;
+  String firstName;
+  String middleName;
+  String lastName;
+  String suffix;
   final String birthday;
   final String deathdate;
   final bool isAlive;
@@ -24,10 +24,11 @@ class Crew {
   final String displayPic;
   final List<String> photos;
   final String description;
-  final List<String> role; // roles in movies
-  final List<String> type; // direktor/manunulat/aktor
-  final List<List<Movie>> movies;
+  List<String> role; // roles in movies
+  List<String> type; // direktor/manunulat/aktor
+  List<List<Movie>> movies;
   final bool isDeleted;
+  bool saved;
 
   Crew(
       {this.crewId,
@@ -45,7 +46,8 @@ class Crew {
       this.role,
       this.type,
       this.movies,
-      this.isDeleted});
+      this.isDeleted,
+      this.saved});
 
   factory Crew.fromJson(Map<String, dynamic> json) {
     return Crew(

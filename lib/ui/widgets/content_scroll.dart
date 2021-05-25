@@ -155,9 +155,6 @@ class ContentScroll extends StatelessWidget {
                                               displayRoles(crew[index]) +
                                               ")"
                                           : ""),
-                                  // (title == "Mga Aktor"
-                                  //     ? "bilang " + displayRoles(crew[index])
-                                  //     : ""),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 12,

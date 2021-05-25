@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +7,6 @@ import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 // import 'package:mubidibi/ui/widgets/searchable_dropdown.dart';
 // import 'package:flutter_chips_input/flutter_chips_input.dart'; -- working widget
 import 'package:image_picker/image_picker.dart';
-import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -22,18 +22,18 @@ import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
-// import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
 import 'dart:convert';
-import 'package:flutter_document_picker/flutter_document_picker.dart';
 
 // FOR DYNAMIC WIDGET ACTOR
 List<ActorWidget> dynamicList = [];
+var size;
+List<ValueNotifier<bool>> open = []; // state values of actors in listview
+
 List<int> actors = [];
 List<List<String>> roles = [];
-var size;
-List<bool> opened = []; // state values of actors in listview
 
 class AddMovie extends StatefulWidget {
   final Movie movie;
@@ -88,9 +88,10 @@ class _AddMovieState extends State<AddMovie> {
   ];
 
   // OTHER VARIABLES
-  File imageFile; // for uploading poster w/ image picker
+  // File imageFile; // for uploading poster w/ image picker (single file)
+  var imageFiles =
+      List(); // for uploading poster w/ image picker (multiple file)
   final picker = ImagePicker();
-  var mimetype;
   String base64Image; // picked image in base64 format
   var screenshots = List(); // for uploading movie screenshots
   var imageURI = ''; // for movie edit
@@ -107,14 +108,15 @@ class _AddMovieState extends State<AddMovie> {
   List<int> writers = []; // Writer(s)
   List<DropdownMenuItem> crewItems = [];
   List<Crew> crewList = [];
+  List<ActorWidget> filteredActors = []; // dynamic list with only saved values
 
   // STEPPER TITLES
   int currentStep = 0;
   List<String> stepperTitle = [
-    "Basic Details",
-    "Poster and Screenshots",
-    "Crew Member/s",
-    "Genre/s",
+    "Mga Basic na Detalye",
+    "Mga Poster, Screenshot, at Ibang Media",
+    "Mga Personalidad",
+    "Mga Genre",
     "Review"
   ];
 
@@ -205,57 +207,67 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: get image using image picker for movie poster
   Future getImage() async {
-    // final pickedFile = await picker.getImage(source: ImageSource.gallery);
-    // if (pickedFile != null) {
-    //   imageFile = File(pickedFile.path);
-    //   setState(() {
-    //     imageFile = imageFile;
-    //     mimetype = lookupMimeType(pickedFile.path);
-    //   });
-    // } else {
-    //   print('No image selected.');
-    // }
-
-    // // File Picker ver. 2
-    // FlutterDocumentPickerParams params = FlutterDocumentPickerParams(
-    //   allowedFileExtensions: ['jpg', 'jpeg', 'png'],
-    // );
-
-    // final path = await FlutterDocumentPicker.openDocument(params: params);
-    // if (path != null) {
-    //   imageFile = File(path);
-    //   setState(() {
-    //     imageFile = imageFile;
-    //     mimetype = lookupMimeType(path);
-    //   });
-    // } else {
-    //   print('No image selected.');
-    // }
-
-    // File Picker ver. 3
-    FilePickerResult result = await FilePicker.platform.pickFiles();
+    // File Picker ver. 3 (multiple files)
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png']);
 
     if (result != null) {
-      imageFile = File(result.files.single.path);
-      setState(() {
-        imageFile = imageFile;
-        mimetype = lookupMimeType(result.files.single.path);
-      });
+      List imagePaths = imageFiles.isNotEmpty
+          ? imageFiles.map((img) => img.path).toList()
+          : [];
+
+      List toUpload = result.paths.map((path) {
+        if (imagePaths.contains(path) == false) {
+          return File(path);
+        }
+      }).toList();
+
+      if (toUpload.isNotEmpty) {
+        setState(() {
+          for (var i = 0; i < toUpload.length; i++) {
+            if (toUpload[i] != null) {
+              imageFiles.add(toUpload[i]);
+            }
+          }
+        });
+      }
     } else {
       // User canceled the picker
-      print("No image selected.");
+      print('No image selected.');
     }
   }
 
   // Function: get images using image picker for movie screenshots
   Future getScreenshot() async {
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      var image = File(pickedFile.path);
-      setState(() {
-        screenshots.add(image);
-      });
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png']);
+
+    if (result != null) {
+      List imagePaths = screenshots.isNotEmpty
+          ? screenshots.map((img) => img.path).toList()
+          : [];
+
+      List toUpload = result.paths.map((path) {
+        if (imagePaths.contains(path) == false) {
+          return File(path);
+        }
+      }).toList();
+
+      if (toUpload.isNotEmpty) {
+        setState(() {
+          for (var i = 0; i < toUpload.length; i++) {
+            if (toUpload[i] != null) {
+              screenshots.add(toUpload[i]);
+            }
+          }
+        });
+      }
     } else {
+      // User canceled the picker
       print('No image selected.');
     }
   }
@@ -313,22 +325,143 @@ class _AddMovieState extends State<AddMovie> {
     );
   }
 
+  // Function: display posters in a scrollable horizontal view
+  Widget displayPosters(String mode) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: imageFiles
+          .map(
+            (pic) => Stack(
+              children: [
+                Container(
+                  margin: EdgeInsets.symmetric(horizontal: 5),
+                  height: 70,
+                  width: 70,
+                  child: Image.file(
+                    pic,
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+                mode == "edit"
+                    ? Container(
+                        margin: EdgeInsets.symmetric(horizontal: 5),
+                        alignment: Alignment.center,
+                        child: GestureDetector(
+                          child: Icon(Icons.close),
+                          onTap: () {
+                            setState(() {
+                              imageFiles.remove(pic);
+                            });
+                          },
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(50.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.white,
+                              offset: Offset(0.0, 0.0),
+                              blurRadius: 0.0,
+                            ),
+                          ],
+                        ),
+                      )
+                    : Container(),
+              ],
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget displayActors() {
+    filteredActors =
+        dynamicList.where((actor) => actor.crew.saved == true).toList();
+
+    return Column(
+      children: [
+        filteredActors.length != 0 ? SizedBox(height: 10) : SizedBox(),
+        // TO DO: Display actors
+        filteredActors.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  "Mga Aktor: ",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              )
+            : SizedBox(),
+        // TO DO: fix overflow issue when text is too long
+        filteredActors.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: filteredActors.map((actor) {
+                    if (actor.crew.saved == true) {
+                      var item = crewList
+                          .firstWhere((p) => p.crewId == actor.crew.crewId);
+                      return new Wrap(
+                        children: [
+                          new Icon(Icons.fiber_manual_record, size: 16),
+                          SizedBox(
+                            width: 5,
+                          ),
+                          new Text(
+                              item.firstName +
+                                  (item.middleName != null
+                                      ? " " + item.middleName
+                                      : "") +
+                                  (item.lastName != null
+                                      ? " " + item.lastName
+                                      : "") +
+                                  (item.suffix != null
+                                      ? " " + item.suffix
+                                      : ""),
+                              style: TextStyle(fontSize: 16),
+                              softWrap: true,
+                              overflow: TextOverflow.fade),
+                          actor.crew.role.length != 0
+                              ? Text(" - " + actor.crew.role.join(" / "),
+                                  style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 16),
+                                  softWrap: true,
+                                  overflow: TextOverflow.fade)
+                              : SizedBox(),
+                        ],
+                      );
+                    }
+                  }).toList(),
+                ),
+              )
+            : SizedBox(),
+      ],
+    );
+  }
+
   // Function: adds ActorWidget in the ListView builder
   addActor() {
     setState(() {
       size = dynamicList.length; // pass the index of the widget to the class
-
-      // insert empty data to roles list
-      roles.add([]);
-
+      ValueNotifier<bool> temp = ValueNotifier<bool>(true);
       // add actor wdiget to list
       dynamicList.add(ActorWidget(
           key: ObjectKey(size),
+          crew: new Crew(),
           crewItems: crewItems,
           crewList: crewList,
           size: size));
-      opened.add(
-          true); // when an actor widget is added, it defaults to an open/editable widget
+      open.add(
+          temp); // when an actor widget is added, it defaults to an open/editable widget
     });
   }
 
@@ -348,7 +481,6 @@ class _AddMovieState extends State<AddMovie> {
     var currentUser = _authenticationService.currentUser;
 
     final _scaffoldKey = GlobalKey<ScaffoldState>();
-    // TO DO: add crew (redirect to add crew form) and then go back to add movie form
     // TO DO: check if poster and screenshots are actually saved in cloudinary
     // TO DO: add awards in stepper
     // TO DO: Check the &&  and || conditions if they're correct
@@ -408,182 +540,191 @@ class _AddMovieState extends State<AddMovie> {
             style: TextStyle(color: Colors.black),
           ),
         ),
-        body: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle.light,
-          child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Stack(
-              children: <Widget>[
-                Container(
-                  height: double.infinity,
-                  child: SingleChildScrollView(
-                    physics: AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 30.0,
-                    ),
-                    child: Column(
-                      children: [
-                        SizedBox(height: 20),
-                        MyStepper(
-                          type: MyStepperType.vertical,
-                          currentStep: currentStep,
-                          onStepTapped: (step) async {
-                            if (currentStep == 0) {
-                              // first step
-                              setState(() {
-                                if (_formKeys[currentStep]
-                                    .currentState
-                                    .validate()) {
-                                  currentStep = step;
-                                }
-                              });
-                            } else {
-                              // allow tapping of steps
-                              setState(() => currentStep = step);
-                            }
-                          },
-                          onStepCancel: () => {
-                            if (currentStep != 0) setState(() => --currentStep)
-                          }, // else do nothing
-                          onStepContinue: () async {
-                            if (currentStep + 1 != stepperTitle.length) {
-                              // do not allow user to continue to next step if inputs aren't filled out yet
-                              switch (currentStep) {
-                                case 0: // title, release date, running time, and synopsis
-                                  setState(() {
-                                    if (_formKeys[currentStep]
-                                        .currentState
-                                        .validate()) {
-                                      titleNode.unfocus();
-                                      dateNode.unfocus();
-                                      runtimeNode.unfocus();
-                                      synopsisNode.unfocus();
-
-                                      currentStep++;
-                                    }
-                                  });
-                                  break;
-
-                                case 1: // poster
-                                  setState(() {
-                                    currentStep++;
-                                  });
-                                  break;
-                                case 2: // crew members
-                                  setState(() {
-                                    directorNode.unfocus();
-                                    writerNode.unfocus();
-                                    // TO DO: unfocus keyboard when an actor/role textfield is currently active
-                                    currentStep++;
-                                  });
-                                  break;
-                                case 3: // genre
-                                  // TO DO: unfocus keyboard when a genre textfield is currently active
-                                  setState(() => currentStep++);
-                                  break;
+        body: ModalProgressHUD(
+          inAsyncCall: _saving,
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle.light,
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Stack(
+                children: <Widget>[
+                  Container(
+                    height: double.infinity,
+                    child: SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 30.0,
+                      ),
+                      child: Column(
+                        children: [
+                          SizedBox(height: 20),
+                          MyStepper(
+                            type: MyStepperType.vertical,
+                            currentStep: currentStep,
+                            onStepTapped: (step) async {
+                              if (currentStep == 0) {
+                                // first step
+                                setState(() {
+                                  if (_formKeys[currentStep]
+                                      .currentState
+                                      .validate()) {
+                                    currentStep = step;
+                                  }
+                                });
+                              } else {
+                                // allow tapping of steps
+                                setState(() => currentStep = step);
                               }
-                            } else {
-                              // last step
-                              var confirm =
-                                  await _dialogService.showConfirmationDialog(
-                                      title: "Confirm Details",
-                                      cancelTitle: "No",
-                                      confirmationTitle: "Yes",
-                                      description:
-                                          "Are you sure that you want to continue?");
-                              if (confirm.confirmed == true) {
-                                _saving =
-                                    true; // set saving to true to trigger circular progress indicator
+                            },
+                            onStepCancel: () => {
+                              if (currentStep != 0)
+                                setState(() => --currentStep)
+                            }, // else do nothing
+                            onStepContinue: () async {
+                              if (currentStep + 1 != stepperTitle.length) {
+                                // do not allow user to continue to next step if inputs aren't filled out yet
+                                switch (currentStep) {
+                                  case 0: // title, release date, running time, and synopsis
+                                    setState(() {
+                                      if (_formKeys[currentStep]
+                                          .currentState
+                                          .validate()) {
+                                        titleNode.unfocus();
+                                        dateNode.unfocus();
+                                        runtimeNode.unfocus();
+                                        synopsisNode.unfocus();
 
-                                final response = await model.addMovie(
-                                    title: titleController.text,
-                                    synopsis: synopsisController.text,
-                                    releaseDate: _date != null
-                                        ? _date.toIso8601String()
-                                        : '',
-                                    runtime: runtimeController.text,
-                                    poster: imageFile,
-                                    imageURI: imageURI,
-                                    screenshots: screenshots,
-                                    mimetype: mimetype,
-                                    genre: filmGenres,
-                                    directors: directors,
-                                    writers: writers,
-                                    actors: actors,
-                                    roles: roles,
-                                    addedBy: currentUser.userId,
-                                    movieId: movieId);
+                                        currentStep++;
+                                      }
+                                    });
+                                    break;
 
-                                // when response is returned, stop showing circular progress indicator
-
-                                if (response != 0) {
-                                  _saving =
-                                      false; // set saving to false to trigger circular progress indicator
-                                  // show success snackbar
-                                  _scaffoldKey.currentState.showSnackBar(
-                                      mySnackBar(
-                                          context,
-                                          'Movie added successfully.',
-                                          Colors.green));
-
+                                  case 1: // poster
+                                    setState(() {
+                                      currentStep++;
+                                    });
+                                    break;
+                                  case 2: // crew members
+                                    setState(() {
+                                      directorNode.unfocus();
+                                      writerNode.unfocus();
+                                      // TO DO: unfocus keyboard when an actor/role textfield is currently active
+                                      currentStep++;
+                                    });
+                                    break;
+                                  case 3: // genre
+                                    // TO DO: unfocus keyboard when a genre textfield is currently active
+                                    setState(() => currentStep++);
+                                    break;
+                                }
+                              } else {
+                                // last step
+                                var confirm =
+                                    await _dialogService.showConfirmationDialog(
+                                        title: "Confirm Details",
+                                        cancelTitle: "No",
+                                        confirmationTitle: "Yes",
+                                        description:
+                                            "Are you sure that you want to continue?");
+                                if (confirm.confirmed == true) {
                                   _saving =
                                       true; // set saving to true to trigger circular progress indicator
 
-                                  // get movie using id redirect to detail view using response
-                                  var movie = await model.getOneMovie(
-                                      movieId: response.toString());
+                                  final response = await model.addMovie(
+                                      title: titleController.text,
+                                      synopsis: synopsisController.text,
+                                      releaseDate: _date != null
+                                          ? _date.toIso8601String()
+                                          : '',
+                                      runtime: runtimeController.text,
+                                      posters: imageFiles,
+                                      // imageURI: imageURI, // poster edit???
+                                      screenshots: screenshots,
+                                      genre: filmGenres,
+                                      directors: directors,
+                                      writers: writers,
+                                      actors: actors,
+                                      roles: roles,
+                                      addedBy: currentUser.userId,
+                                      movieId: movieId);
 
-                                  if (movie != null) {
+                                  // when response is returned, stop showing circular progress indicator
+
+                                  if (response != 0) {
                                     _saving =
                                         false; // set saving to false to trigger circular progress indicator
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => MovieView(
-                                            movieId: movie.movieId.toString()),
-                                      ),
-                                    );
+                                    // show success snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(
+                                            context,
+                                            'Movie added successfully.',
+                                            Colors.green));
+
+                                    _saving =
+                                        true; // set saving to true to trigger circular progress indicator
+
+                                    // get movie using id redirect to detail view using response
+                                    var movie = await model.getOneMovie(
+                                        movieId: response.toString());
+
+                                    if (movie != null) {
+                                      _saving =
+                                          false; // set saving to false to trigger circular progress indicator
+                                      Timer(const Duration(milliseconds: 2000),
+                                          () {
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => MovieView(
+                                                movieId:
+                                                    movie.movieId.toString()),
+                                          ),
+                                        );
+                                      });
+                                    }
+                                  } else {
+                                    _saving =
+                                        false; // set saving to false to trigger circular progress indicator
+                                    // show error snackbar
+                                    _scaffoldKey.currentState.showSnackBar(
+                                        mySnackBar(
+                                            context,
+                                            'Something went wrong. Check your inputs and try again.',
+                                            Colors.red));
                                   }
-                                } else {
-                                  _saving =
-                                      false; // set saving to false to trigger circular progress indicator
-                                  // show error snackbar
-                                  _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                                      context,
-                                      'Something went wrong. Check your inputs and try again.',
-                                      Colors.red));
                                 }
                               }
-                            }
-                          },
-                          steps: [
-                            for (var i = 0; i < stepperTitle.length; i++)
-                              MyStep(
-                                title: Text(
-                                  stepperTitle[i],
-                                  style: TextStyle(
-                                    fontSize: 18,
+                            },
+                            steps: [
+                              for (var i = 0; i < stepperTitle.length; i++)
+                                MyStep(
+                                  title: Text(
+                                    stepperTitle[i],
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                    ),
+                                  ),
+                                  isActive: i <= currentStep,
+                                  state: i == currentStep
+                                      ? MyStepState.editing
+                                      : i < currentStep
+                                          ? MyStepState.complete
+                                          : MyStepState.indexed,
+                                  content: LimitedBox(
+                                    maxWidth: 300,
+                                    child: Form(
+                                        key: _formKeys[i],
+                                        child: getContent(i)),
                                   ),
                                 ),
-                                isActive: i <= currentStep,
-                                state: i == currentStep
-                                    ? MyStepState.editing
-                                    : i < currentStep
-                                        ? MyStepState.complete
-                                        : MyStepState.indexed,
-                                content: LimitedBox(
-                                  maxWidth: 300,
-                                  child: Form(
-                                      key: _formKeys[i], child: getContent(i)),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -744,76 +885,100 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              Stack(
-                children: [
-                  GestureDetector(
-                    onTap: getImage,
-                    child: Container(
-                      margin: EdgeInsets.only(left: 20),
-                      height: 200,
-                      width: 150,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: imageFile != null || imageURI.trim() != ''
-                          ? Container(
-                              height: 200,
-                              width: 150,
-                              child: imageFile != null
-                                  ? Image.file(
-                                      imageFile,
-                                      width: 150,
-                                      height: 200,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Image.network(
-                                      imageURI,
-                                      width: 150,
-                                      height: 200,
-                                      fit: BoxFit.cover,
-                                    ))
-                          : Container(
-                              height: 200,
-                              width: 150,
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.grey[800],
-                              ),
-                              decoration: BoxDecoration(
-                                color: Color.fromRGBO(240, 240, 240, 1),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
+              Padding(
+                padding: EdgeInsets.only(left: 15),
+                child: Container(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Container(
+                            margin: EdgeInsets.symmetric(horizontal: 5),
+                            child: GestureDetector(
+                              child: Icon(Icons.camera_alt),
+                              onTap: getImage,
                             ),
+                            width: 70,
+                            height: 70,
+                            color: Color.fromRGBO(240, 240, 240, 1)),
+                        imageFiles.length != 0
+                            ? displayPosters("edit")
+                            : Container(),
+                      ],
                     ),
                   ),
-                  imageFile != null || imageURI.trim() != ''
-                      ? Container(
-                          margin: EdgeInsets.only(left: 25, top: 5),
-                          width: 25,
-                          alignment: Alignment.center,
-                          child: GestureDetector(
-                            child: Icon(Icons.close),
-                            onTap: () {
-                              setState(() {
-                                imageFile = null;
-                                imageURI = '';
-                              });
-                            },
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white,
-                                offset: Offset(0.0, 0.0),
-                                blurRadius: 0.0,
-                              ),
-                            ],
-                          ),
-                        )
-                      : Container(),
-                ],
+                ),
               ),
+              // Stack(
+              //   children: [
+              //     GestureDetector(
+              //       onTap: getImage,
+              //       child: Container(
+              //         margin: EdgeInsets.only(left: 20),
+              //         height: 200,
+              //         width: 150,
+              //         decoration: BoxDecoration(
+              //           borderRadius: BorderRadius.circular(5),
+              //         ),
+              //         child: imageFile != null ||  imageURI.trim() != ''
+              //             ? Container(
+              //                 height: 200,
+              //                 width: 150,
+              //                 child: imageFile != null
+              //                     ? Image.file(
+              //                         imageFile,
+              //                         width: 150,
+              //                         height: 200,
+              //                         fit: BoxFit.cover,
+              //                       )
+              //                     : Image.network(
+              //                         imageURI,
+              //                         width: 150,
+              //                         height: 200,
+              //                         fit: BoxFit.cover,
+              //                       ))
+              //             : Container(
+              //                 height: 200,
+              //                 width: 150,
+              //                 child: Icon(
+              //                   Icons.camera_alt,
+              //                   color: Colors.grey[800],
+              //                 ),
+              //                 decoration: BoxDecoration(
+              //                   color: Color.fromRGBO(240, 240, 240, 1),
+              //                   borderRadius: BorderRadius.circular(5),
+              //                 ),
+              //               ),
+              //       ),
+              //     ),
+              //     imageFile != null || imageURI.trim() != ''
+              //         ? Container(
+              //             margin: EdgeInsets.only(left: 25, top: 5),
+              //             width: 25,
+              //             alignment: Alignment.center,
+              //             child: GestureDetector(
+              //               child: Icon(Icons.close),
+              //               onTap: () {
+              //                 setState(() {
+              //                   imageFile = null;
+              //                   imageURI = '';
+              //                 });
+              //               },
+              //             ),
+              //             decoration: BoxDecoration(
+              //               borderRadius: BorderRadius.circular(50.0),
+              //               boxShadow: [
+              //                 BoxShadow(
+              //                   color: Colors.white,
+              //                   offset: Offset(0.0, 0.0),
+              //                   blurRadius: 0.0,
+              //                 ),
+              //               ],
+              //             ),
+              //           )
+              //         : Container(),
+              //   ],
+              // ),
               SizedBox(
                 height: 15,
               ),
@@ -861,67 +1026,6 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              // Container(
-              //   decoration: BoxDecoration(
-              //     color: Color.fromRGBO(240, 240, 240, 1),
-              //     borderRadius: BorderRadius.circular(5),
-              //   ),
-              //   child: Column(
-              //     children: <Widget>[
-              //       CSearchableDropdown.multiple(
-              //         selectedValueWidgetFn: (item) => Container(
-              //           margin: EdgeInsets.only(right: 5),
-              //           child: InputChip(
-              //             label: Text(
-              //               item,
-              //               style: TextStyle(
-              //                 fontSize: 12,
-              //               ),
-              //             ),
-              //             backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-              //             deleteIconColor: Colors.black,
-              //             onPressed: () {},
-              //             onDeleted: () {
-              //               setState(() {
-              //                 var index = crewItems.indexWhere(
-              //                     (director) => director.value == item);
-              //                 directors.removeWhere((item) => item == index);
-              //               });
-              //             },
-              //           ),
-              //         ),
-              //         key: UniqueKey(),
-              //         style: TextStyle(
-              //           color: Colors.black,
-              //         ),
-              //         underline: Container(),
-              //         items: crewItems,
-              //         selectedItems: directors,
-              //         hint: Padding(
-              //           padding: const EdgeInsets.all(12.0),
-              //           child: Text("Pumili ng direktor",
-              //               style: TextStyle(
-              //                   color: Colors.black54,
-              //                   fontSize: 16,
-              //                   fontFamily: 'Poppins')),
-              //         ),
-              //         searchHint: Text("Search Any",
-              //             style: TextStyle(color: Colors.white)),
-              //         onChanged: (value) {
-              //           setState(() {
-              //             directors = value;
-              //           });
-              //         },
-              //         closeButton: (directors) {
-              //           return (directors.isNotEmpty
-              //               ? "Save ${directors.length == 1 ? '"' + crewItems[directors.first].value.toString() + '"' : '(' + directors.length.toString() + ')'}"
-              //               : "Save without selection");
-              //         },
-              //         isExpanded: true,
-              //       ),
-              //     ],
-              //   ),
-              // ),
 
               // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
               Container(
@@ -952,12 +1056,6 @@ class _AddMovieState extends State<AddMovie> {
                                 : "") +
                             (item.lastName != null ? " " + item.lastName : "") +
                             (item.suffix != null ? " " + item.suffix : "");
-                        // return item.firstName
-                        //         .toLowerCase()
-                        //         .contains(query.toLowerCase()) ||
-                        //     item.lastName
-                        //         .toLowerCase()
-                        //         .contains(query.toLowerCase());
                         return fullName
                             .toLowerCase()
                             .contains(query.toLowerCase());
@@ -1007,69 +1105,6 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              // Container(
-              //   decoration: BoxDecoration(
-              //     color: Color.fromRGBO(240, 240, 240, 1),
-              //     borderRadius: BorderRadius.circular(5),
-              //   ),
-              //   child: Column(
-              //     children: <Widget>[
-              //       CSearchableDropdown.multiple(
-              //         selectedValueWidgetFn: (item) => Container(
-              //           margin: EdgeInsets.only(right: 5),
-              //           child: InputChip(
-              //             label: Text(
-              //               item,
-              //               style: TextStyle(
-              //                 fontSize: 12,
-              //               ),
-              //             ),
-              //             backgroundColor: Color.fromRGBO(220, 220, 220, 1),
-              //             deleteIconColor: Colors.black,
-              //             padding: EdgeInsets.all(0),
-              //             onPressed: () {},
-              //             onDeleted: () {
-              //               setState(() {
-              //                 var index = crewItems
-              //                     .indexWhere((writer) => writer.value == item);
-              //                 writers.removeWhere((item) => item == index);
-              //               });
-              //             },
-              //           ),
-              //         ),
-              //         key: UniqueKey(),
-              //         style: TextStyle(
-              //           color: Colors.black,
-              //         ),
-              //         underline: Container(),
-              //         items: crewItems,
-              //         selectedItems: writers,
-              //         hint: Padding(
-              //           padding: const EdgeInsets.all(12.0),
-              //           child: Text("Pumili ng manunulat",
-              //               style: TextStyle(
-              //                   color: Colors.black54,
-              //                   fontSize: 16,
-              //                   fontFamily: 'Poppins')),
-              //         ),
-              //         searchHint: Text("Search Any",
-              //             style: TextStyle(color: Colors.white)),
-              //         onChanged: (value) {
-              //           setState(() {
-              //             writers = value;
-              //           });
-              //         },
-              //         closeButton: (writers) {
-              //           return (writers.isNotEmpty
-              //               ? "Save ${writers.length == 1 ? '"' + crewItems[writers.first].value.toString() + '"' : '(' + writers.length.toString() + ')'}"
-              //               : "Save without selection");
-              //         },
-              //         isExpanded: true,
-              //       ),
-              //     ],
-              //   ),
-              // ),
-
               // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
               Container(
                 decoration: BoxDecoration(
@@ -1123,7 +1158,6 @@ class _AddMovieState extends State<AddMovie> {
                     return InputChip(
                       key: ObjectKey(c),
                       label: Text(c.firstName +
-                         
                           (c.middleName != null ? " " + c.middleName : "") +
                           (c.lastName != null ? " " + c.lastName : "") +
                           (c.suffix != null ? " " + c.suffix : "")),
@@ -1135,7 +1169,6 @@ class _AddMovieState extends State<AddMovie> {
                     return ListTile(
                       key: ObjectKey(c),
                       title: Text(c.firstName +
-                        
                           (c.middleName != null ? " " + c.middleName : "") +
                           (c.lastName != null ? " " + c.lastName : "") +
                           (c.suffix != null ? " " + c.suffix : "")),
@@ -1171,42 +1204,104 @@ class _AddMovieState extends State<AddMovie> {
               ),
               Column(
                 children: [
-                  ListView(
-                    shrinkWrap: true,
-                    children: dynamicList
-                        .map((item) => Column(
-                              key: ObjectKey(item),
-                              children: [
-                                item,
-                                Container(
-                                  alignment: Alignment.centerRight,
-                                  child: FlatButton(
-                                    color: Color.fromRGBO(240, 240, 240, 1),
-                                    child: Text("Remove"),
-                                    onPressed: () {
-                                      setState(() {
-                                        // remove from actors and roles lists
-                                        actors.removeAt(
-                                            dynamicList.indexOf(item));
-                                        roles.removeAt(
-                                            dynamicList.indexOf(item));
-                                        dynamicList.removeAt(
-                                            dynamicList.indexOf(item));
-                                      });
-                                    },
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 10,
-                                ),
-                                Divider(height: 1, thickness: 2),
-                              ],
-                            ))
-                        .toList(),
-                  ),
+                  ListView.builder(
+                      itemCount: dynamicList.length,
+                      shrinkWrap: true,
+                      itemBuilder: (context, i) {
+                        return ValueListenableBuilder(
+                            key: ObjectKey(dynamicList[i]),
+                            valueListenable: open[i],
+                            builder: (context, value, widget) {
+                              return Stack(
+                                key: ObjectKey(dynamicList[i]),
+                                children: [
+                                  dynamicList[i],
+                                  value == true
+                                      ? Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: Container(
+                                            child: OutlineButton(
+                                              padding: EdgeInsets.all(0),
+                                              color: Colors.white,
+                                              onPressed: () {
+                                                print(index);
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                                setState(() {
+                                                  open.removeAt(i);
+                                                  dynamicList.removeAt(i);
+                                                  // addedAward.removeAt() // TO DO: ANONG IDEDELETE
+                                                });
+                                              },
+                                              child: Text('Tanggalin'),
+                                            ),
+                                            alignment: Alignment.centerRight,
+                                          ),
+                                        )
+                                      : SizedBox(),
+                                ],
+                              );
+                            });
+                      })
+                  // ListView(
+                  //   shrinkWrap: true,
+                  //   children: dynamicList.map((item) {
+                  //     var index = dynamicList.indexOf(item);
+                  //     return ValueListenableBuilder(
+                  //         valueListenable: open[index],
+                  //         builder: (context, value, widget) {
+                  //           return Stack(
+                  //             key: ObjectKey(item),
+                  //             children: [
+                  //               item,
+                  //               value == true
+                  //                   ? Positioned(
+                  //                       bottom: 0,
+                  //                       right: 0,
+                  //                       child: Container(
+                  //                         child: OutlineButton(
+                  //                           padding: EdgeInsets.all(0),
+                  //                           color: Colors.white,
+                  //                           onPressed: () {
+                  //                             print(index);
+                  //                             FocusScope.of(context).unfocus();
+                  //                             setState(() {
+                  //                               open.removeAt(index);
+                  //                               // if (dynamicList[index]
+                  //                               //         .crew
+                  //                               //         .saved ==
+                  //                               //     true) {
+                  //                               //   // get index
+                  //                               //   var i = actors.indexOf(
+                  //                               //       dynamicList[index]
+                  //                               //           .crew
+                  //                               //           .crewId);
+                  //                               //   print('index in actors: $i');
+                  //                               //   roles.removeAt(i);
+                  //                               //   actors.remove(
+                  //                               //       dynamicList[index]
+                  //                               //           .crew
+                  //                               //           .crewId);
+                  //                               // }
+                  //                               dynamicList.remove(item);
+
+                  //                               // addedAward.removeAt() // TO DO: ANONG IDEDELETE
+                  //                             });
+                  //                           },
+                  //                           child: Text('Tanggalin'),
+                  //                         ),
+                  //                         alignment: Alignment.centerRight,
+                  //                       ),
+                  //                     )
+                  //                   : SizedBox(),
+                  //             ],
+                  //           );
+                  //         });
+                  //   }).toList(),
+                  // ),
                 ],
               ),
-
               SizedBox(
                 height: 10,
               ),
@@ -1386,32 +1481,19 @@ class _AddMovieState extends State<AddMovie> {
                       ),
                     ),
                   ),
-                  imageFile != null ? SizedBox(height: 10) : SizedBox(),
-                  imageFile != null
+                  imageFiles.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  imageFiles.isNotEmpty
                       ? Container(
                           alignment: Alignment.topLeft,
-                          child: Text("Poster/s: ",
+                          child: Text("Mga Poster: ",
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               )),
                         )
                       : SizedBox(),
-                  imageFile != null
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: imageFile != null
-                              ? Image.file(
-                                  imageFile,
-                                  width: 150,
-                                  height: 200,
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                        )
+                  imageFiles.isNotEmpty
+                      ? displayPosters("display")
                       : SizedBox(),
                   screenshots.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
                   screenshots.isNotEmpty
@@ -1511,65 +1593,66 @@ class _AddMovieState extends State<AddMovie> {
                           }).toList()),
                         )
                       : SizedBox(),
-                  actors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  // TO DO: Display actors
-                  actors.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Mga Aktor: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      : SizedBox(),
-                  // TO DO: fix overflow issue when text is too long
-                  actors.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Column(
-                            children: actors.map((id) {
-                              var item =
-                                  crewList.firstWhere((p) => p.crewId == id);
-                              return new Wrap(
-                                children: [
-                                  new Icon(Icons.fiber_manual_record, size: 16),
-                                  SizedBox(
-                                    width: 5,
-                                  ),
-                                  new Text(
-                                      item.firstName +
-                                          (item.middleName != null
-                                              ? " " + item.middleName
-                                              : "") +
-                                          (item.lastName != null
-                                              ? " " + item.lastName
-                                              : "") +
-                                          (item.suffix != null
-                                              ? " " + item.suffix
-                                              : ""),
-                                      style: TextStyle(fontSize: 16),
-                                      softWrap: true,
-                                      overflow: TextOverflow.fade),
-                                  roles[actors.indexOf(id)].length != 0
-                                      ? Text(
-                                          " - " +
-                                              roles[actors.indexOf(id)]
-                                                  .join(" / "),
-                                          style: TextStyle(
-                                              fontStyle: FontStyle.italic,
-                                              fontSize: 16),
-                                          softWrap: true,
-                                          overflow: TextOverflow.fade)
-                                      : SizedBox(),
-                                ],
-                              );
-                            }).toList(),
-                          ),
-                        )
-                      : SizedBox(),
+                  displayActors(),
+                  // actors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  // // TO DO: Display actors
+                  // actors.isNotEmpty
+                  //     ? Container(
+                  //         alignment: Alignment.topLeft,
+                  //         child: Text(
+                  //           "Mga Aktor: ",
+                  //           style: TextStyle(
+                  //             fontWeight: FontWeight.bold,
+                  //             fontSize: 16,
+                  //           ),
+                  //         ),
+                  //       )
+                  //     : SizedBox(),
+                  // // TO DO: fix overflow issue when text is too long
+                  // actors.isNotEmpty
+                  //     ? Container(
+                  //         alignment: Alignment.topLeft,
+                  //         child: Column(
+                  //           children: actors.map((id) {
+                  //             var item =
+                  //                 crewList.firstWhere((p) => p.crewId == id);
+                  //             return new Wrap(
+                  //               children: [
+                  //                 new Icon(Icons.fiber_manual_record, size: 16),
+                  //                 SizedBox(
+                  //                   width: 5,
+                  //                 ),
+                  //                 new Text(
+                  //                     item.firstName +
+                  //                         (item.middleName != null
+                  //                             ? " " + item.middleName
+                  //                             : "") +
+                  //                         (item.lastName != null
+                  //                             ? " " + item.lastName
+                  //                             : "") +
+                  //                         (item.suffix != null
+                  //                             ? " " + item.suffix
+                  //                             : ""),
+                  //                     style: TextStyle(fontSize: 16),
+                  //                     softWrap: true,
+                  //                     overflow: TextOverflow.fade),
+                  //                 roles[actors.indexOf(id)].length != 0
+                  //                     ? Text(
+                  //                         " - " +
+                  //                             roles[actors.indexOf(id)]
+                  //                                 .join(" / "),
+                  //                         style: TextStyle(
+                  //                             fontStyle: FontStyle.italic,
+                  //                             fontSize: 16),
+                  //                         softWrap: true,
+                  //                         overflow: TextOverflow.fade)
+                  //                     : SizedBox(),
+                  //               ],
+                  //             );
+                  //           }).toList(),
+                  //         ),
+                  //       )
+                  //     : SizedBox(),
                   filmGenres.length != 0 ? SizedBox(height: 10) : SizedBox(),
                   filmGenres.length != 0
                       ? Container(
@@ -1611,9 +1694,11 @@ class _AddMovieState extends State<AddMovie> {
 class ActorWidget extends StatefulWidget {
   final List<DropdownMenuItem> crewItems;
   final List<Crew> crewList;
+  final Crew crew;
   final size;
 
-  const ActorWidget({Key key, this.crewItems, this.crewList, this.size})
+  const ActorWidget(
+      {Key key, this.crew, this.crewItems, this.crewList, this.size})
       : super(key: key);
 
   @override
@@ -1621,193 +1706,232 @@ class ActorWidget extends StatefulWidget {
 }
 
 class ActorWidgetState extends State<ActorWidget> {
-  var temp;
-  var tempActor;
-  List<String> tempRoles = [];
   bool closed = false;
-  Crew actor;
+  var temp;
+  Crew tempActor;
+  List<String> tempRoles;
+  bool showError;
 
-  final testController = TextEditingController();
+  @override
+  void initState() {
+    widget.crew.saved = widget.crew.saved == null ? false : widget.crew.saved;
+    showError = false;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return closed == false
+    return open[widget.size].value == true
         ? Container(
             child: Column(children: [
-              SizedBox(
-                height: 15,
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                // TO DO: make every widget collapsible to reduce space
-                child: ChipsInput(
-                  maxChips: 1,
-                  keyboardAppearance: Brightness.dark,
-                  textCapitalization: TextCapitalization.words,
-                  enabled: true,
-                  textStyle:
-                      const TextStyle(fontFamily: 'Poppins', fontSize: 16),
-                  decoration: const InputDecoration(
-                    labelText: 'Pumili ng aktor',
-                    contentPadding: EdgeInsets.all(10),
-                  ),
-                  findSuggestions: (String query) {
-                    if (query.isNotEmpty) {
-                      var lowercaseQuery = query.toLowerCase();
-                      return widget.crewList.where((item) {
-                        var fullName = item.firstName +
-                       
-                            (item.middleName != null
-                                ? " " + item.middleName
-                                : "") +
-                            (item.lastName != null ? " " + item.lastName : "") +
-                            (item.suffix != null ? " " + item.suffix : "");
-                        return fullName
-                            .toLowerCase()
-                            .contains(query.toLowerCase());
-                      }).toList(growable: false)
-                        ..sort((a, b) => a.firstName
-                            .toLowerCase()
-                            .indexOf(lowercaseQuery)
-                            .compareTo(b.firstName
-                                .toLowerCase()
-                                .indexOf(lowercaseQuery)));
-                    }
-                    return widget.crewList;
-                  },
-                  onChanged: (data) {
-                    setState(() {
-                      actor = data[0]; // set actor locally
-                      if (dynamicList.length > actors.length) {
-                        // actor is not yet added to list
-                        actors.add(data[0].crewId);
-                      } else {
-                        actors[widget.size] = data[0]
-                            .crewId; // replace the value in the list if it already exists.
-                      }
-                    });
-                  },
-                  chipBuilder: (context, state, c) {
-                    return InputChip(
-                      key: ObjectKey(c),
-                      label: Text(c.firstName +
-                          (c.middleName != null ? " " + c.middleName : "") +
-                          (c.lastName != null ? " " + c.lastName : "") +
-                          (c.suffix != null ? " " + c.suffix : "")),
-                      onDeleted: () => state.deleteChip(c),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    );
-                  },
-                  suggestionBuilder: (context, state, c) {
-                    return ListTile(
-                      key: ObjectKey(c),
-                      title: Text(c.firstName +
-                          (c.middleName != null ? " " + c.middleName : "") +
-                          (c.lastName != null ? " " + c.lastName : "") +
-                          (c.suffix != null ? " " + c.suffix : "")),
-                      onTap: () => state.selectSuggestion(c),
-                    );
-                  },
-                ),
-              ),
-              SizedBox(
-                height: 15,
-              ),
-              Container(
+            SizedBox(
+              height: 15,
+            ),
+            Container(
+              decoration: BoxDecoration(
                 color: Color.fromRGBO(240, 240, 240, 1),
-                child: TestChipsInput(
-                  key: ObjectKey(widget.size),
-                  keyboardAppearance: Brightness.dark,
-                  textCapitalization: TextCapitalization.words,
-                  enabled: true,
-                  textStyle:
-                      const TextStyle(fontFamily: 'Poppins', fontSize: 16),
-                  decoration: const InputDecoration(
-                    labelText: 'Role',
-                    contentPadding: EdgeInsets.all(10),
-                  ),
-                  findSuggestions: (String query) {
-                    setState(() {
-                      temp = query;
-                    });
-                    return [];
-                  },
-                  submittedText:
-                      temp != null ? temp.trimLeft().trimRight() : "",
-                  onChanged: (data) {
-                    List<String> tempList =
-                        data.map((role) => role.toString()).toList();
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: ChipsInput(
+                initialValue:
+                    widget.crew.crewId != null ? [widget.crew.crewId] : [],
+                maxChips: 1,
+                keyboardAppearance: Brightness.dark,
+                textCapitalization: TextCapitalization.words,
+                enabled: true,
+                textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                decoration: const InputDecoration(
+                  labelText: 'Pumili ng aktor',
+                  contentPadding: EdgeInsets.all(10),
+                ),
+                findSuggestions: (String query) {
+                  if (query.isNotEmpty) {
+                    var lowercaseQuery = query.toLowerCase();
+                    return widget.crewList.where((item) {
+                      var fullName = item.firstName +
+                          (item.middleName != null
+                              ? " " + item.middleName
+                              : "") +
+                          (item.lastName != null ? " " + item.lastName : "") +
+                          (item.suffix != null ? " " + item.suffix : "");
+                      return fullName
+                          .toLowerCase()
+                          .contains(query.toLowerCase());
+                    }).toList(growable: false)
+                      ..sort((a, b) => a.firstName
+                          .toLowerCase()
+                          .indexOf(lowercaseQuery)
+                          .compareTo(b.firstName
+                              .toLowerCase()
+                              .indexOf(lowercaseQuery)));
+                  }
+                  return widget.crewList;
+                },
+                onChanged: (data) {
+                  setState(() {
+                    widget.crew.crewId = data[0].crewId;
+                    widget.crew.firstName = data[0].firstName;
+                    widget.crew.middleName = data[0].middleName;
+                    widget.crew.lastName = data[0].lastName;
+                    widget.crew.suffix = data[0].suffix;
+                    showError =
+                        widget.crew.crewId != null && widget.crew.role != null
+                            ? false
+                            : true;
+                  });
+                },
+                chipBuilder: (context, state, c) {
+                  return InputChip(
+                    key: ObjectKey(c),
+                    label: Text(c != null
+                        ? widget.crew.firstName +
+                            (widget.crew.middleName != null
+                                ? " " + widget.crew.middleName
+                                : "") +
+                            (widget.crew.lastName != null
+                                ? " " + widget.crew.lastName
+                                : "") +
+                            (widget.crew.suffix != null
+                                ? " " + widget.crew.suffix
+                                : "")
+                        : ""),
+                    onDeleted: () => state.deleteChip(c),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, c) {
+                  return ListTile(
+                    key: ObjectKey(c),
+                    title: Text(c.firstName +
+                        (c.middleName != null ? " " + c.middleName : "") +
+                        (c.lastName != null ? " " + c.lastName : "") +
+                        (c.suffix != null ? " " + c.suffix : "")),
+                    onTap: () => state.selectSuggestion(c),
+                  );
+                },
+              ),
+            ),
+            SizedBox(
+              height: 15,
+            ),
+            Container(
+              color: Color.fromRGBO(240, 240, 240, 1),
+              child: TestChipsInput(
+                initialValue: widget.crew.role != null ? widget.crew.role : [],
+                key: ObjectKey(widget.size),
+                keyboardAppearance: Brightness.dark,
+                textCapitalization: TextCapitalization.words,
+                enabled: true,
+                textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                decoration: const InputDecoration(
+                  labelText: 'Role',
+                  contentPadding: EdgeInsets.all(10),
+                ),
+                findSuggestions: (String query) {
+                  setState(() {
+                    temp = query;
+                  });
+                  return [];
+                },
+                submittedText: temp != null ? temp.trimLeft().trimRight() : "",
+                onChanged: (data) {
+                  List<String> tempList = [];
+                  tempList = data.map((role) => role.toString()).toList();
 
-                    setState(() {
-                      roles[widget.size] = tempList; // replace
-                      tempRoles.addAll(tempList);
-                    });
-                  },
-                  chipBuilder: (context, state, c) {
-                    return InputChip(
-                      key: ObjectKey(c),
-                      label: Text(c),
-                      onDeleted: () => state.deleteChip(c),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    );
-                  },
-                  suggestionBuilder: (context, state, c) {
-                    return null;
-                  },
-                ),
+                  setState(() {
+                    widget.crew.role = tempList;
+                    showError =
+                        widget.crew.crewId != null && widget.crew.role != null
+                            ? false
+                            : true;
+                  });
+                },
+                chipBuilder: (context, state, c) {
+                  return InputChip(
+                    key: ObjectKey(c),
+                    label: Text(c),
+                    onDeleted: () => state.deleteChip(c),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, c) {
+                  return null;
+                },
               ),
-              SizedBox(height: 5),
-              Text("Pindutin ang 'ENTER' para i-save ang role."),
-              SizedBox(height: 15),
-              Container(
-                child: OutlineButton(
-                  padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                  color: Colors.white,
-                  onPressed: () {
-                    // FocusScope.of(context).unfocus();
+            ),
+            SizedBox(height: 5),
+            Text("Pindutin ang 'ENTER' para i-save ang role."),
+            SizedBox(height: 15),
+            showError == true
+                ? Text('Required ang mga field ng Aktor at Role.',
+                    style: TextStyle(
+                        color: Colors.red, fontStyle: FontStyle.italic))
+                : SizedBox(),
+            showError == true ? SizedBox(height: 15) : SizedBox(),
+            Container(
+              child: OutlineButton(
+                padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                color: Colors.white,
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  if (widget.crew.crewId != null && widget.crew.role != null) {
                     setState(() {
+                      // save to actors and roles list
+                      open[widget.size].value = false;
                       closed = true;
+                      widget.crew.saved = true;
                     });
-                  },
-                  child: Text('Save'),
-                ),
-                alignment: Alignment.center,
+                  } else {
+                    setState(() {
+                      widget.crew.saved = false;
+                      showError = true;
+                    });
+                  }
+                },
+                child: Text('Save'),
               ),
-            ]),
-          )
+              alignment: Alignment.center,
+            )
+          ]))
         :
         // display this instead if closed == true
-        ListTile(
-            contentPadding: EdgeInsets.all(10),
-            tileColor: Color.fromRGBO(240, 240, 240, 1),
-            title: Text(
-                (actor != null
-                    ? (actor.firstName +
-                        (actor.middleName != null
-                            ? " " + actor.middleName
-                            : "") +
-                        (actor.lastName != null ? " " + actor.lastName : "") +
-                        (actor.suffix != null ? " " + actor.suffix : ""))
-                    : ""),
-                softWrap: true,
-                overflow: TextOverflow.clip),
-            subtitle: Text(
-              tempRoles.join(", "),
-              style: TextStyle(
-                fontSize: 14,
+        Column(children: [
+            ListTile(
+              contentPadding: EdgeInsets.all(10),
+              tileColor: Color.fromRGBO(240, 240, 240, 1),
+              title: Text(
+                  (widget.crew != null
+                      ? (widget.crew.firstName +
+                          (widget.crew.middleName != null
+                              ? " " + widget.crew.middleName
+                              : "") +
+                          (widget.crew.lastName != null
+                              ? " " + widget.crew.lastName
+                              : "") +
+                          (widget.crew.suffix != null
+                              ? " " + widget.crew.suffix
+                              : ""))
+                      : ""),
+                  softWrap: true,
+                  overflow: TextOverflow.clip),
+              subtitle: Text(
+                widget.crew.role != null ? widget.crew.role.join(", ") : "",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                ),
+              ),
+              trailing: GestureDetector(
+                child: Icon(Icons.edit),
+                onTap: () {
+                  setState(() {
+                    closed = false;
+                    open[widget.size].value = true;
+                  });
+                },
               ),
             ),
-            trailing: GestureDetector(
-              child: Icon(Icons.edit),
-              onTap: () {
-                setState(() {
-                  closed = false;
-                });
-              },
-            ),
-          );
+            SizedBox(height: 10)
+          ]);
   }
 }

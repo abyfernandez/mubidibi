@@ -14,6 +14,7 @@ import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/views/add_movie.dart';
+import 'package:mubidibi/ui/views/see_all_view.dart';
 import 'package:mubidibi/ui/widgets/content_scroll.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -60,6 +61,7 @@ class _MovieViewState extends State<MovieView>
   ValueNotifier<double> rating = ValueNotifier<double>(0.0);
   var tempRating = 0.0;
   var numItems = 0;
+  int _current = 0;
 
   // variables needed for adding reviews
   final reviewController = TextEditingController();
@@ -338,17 +340,21 @@ class _MovieViewState extends State<MovieView>
               children: <Widget>[
                 Stack(
                   children: <Widget>[
-                    CarouselSlider(
-                      options: CarouselOptions(height: 400),
-                      items: movie.poster.map((p) {
-                        return Builder(
-                          builder: (BuildContext context) {
-                            return Container(
-                              width: MediaQuery.of(context).size.width,
-                              margin: EdgeInsets.symmetric(horizontal: 5.0),
-                              decoration: BoxDecoration(color: Colors.amber),
-                              child: Container(
-                                // height: (queryData.size.height / 2) + 60,   -> using mediaquery causes the widgets to rebuild once it detected change in size (e.g. height of the widget changes when onscreen keyboard opens) so i removed it for the meantime
+                    movie.poster.length > 1
+                        ? CarouselSlider(
+                            options: CarouselOptions(
+                              autoPlay: true,
+                              autoPlayAnimationDuration: Duration(seconds: 1),
+                              height: 400,
+                              viewportFraction: 1.0,
+                              // onPageChanged: (index, reason) {
+                              //   setState(() {
+                              //     _current = index;
+                              //   });
+                              // }
+                            ),
+                            items: movie.poster.map((p) {
+                              return Container(
                                 height: 400,
                                 decoration: new BoxDecoration(
                                   image: new DecorationImage(
@@ -360,15 +366,15 @@ class _MovieViewState extends State<MovieView>
                                 child: Stack(
                                   alignment: Alignment.center,
                                   children: [
-                                    // new BackdropFilter(
-                                    //   filter: new ImageFilter.blur(
-                                    //       sigmaX: 7.0, sigmaY: 7.0),
-                                    //   child: new Container(
-                                    //     decoration: new BoxDecoration(
-                                    //         color:
-                                    //             Colors.black.withOpacity(0.3)),
-                                    //   ),
-                                    // ),
+                                    new BackdropFilter(
+                                      filter: new ImageFilter.blur(
+                                          sigmaX: 7.0, sigmaY: 7.0),
+                                      child: new Container(
+                                        decoration: new BoxDecoration(
+                                            color:
+                                                Colors.black.withOpacity(0.3)),
+                                      ),
+                                    ),
                                     GestureDetector(
                                       child: Center(
                                         child: CachedNetworkImage(
@@ -413,89 +419,86 @@ class _MovieViewState extends State<MovieView>
                                     ),
                                   ],
                                 ),
+                              );
+                            }).toList(),
+                          )
+                        : Container(
+                            height: 400,
+                            decoration: new BoxDecoration(
+                              image: new DecorationImage(
+                                image: CachedNetworkImageProvider(
+                                    movie.poster != null &&
+                                            movie.poster.length != 0
+                                        ? movie.poster[0]
+                                        : Config.imgNotFound),
+                                fit: BoxFit.cover,
                               ),
-                            );
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    // Container(
-                    //   // height: (queryData.size.height / 2) + 60,   -> using mediaquery causes the widgets to rebuild once it detected change in size (e.g. height of the widget changes when onscreen keyboard opens) so i removed it for the meantime
-                    //   height: 400,
-                    //   decoration: new BoxDecoration(
-                    //     image: new DecorationImage(
-                    //       image: CachedNetworkImageProvider(
-                    //           movie.poster != null && movie.poster.length != 0
-                    //               ? movie.poster[0]
-                    //               : Config.imgNotFound),
-                    //       fit: BoxFit.cover,
-                    //     ),
-                    //   ),
-                    //   child: Stack(
-                    //     alignment: Alignment.center,
-                    //     children: [
-                    //       new BackdropFilter(
-                    //         filter:
-                    //             new ImageFilter.blur(sigmaX: 7.0, sigmaY: 7.0),
-                    //         child: new Container(
-                    //           decoration: new BoxDecoration(
-                    //               color: Colors.black.withOpacity(0.3)),
-                    //         ),
-                    //       ),
-                    //       GestureDetector(
-                    //         child: Center(
-                    //           child: CachedNetworkImage(
-                    //             placeholder: (context, url) => Container(
-                    //               child: Container(
-                    //                 alignment: Alignment.center,
-                    //                 child: CircularProgressIndicator(
-                    //                   valueColor: AlwaysStoppedAnimation<Color>(
-                    //                       Theme.of(context).accentColor),
-                    //                 ),
-                    //               ),
-                    //             ),
-                    //             errorWidget: (context, url, error) => Material(
-                    //               child: Image.network(
-                    //                 Config.imgNotFound,
-                    //                 height: 350,
-                    //                 width: 250,
-                    //                 fit: BoxFit.cover,
-                    //                 alignment: Alignment.center,
-                    //               ),
-                    //             ),
-                    //             imageUrl: movie.poster != null &&
-                    //                     movie.poster.length != 0
-                    //                 ? movie.poster[0]
-                    //                 : Config.imgNotFound,
-                    //             width: 250,
-                    //             height: 350,
-                    //             fit: BoxFit.cover,
-                    //           ),
-                    //         ),
-                    //         onTap: () {
-                    //           Navigator.push(
-                    //             context,
-                    //             MaterialPageRoute(
-                    //               builder: (context) => FullPhoto(
-                    //                   url: movie.poster != null &&
-                    //                           movie.poster.length != 0
-                    //                       ? movie.poster[0]
-                    //                       : Config.imgNotFound),
-                    //             ),
-                    //           );
-                    //         },
-                    //       ),
-                    //     ],
-                    //   ),
-                    // ),
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                new BackdropFilter(
+                                  filter: new ImageFilter.blur(
+                                      sigmaX: 7.0, sigmaY: 7.0),
+                                  child: new Container(
+                                    decoration: new BoxDecoration(
+                                        color: Colors.black.withOpacity(0.3)),
+                                  ),
+                                ),
+                                GestureDetector(
+                                  child: Center(
+                                    child: CachedNetworkImage(
+                                      placeholder: (context, url) => Container(
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          child: CircularProgressIndicator(
+                                            valueColor: AlwaysStoppedAnimation<
+                                                    Color>(
+                                                Theme.of(context).accentColor),
+                                          ),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Material(
+                                        child: Image.network(
+                                          Config.imgNotFound,
+                                          height: 350,
+                                          width: 250,
+                                          fit: BoxFit.cover,
+                                          alignment: Alignment.center,
+                                        ),
+                                      ),
+                                      imageUrl: movie.poster != null &&
+                                              movie.poster.length != 0
+                                          ? movie.poster[0]
+                                          : Config.imgNotFound,
+                                      width: 250,
+                                      height: 350,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FullPhoto(
+                                            url: movie.poster != null &&
+                                                    movie.poster.length != 0
+                                                ? movie.poster[0]
+                                                : Config.imgNotFound),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
                         IconButton(
                           padding: EdgeInsets.only(left: 30.0),
-                          onPressed: () =>
-                              // _navigationService.navigateTo(HomeViewRoute), -- this causes to redirecto to homepage after searching for movies, instead na bumalik lang sa search page
-                              _navigationService.pop(),
+                          onPressed: () => _navigationService.pop(),
                           icon: Icon(Icons.arrow_back),
                           iconSize: 30.0,
                           color: Colors.white,
@@ -530,6 +533,30 @@ class _MovieViewState extends State<MovieView>
                                 : SizedBox(),
                       ],
                     ),
+                    // movie.poster.length > 1
+                    //     ? PositionedDirectional(
+                    //         // bottom: 2,
+                    //         child: Row(
+                    //           mainAxisAlignment: MainAxisAlignment.center,
+                    //           crossAxisAlignment: CrossAxisAlignment.center,
+                    //           children: movie.poster.map((url) {
+                    //             int index = movie.poster.indexOf(url);
+                    //             return Container(
+                    //               width: 8.0,
+                    //               height: 8.0,
+                    //               margin: EdgeInsets.symmetric(
+                    //                   vertical: 10.0, horizontal: 2.0),
+                    //               decoration: BoxDecoration(
+                    //                 shape: BoxShape.circle,
+                    //                 color: _current == index
+                    //                     ? Color.fromRGBO(0, 0, 0, 0.9)
+                    //                     : Colors.white,
+                    //               ),
+                    //             );
+                    //           }).toList(),
+                    //         ),
+                    //       )
+                    //     : SizedBox()
                   ],
                 ),
                 Padding(
@@ -548,19 +575,31 @@ class _MovieViewState extends State<MovieView>
                         ),
                       ),
                       movie.genre != null
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                  Center(
+                          ? Wrap(
+                              children: movie.genre.map((genre) {
+                                var i = movie.genre.indexOf(genre);
+                                return GestureDetector(
                                     child: Text(
-                                      movie.genre.reduce(
-                                          (curr, next) => curr + ", " + next),
+                                      genre +
+                                          (i < movie.genre.length - 1
+                                              ? ", "
+                                              : ""),
                                       style: TextStyle(
                                           fontSize: 16,
-                                          fontStyle: FontStyle.italic),
+                                          fontStyle: FontStyle.italic,
+                                          decoration: TextDecoration.underline),
                                     ),
-                                  ),
-                                ])
+                                    onTap: () {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) => SeeAllView(
+                                                  type: "movies",
+                                                  showFilter: true,
+                                                  filter: genre)));
+                                    });
+                              }).toList(),
+                            )
                           : Container(),
                       ValueListenableBuilder(
                         valueListenable: rating,
@@ -581,68 +620,6 @@ class _MovieViewState extends State<MovieView>
                     ],
                   ),
                 ),
-
-                // Row(
-                //   mainAxisAlignment: MainAxisAlignment.center,
-                //   crossAxisAlignment: CrossAxisAlignment.center,
-                //   children: [
-                //     Column(
-                //       crossAxisAlignment: CrossAxisAlignment.end,
-                //       children: <Widget>[
-                //         Text(
-                //           'Petsa ng Paglabas',
-                //           style: TextStyle(
-                //             color: Colors.black,
-                //             fontSize: 18.0,
-                //             fontWeight: FontWeight.bold,
-                //           ),
-                //           textAlign: TextAlign.right,
-                //         ),
-                //         SizedBox(height: 2.0),
-                //         Text(
-                //           movie.releaseDate != null &&
-                //                   movie.releaseDate.trim() != ''
-                //               ? DateFormat("MMM. d, y").format(
-                //                   DateTime.parse(movie.releaseDate),
-                //                 )
-                //               : '-',
-                //           style: TextStyle(
-                //             fontSize: 16.0,
-                //           ),
-                //         ),
-                //       ],
-                //     ),
-                //     Center(
-                //       child: Container(
-                //         height: 50,
-                //         child: VerticalDivider(
-                //           color: Colors.grey[900],
-                //         ),
-                //       ),
-                //     ),
-                //     Column(
-                //       crossAxisAlignment: CrossAxisAlignment.start,
-                //       children: <Widget>[
-                //         Text(
-                //           'Runtime',
-                //           style: TextStyle(
-                //             color: Colors.black,
-                //             fontSize: 18.0,
-                //             fontWeight: FontWeight.bold,
-                //           ),
-                //           textAlign: TextAlign.left,
-                //         ),
-                //         SizedBox(height: 2.0),
-                //         Text(
-                //           displayRuntime(),
-                //           style: TextStyle(
-                //             fontSize: 16.0,
-                //           ),
-                //         ),
-                //       ],
-                //     ),
-                //   ],
-                // ),
 
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20),
@@ -776,6 +753,7 @@ class _MovieViewState extends State<MovieView>
                       )
                     : Container(),
                 SizedBox(height: 25),
+                // TO DO: add screenshots here
                 model.reviews.isNotEmpty
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),

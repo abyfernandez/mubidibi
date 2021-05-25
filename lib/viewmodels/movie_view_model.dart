@@ -73,8 +73,9 @@ class MovieViewModel extends BaseModel {
     String releaseDate,
     String mimetype,
     String runtime,
-    File poster,
-    String imageURI,
+    // File poster, // single file
+    List posters, // multiple files
+    // String imageURI, // poster edit ??
     List screenshots,
     List<String> genre,
     List<int> directors,
@@ -87,23 +88,18 @@ class MovieViewModel extends BaseModel {
     setBusy(true);
 
     var id;
-    String filename;
-    List<String> mime;
-    var images = [];
+    var images = []; // list for both posters and screenshots
     Response response;
-
-    if (poster != null && mimetype.trim() != '') {
-      filename = poster.path.split('/').last;
-      mime = mimetype.split('/');
-    }
 
     // TO DO: EDIT MOVIE
     void setImages() {
-      if (poster != null) {
-        images.add(MultipartFile.fromFileSync(poster.path,
-            filename: filename,
-            contentType:
-                MediaType(mime[0], mime[1]))); // add poster in first index
+      if (posters.isNotEmpty) {
+        images.addAll(posters
+            .map((file) => MultipartFile.fromFileSync(file.path,
+                filename: file.path.split('/').last,
+                contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                    lookupMimeType(file.path).split('/')[1])))
+            .toList());
       }
       images.addAll(screenshots
           .map((file) => MultipartFile.fromFileSync(file.path,
@@ -128,8 +124,9 @@ class MovieViewModel extends BaseModel {
         'directors': directors,
         'writers': writers,
         'added_by': addedBy,
-        'posterURI': imageURI,
-        'poster': poster == null ? false : true,
+        // 'posterURI': imageURI,  // for poster edit ??
+        'poster': posters.isEmpty ? false : true,
+        'poster_count': posters.length,
         'actors': actors,
         'roles': roles
       }),
