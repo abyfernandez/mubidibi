@@ -23,6 +23,7 @@ class SeeAllView extends StatefulWidget {
   final String type;
   final String filter;
   final bool showFilter;
+  final String title;
   // TO DO: photos and crew
 
   SeeAllView({
@@ -34,11 +35,12 @@ class SeeAllView extends StatefulWidget {
     this.type,
     this.filter,
     this.showFilter = false,
+    this.title,
   }) : super(key: key);
 
   @override
   _SeeAllViewState createState() => _SeeAllViewState(
-      movies, crew, photos, screenshots, type, filter, showFilter);
+      movies, crew, photos, screenshots, type, filter, showFilter, title);
 }
 
 class _SeeAllViewState extends State<SeeAllView> {
@@ -50,6 +52,7 @@ class _SeeAllViewState extends State<SeeAllView> {
   final String
       filter; // variable for when user came from the genre dropdown in the homepage. this will later be added to the list of filters
   final bool showFilter;
+  final String title;
 
   List<Movie> films = [];
   List<Crew> personalidad = [];
@@ -60,20 +63,14 @@ class _SeeAllViewState extends State<SeeAllView> {
 
   List filtered = []; // filtered films
 
-  _SeeAllViewState(
-    this.movies,
-    this.crew,
-    this.photos,
-    this.screenshots,
-    this.type,
-    this.filter,
-    this.showFilter,
-  );
+  _SeeAllViewState(this.movies, this.crew, this.photos, this.screenshots,
+      this.type, this.filter, this.showFilter, this.title);
 
   @override
   void initState() {
+    // TO DO: MOVIES FOR FAVORITES
     if (filter != null) filters.add(filter);
-    if (type == "movies")
+    if (type == "movies" || type == 'favorites')
       fetchMovies();
     else if (type == "crew") fetchCrew();
     super.initState();
@@ -86,7 +83,7 @@ class _SeeAllViewState extends State<SeeAllView> {
         appBar: AppBar(
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
-          title: showTitle(),
+          title: Text('${title[0].toUpperCase()}${title.substring(1)}'),
         ),
         body: AnnotatedRegion<SystemUiOverlayStyle>(
             value: SystemUiOverlayStyle.light,
@@ -142,26 +139,8 @@ class _SeeAllViewState extends State<SeeAllView> {
     }
   }
 
-  Widget showTitle() {
-    switch (type) {
-      case "movies":
-        return Text("Mga Pelikula");
-        break;
-      case "crew":
-        return Text('Mga Personalidad');
-        break;
-      case "photos":
-        return Text("Mga Litrato");
-        break;
-      case "screenshots":
-        return Text("Mga Screenshot");
-        break;
-    }
-    return null;
-  }
-
   void applyFilter(List<String> groupBy) {
-    if (type == 'movies') {
+    if (type == 'movies' || type == "favorites") {
       filtered = films
           .where((item) => item.genre.toSet().containsAll(groupBy))
           .toList();
@@ -179,6 +158,147 @@ class _SeeAllViewState extends State<SeeAllView> {
   Widget showContent(context) {
     switch (type) {
       case "movies":
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 10),
+              showFilter == true
+                  ? Container(
+                      margin: EdgeInsets.only(left: 15, right: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: ChipsInput(
+                        initialValue: filters,
+                        focusNode: filterNode,
+                        keyboardAppearance: Brightness.dark,
+                        textCapitalization: TextCapitalization.words,
+                        enabled: true,
+                        textStyle: const TextStyle(
+                            fontFamily: 'Poppins', fontSize: 16),
+                        decoration: const InputDecoration(
+                          labelText: 'Filter by genre',
+                          contentPadding: EdgeInsets.all(10),
+                        ),
+                        findSuggestions: (String query) {
+                          if (query.isNotEmpty) {
+                            var lowercaseQuery = query.toLowerCase();
+                            return genres.where((item) {
+                              return item
+                                  .toLowerCase()
+                                  .contains(query.toLowerCase());
+                            }).toList(growable: false)
+                              ..sort((a, b) => a
+                                  .toLowerCase()
+                                  .indexOf(lowercaseQuery)
+                                  .compareTo(
+                                      b.toLowerCase().indexOf(lowercaseQuery)));
+                          }
+                          return genres;
+                        },
+                        onChanged: (data) {
+                          filters = data;
+                          applyFilter(filters);
+                        },
+                        chipBuilder: (context, state, c) {
+                          return InputChip(
+                            key: ObjectKey(c),
+                            label: Text(c),
+                            onDeleted: () => state.deleteChip(c),
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          );
+                        },
+                        suggestionBuilder: (context, state, c) {
+                          return ListTile(
+                            key: ObjectKey(c),
+                            title: Text(c),
+                            onTap: () => state.selectSuggestion(c),
+                          );
+                        },
+                      ),
+                    )
+                  : SizedBox(),
+              showFilter == true ? SizedBox(height: 20) : SizedBox(),
+              Wrap(
+                  children: filtered.length != 0
+                      ? filtered
+                          .map(
+                            (movie) => GestureDetector(
+                              child: Container(
+                                height: 210.0,
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      alignment: Alignment.center,
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 8.0),
+                                      height: 200.0,
+                                      width: 120.0,
+                                      decoration: BoxDecoration(
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black54,
+                                            offset: Offset(0.0, 0.0),
+                                            blurRadius: 0.0, // 2
+                                          ),
+                                        ],
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                      child: Text(
+                                        movie.title,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 8.0),
+                                      height: 200.0,
+                                      width: 120.0,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(5),
+                                        image: DecorationImage(
+                                          image: CachedNetworkImageProvider(
+                                            movie.poster != null &&
+                                                    movie.poster.length != 0
+                                                ? movie.poster[0]
+                                                : Config.imgNotFound,
+                                          ),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MovieView(
+                                          movieId: movie.movieId.toString()),
+                                    ));
+                              },
+                            ),
+                          )
+                          .toList()
+                      : [
+                          Center(
+                            child: Text("No content found."),
+                          ),
+                        ]),
+            ],
+          ),
+        );
+        break;
+      case "favorites":
         return SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

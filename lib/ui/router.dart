@@ -84,6 +84,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       var screenshots = settings.arguments as List<String>;
       var type = settings.arguments as String;
       var filter = settings.arguments as String;
+      var title = settings.arguments as String;
 
       return _getPageRoute(
         routeName: settings.name,
@@ -94,6 +95,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           screenshots: screenshots,
           type: type,
           filter: filter,
+          title: title,
         ),
       );
     default:

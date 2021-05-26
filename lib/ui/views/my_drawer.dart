@@ -41,7 +41,7 @@ class MyDrawer extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Color.fromRGBO(240, 240, 240, 1),
                         ),
-                        margin: EdgeInsets.only(bottom: 0),
+                        // margin: EdgeInsets.only(bottom: 0),
                         accountName: GestureDetector(
                           child: Text(
                               currentUser.firstName +
@@ -55,8 +55,9 @@ class MyDrawer extends StatelessWidget {
                                       ? " " + currentUser.suffix
                                       : ""),
                               style: TextStyle(
-                                  fontSize: 18,
-                                  decoration: TextDecoration.underline)),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              )),
                           onTap: () {
                             print("View Profile");
                           },

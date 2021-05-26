@@ -4,8 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
-// import 'package:mubidibi/ui/widgets/searchable_dropdown.dart';
-// import 'package:flutter_chips_input/flutter_chips_input.dart'; -- working widget
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
@@ -14,8 +12,7 @@ import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
-// import 'package:mubidibi/ui/widgets/chips_input.dart'; // test -- for roles and possibly genres
-import 'package:mubidibi/ui/widgets/input_chips.dart'; // test -- should be working
+import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';

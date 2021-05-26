@@ -148,6 +148,7 @@ class _HomeViewState extends State<HomeView> {
                               builder: (BuildContext context) => SeeAllView(
                                   movies: null,
                                   type: "movies",
+                                  title: filterBy.value,
                                   filter: filterBy.value)));
                     },
                     underline: Container(),
@@ -184,45 +185,6 @@ class _HomeViewState extends State<HomeView> {
           BottomNavigationBarItem(
             icon: Icon(Icons.search_outlined),
             label: 'Search',
-          ),
-          // TO DO: changes in design kapag guest lang yung user
-          BottomNavigationBarItem(
-            icon: Stack(
-              children: [
-                Icon(Icons.notifications_outlined),
-                new Positioned(
-                  right: 0,
-                  top: 0,
-                  child: new Container(
-                    padding: EdgeInsets.all(0),
-                    decoration: new BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    constraints: BoxConstraints(
-                      minWidth: 12,
-                      minHeight: 12,
-                    ),
-                    child: new Text(
-                      '10',
-                      style: new TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-                // Positioned(
-                //   // draw a red marble
-                //   top: 0.0,
-                //   right: 0.0,
-                //   child: new Icon(Icons.brightness_1,
-                //       size: 8.0, color: Colors.redAccent),
-                // )
-              ],
-            ),
-            label: 'Notifications',
           ),
         ],
         currentIndex: pageIndex,

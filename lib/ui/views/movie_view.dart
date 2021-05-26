@@ -55,6 +55,7 @@ class _MovieViewState extends State<MovieView>
       locator<AuthenticationService>();
   final DialogService _dialogService = locator<DialogService>();
   var currentUser;
+  IconData fabIcon;
 
   // local variables
   bool _saving = false;
@@ -62,6 +63,7 @@ class _MovieViewState extends State<MovieView>
   var tempRating = 0.0;
   var numItems = 0;
   int _current = 0;
+  final CarouselController _controller = CarouselController();
 
   // variables needed for adding reviews
   final reviewController = TextEditingController();
@@ -143,6 +145,8 @@ class _MovieViewState extends State<MovieView>
   void initState() {
     fetchMovie();
     crew = fetchCrew();
+    fabIcon = Icons.settings;
+
     currentUser = _authenticationService.currentUser;
 
     _animationController = AnimationController(
@@ -205,6 +209,11 @@ class _MovieViewState extends State<MovieView>
                     ),
                   );
                   _animationController.reverse();
+                  setState(() {
+                    fabIcon = fabIcon == Icons.settings
+                        ? Icons.close
+                        : Icons.settings;
+                  });
                 },
               ),
               //Floating action menu item
@@ -217,6 +226,11 @@ class _MovieViewState extends State<MovieView>
                       titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
+                        setState(() {
+                          fabIcon = fabIcon == Icons.settings
+                              ? Icons.close
+                              : Icons.settings;
+                        });
 
                         // if user is an admin, they can soft delete movies
                         var response = await _dialogService.showConfirmationDialog(
@@ -269,6 +283,11 @@ class _MovieViewState extends State<MovieView>
                       titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
+                        setState(() {
+                          fabIcon = fabIcon == Icons.settings
+                              ? Icons.close
+                              : Icons.settings;
+                        });
 
                         var response = await _dialogService.showConfirmationDialog(
                             title: "Confirm Restoration",
@@ -323,13 +342,17 @@ class _MovieViewState extends State<MovieView>
               _animationController.isCompleted
                   ? _animationController.reverse()
                   : _animationController.forward(),
+              setState(() {
+                fabIcon =
+                    fabIcon == Icons.settings ? Icons.close : Icons.settings;
+              })
             },
 
             // Floating Action button Icon color
             iconColor: Colors.white,
 
             // Floating Action button Icon
-            iconData: Icons.settings,
+            iconData: fabIcon,
             backGroundColor: Colors.lightBlue,
           ),
         ),
@@ -348,11 +371,14 @@ class _MovieViewState extends State<MovieView>
                               height: 400,
                               viewportFraction: 1.0,
                               // onPageChanged: (index, reason) {
+                              //   print(index);
+                              //   print(reason);
                               //   setState(() {
                               //     _current = index;
                               //   });
-                              // }
+                              // },
                             ),
+                            carouselController: _controller,
                             items: movie.poster.map((p) {
                               return Container(
                                 height: 400,
@@ -541,18 +567,22 @@ class _MovieViewState extends State<MovieView>
                     //           crossAxisAlignment: CrossAxisAlignment.center,
                     //           children: movie.poster.map((url) {
                     //             int index = movie.poster.indexOf(url);
-                    //             return Container(
-                    //               width: 8.0,
-                    //               height: 8.0,
-                    //               margin: EdgeInsets.symmetric(
-                    //                   vertical: 10.0, horizontal: 2.0),
-                    //               decoration: BoxDecoration(
-                    //                 shape: BoxShape.circle,
-                    //                 color: _current == index
-                    //                     ? Color.fromRGBO(0, 0, 0, 0.9)
-                    //                     : Colors.white,
-                    //               ),
-                    //             );
+                    //             return GestureDetector(
+                    //                 child: Container(
+                    //                   width: 8.0,
+                    //                   height: 8.0,
+                    //                   margin: EdgeInsets.symmetric(
+                    //                       vertical: 10.0, horizontal: 2.0),
+                    //                   decoration: BoxDecoration(
+                    //                     shape: BoxShape.circle,
+                    //                     color: _current == index
+                    //                         ? Color.fromRGBO(0, 0, 0, 0.9)
+                    //                         : Colors.white,
+                    //                   ),
+                    //                 ),
+                    //                 onTap: () {
+                    //                   _controller.animateToPage(_current);
+                    //                 });
                     //           }).toList(),
                     //         ),
                     //       )
@@ -577,24 +607,28 @@ class _MovieViewState extends State<MovieView>
                       movie.genre != null
                           ? Wrap(
                               children: movie.genre.map((genre) {
-                                var i = movie.genre.indexOf(genre);
                                 return GestureDetector(
-                                    child: Text(
-                                      genre +
-                                          (i < movie.genre.length - 1
-                                              ? ", "
-                                              : ""),
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontStyle: FontStyle.italic,
-                                          decoration: TextDecoration.underline),
-                                    ),
+                                    child: Container(
+                                        child: Chip(
+                                          labelPadding: EdgeInsets.only(
+                                              left: 3, right: 3),
+                                          backgroundColor: Colors.lightBlue,
+                                          label: Text(
+                                            genre,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                        margin: EdgeInsets.only(right: 5)),
                                     onTap: () {
                                       Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                               builder: (context) => SeeAllView(
                                                   type: "movies",
+                                                  title: genre,
                                                   showFilter: true,
                                                   filter: genre)));
                                     });
@@ -611,6 +645,9 @@ class _MovieViewState extends State<MovieView>
                                       : "No ratings yet",
                                   style: TextStyle(
                                       fontSize: 16,
+                                      color: value != 0
+                                          ? Colors.black
+                                          : Colors.grey[700],
                                       fontStyle: value != 0
                                           ? FontStyle.normal
                                           : FontStyle.italic)));

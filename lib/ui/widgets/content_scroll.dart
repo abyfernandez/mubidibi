@@ -54,15 +54,18 @@ class ContentScroll extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => SeeAllView(crew: crew, type: "crew"),
+                          builder: (_) => SeeAllView(
+                              crew: crew, type: "crew", title: title),
                         ),
                       );
                     },
                     // child: Icon(Icons.arrow_forward_ios_outlined),
                     child: Text(
                       "Tingnan Lahat",
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue,
+                      ),
                     ),
                   )
                 : Container(),

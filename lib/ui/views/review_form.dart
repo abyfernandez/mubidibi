@@ -102,7 +102,7 @@ class ReviewFormState extends State<ReviewForm> {
       upvoted = userReview?.upvoted ?? null;
       upvoteCount = userReview?.upvoteCount ?? 0;
       downvoteCount = userReview?.downvoteCount ?? 0;
-      isApproved = userReview?.isApproved;
+      isApproved = userReview?.isApproved ?? false;
       _edit = userReview != null ? false : true;
     });
   }
@@ -151,7 +151,11 @@ class ReviewFormState extends State<ReviewForm> {
                                         child: Text(
                                           userReview.firstName +
                                               (userReview.middleName != null
-                                                  ? " " +userReview.middleName : "") + (userReview.lastName != null ? " " + userReview.lastName : "") +
+                                                  ? " " + userReview.middleName
+                                                  : "") +
+                                              (userReview.lastName != null
+                                                  ? " " + userReview.lastName
+                                                  : "") +
                                               (userReview.suffix != null
                                                   ? " " + userReview.suffix
                                                   : ""),

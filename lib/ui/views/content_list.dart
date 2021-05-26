@@ -52,23 +52,28 @@ class ContentList extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                type == "movies"
+                type == "movies" || type == "favorites"
                     ? movies.length >= 4
                         ? GestureDetector(
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => type == "movies"
-                                      ? SeeAllView(
-                                          type: type,
-                                          filter: filter,
-                                          showFilter: true,
-                                        )
-                                      : SeeAllView(
-                                          type: type,
-                                          filter: filter,
-                                          showFilter: true),
+                                  builder: (_) =>
+                                      type == "movies" || type == "favorites"
+                                          ? SeeAllView(
+                                              type: type,
+                                              filter: filter,
+                                              title: type == "movies"
+                                                  ? 'Mga Pelikula'
+                                                  : 'Mga Favorite',
+                                              showFilter: true,
+                                            )
+                                          : SeeAllView(
+                                              type: type,
+                                              filter: filter,
+                                              title: 'Mga Personalidad',
+                                              showFilter: true),
                                 ),
                               );
                             },
@@ -76,9 +81,8 @@ class ContentList extends StatelessWidget {
                             child: Text(
                               seeAll,
                               style: const TextStyle(
-                                color: Colors.black,
                                 fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
                               ),
                             ),
                           )
@@ -89,17 +93,22 @@ class ContentList extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => type == "movies"
-                                      ? SeeAllView(
-                                          type: type,
-                                          filter: filter,
-                                          showFilter: true,
-                                        )
-                                      : SeeAllView(
-                                          type: type,
-                                          filter: filter,
-                                          showFilter: true,
-                                        ),
+                                  builder: (_) =>
+                                      type == "movies" || type == "favorites"
+                                          ? SeeAllView(
+                                              type: type,
+                                              filter: filter,
+                                              title: type == "movies"
+                                                  ? 'Mga Pelikula'
+                                                  : 'Mga Favorite',
+                                              showFilter: true,
+                                            )
+                                          : SeeAllView(
+                                              type: type,
+                                              filter: filter,
+                                              title: 'Mga Personalidad',
+                                              showFilter: true,
+                                            ),
                                 ),
                               );
                             },
@@ -108,9 +117,8 @@ class ContentList extends StatelessWidget {
                             child: Text(
                               seeAll,
                               style: const TextStyle(
-                                color: Colors.black,
                                 fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
                               ),
                             ),
                           )
@@ -118,7 +126,7 @@ class ContentList extends StatelessWidget {
               ],
             ),
           ),
-          type == 'movies'
+          type == 'movies' || type == "favorites"
               ? Container(
                   height: 220.0,
                   child: ListView.builder(

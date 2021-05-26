@@ -14,6 +14,7 @@ import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
+import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:provider_architecture/viewmodel_provider.dart';
 import 'package:mubidibi/globals.dart' as Config;
@@ -43,6 +44,7 @@ class _CrewViewState extends State<CrewView>
   var currentUser;
   Animation<double> _animation;
   AnimationController _animationController;
+  IconData fabIcon;
 
   void fetchCrew() async {
     var model = CrewViewModel();
@@ -57,6 +59,7 @@ class _CrewViewState extends State<CrewView>
   void initState() {
     fetchCrew();
     currentUser = _authenticationService.currentUser;
+    fabIcon = Icons.settings;
 
     _animationController = AnimationController(
       vsync: this,
@@ -103,27 +106,46 @@ class _CrewViewState extends State<CrewView>
                           )
                         ]),
                     child: GestureDetector(
-                        onTap: () {
-                          // Navigator.push(
-                          //   context,
-                          //   MaterialPageRoute(
-                          //     builder: (context) => FullPhoto(
-                          //         url: movie.poster ?? Config.imgNotFound),
-                          //   ),
-                          // );
-                          print(movie.title);
-                        },
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                MovieView(movieId: movie.movieId.toString()),
+                          ),
+                        );
+                        print(movie.title);
+                      },
 
-                        // Make this a stack/ conditional statement so that the movie title can still be seen if poster is not available
-                        child: Image.network(
-                          movie.poster != null && movie.poster.length != 0
-                              ? movie.poster[0]
-                              : Config.imgNotFound,
-                          height: 250,
-                          width: 230,
-                          alignment: Alignment.topCenter,
-                          fit: BoxFit.cover,
-                        )),
+                      // Make this a stack/ conditional statement so that the movie title can still be seen if poster is not available
+                      child: CachedNetworkImage(
+                        placeholder: (context, url) => Container(
+                          child: Container(
+                            alignment: Alignment.center,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).accentColor),
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Material(
+                          child: Image.network(
+                            Config.imgNotFound,
+                            height: 350,
+                            width: 250,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                          ),
+                        ),
+                        imageUrl:
+                            movie.poster != null && movie.poster.length != 0
+                                ? movie.poster[0]
+                                : Config.imgNotFound,
+                        width: 250,
+                        height: 230,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   );
                 }).toList()
               : []),
@@ -206,13 +228,18 @@ class _CrewViewState extends State<CrewView>
                 icon: Icons.edit_outlined,
                 titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                 onPress: () async {
+                  _animationController.reverse();
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => AddCrew(crew: crew),
                     ),
                   );
-                  _animationController.reverse();
+                  setState(() {
+                    fabIcon = fabIcon == Icons.settings
+                        ? Icons.close
+                        : Icons.settings;
+                  });
                 },
               ),
               //Floating action menu item
@@ -225,6 +252,11 @@ class _CrewViewState extends State<CrewView>
                       titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
+                        setState(() {
+                          fabIcon = fabIcon == Icons.settings
+                              ? Icons.close
+                              : Icons.settings;
+                        });
 
                         // TO DO: if user is an admin, they can soft delete crew
                         var response =
@@ -282,6 +314,11 @@ class _CrewViewState extends State<CrewView>
                       titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
+                        setState(() {
+                          fabIcon = fabIcon == Icons.settings
+                              ? Icons.close
+                              : Icons.settings;
+                        });
 
                         // TO DO: if user is an admin, they can restore delete movies
                         var response = await _dialogService.showConfirmationDialog(
@@ -312,12 +349,6 @@ class _CrewViewState extends State<CrewView>
 
                             // redirect to homepage
 
-                            // Navigator.pushReplacement(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => HomeView(),
-                            //   ),
-                            // );
                           } else {
                             _saving = false;
 
@@ -339,13 +370,17 @@ class _CrewViewState extends State<CrewView>
               _animationController.isCompleted
                   ? _animationController.reverse()
                   : _animationController.forward(),
+              setState(() {
+                fabIcon =
+                    fabIcon == Icons.settings ? Icons.close : Icons.settings;
+              })
             },
 
             // Floating Action button Icon color
             iconColor: Colors.white,
 
             // Floating Action button Icon
-            iconData: Icons.settings,
+            iconData: fabIcon,
             backGroundColor: Colors.lightBlue,
           ),
         ),
@@ -364,8 +399,9 @@ class _CrewViewState extends State<CrewView>
                       Text(
                         crew.firstName +
                             (crew.middleName != null
-                                ? " " + crew.middleName : "") +
-                                (crew.lastName != null ?  " " + crew.lastName : "") +
+                                ? " " + crew.middleName
+                                : "") +
+                            (crew.lastName != null ? " " + crew.lastName : "") +
                             (crew.suffix != null ? ' ' + crew.suffix : ''),
                         softWrap: true,
                         overflow: TextOverflow.fade,
@@ -591,14 +627,17 @@ class _CrewViewState extends State<CrewView>
                                           ),
                                           crew.movies[2].length >= 4
                                               ? GestureDetector(
-                                                  // child: Text(
-                                                  //   'Tingnan Lahat',
-                                                  //   style: TextStyle(
-                                                  //       fontSize: 14,
-                                                  //       fontWeight: FontWeight.bold),
-                                                  // ),
-                                                  child: Icon(Icons
-                                                      .arrow_forward_ios_outlined),
+                                                  child: Text(
+                                                    'Tingnan Lahat',
+                                                    style: TextStyle(
+                                                        fontSize: 14,
+                                                        color: Colors.blue),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    softWrap: true,
+                                                  ),
+                                                  // child: Icon(Icons
+                                                  //     .arrow_forward_ios_outlined),
                                                   onTap: () {},
                                                 )
                                               : Container(),
@@ -621,7 +660,7 @@ class _CrewViewState extends State<CrewView>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "Photos",
+                                  "Mga Larawan",
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold),

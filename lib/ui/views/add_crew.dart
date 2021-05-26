@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:meta/meta.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
@@ -16,16 +15,13 @@ import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
-import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
-import 'package:searchable_dropdown/searchable_dropdown.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 
 // FOR DYNAMIC WIDGET ACTOR
 List dynamicList = [];
@@ -98,7 +94,7 @@ class _AddCrewState extends State<AddCrew> {
   List<String> stepperTitle = [
     "Mga Basic na Detalye",
     "Mga Pelikula",
-    "Mga Litrato",
+    "Mga Larawan",
     "Mga Award",
     "Review"
   ];
@@ -963,7 +959,7 @@ class _AddCrewState extends State<AddCrew> {
               SizedBox(
                 height: 15,
               ),
-              Text('Mga Litrato',
+              Text('Mga Larawan',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 10,

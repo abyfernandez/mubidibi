@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
-
 import 'base_model.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/services/authentication_service.dart';
@@ -46,33 +45,33 @@ class LoginViewModel extends BaseModel {
     }
   }
 
-  // Function: Google Sign In -- signs in user with Google and creates user account using the details from Google
-  Future googleSignIn() async {
-    setBusy(true);
-    var result = await _authenticationService.signInWithGoogle();
-    setBusy(false);
+  // // Function: Google Sign In -- signs in user with Google and creates user account using the details from Google
+  // Future googleSignIn() async {
+  //   setBusy(true);
+  //   var result = await _authenticationService.signInWithGoogle();
+  //   setBusy(false);
 
-    if (result is bool) {
-      // RegExp regExp = new RegExp(
-      //   r"^[A-Za-z0-9._%+-]+@up.edu.ph$",
-      //   caseSensitive: false,
-      //   multiLine: false,
-      // );
-      // if (result && regExp.hasMatch(currentUser.email) && (currentUser.rating > 2 || currentUser.rating == 0)) {
-      //   await _authenticationService.syncUserProfile(currentUser.uid);
-      //   await _navigationService.navigateTo(HomeViewRoute);
-      // } else {
-      //   await _authenticationService.signOutGoogle();
-      //   await _navigationService.navigateTo(LoginErrorViewRoute);
-      // }
+  //   if (result is bool) {
+  //     // RegExp regExp = new RegExp(
+  //     //   r"^[A-Za-z0-9._%+-]+@up.edu.ph$",
+  //     //   caseSensitive: false,
+  //     //   multiLine: false,
+  //     // );
+  //     // if (result && regExp.hasMatch(currentUser.email) && (currentUser.rating > 2 || currentUser.rating == 0)) {
+  //     //   await _authenticationService.syncUserProfile(currentUser.uid);
+  //     //   await _navigationService.navigateTo(HomeViewRoute);
+  //     // } else {
+  //     //   await _authenticationService.signOutGoogle();
+  //     //   await _navigationService.navigateTo(LoginErrorViewRoute);
+  //     // }
 
-      if (result) {
-        await _navigationService.navigateTo(HomeViewRoute);
-      } else {
-        await _authenticationService.signOut();
-        await _navigationService.navigateTo(LoginViewRoute);
-        // TO DO: create login error route  and replace the above line of code
-      }
-    }
-  }
+  //     if (result) {
+  //       await _navigationService.navigateTo(HomeViewRoute);
+  //     } else {
+  //       await _authenticationService.signOut();
+  //       await _navigationService.navigateTo(LoginViewRoute);
+  //       // TO DO: create login error route  and replace the above line of code
+  //     }
+  //   }
+  // }
 }

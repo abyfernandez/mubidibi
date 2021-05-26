@@ -195,58 +195,61 @@ class _DashboardViewState extends State<DashboardView>
             backGroundColor: Colors.lightBlue,
           ),
         ),
-        body: Column(
-          children: [
-            Flexible(
-              flex: 4,
-              child: CustomScrollView(
-                controller: _movieScrollController,
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: ContentHeader(featuredContent: movies[index]),
-                  ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(height: 10),
-                  ),
-                  currentUser != null
-                      ? SliverToBoxAdapter(
-                          child: ContentList(
-                            key: PageStorageKey('myFavorites'),
-                            title: 'Mga Favorite',
-                            seeAll: 'Tingnan Lahat',
-                            movies: movies,
-                            type: 'movies',
-                            filter: filter,
-                            showFilter: true,
-                          ),
-                        )
-                      : SliverToBoxAdapter(),
-                  SliverToBoxAdapter(
-                    child: ContentList(
-                      key: PageStorageKey('movies'),
-                      title: 'Mga Pelikula',
-                      seeAll: 'Tingnan Lahat',
-                      movies: movies,
-                      type: 'movies',
-                      filter: filter,
-                      showFilter: true,
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Column(
+            children: [
+              Flexible(
+                flex: 4,
+                child: CustomScrollView(
+                  controller: _movieScrollController,
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: ContentHeader(featuredContent: movies[index]),
                     ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: ContentList(
-                      key: PageStorageKey('crew'),
-                      title: 'Mga Personalidad',
-                      seeAll: 'Tingnan Lahat',
-                      crew: crew,
-                      type: 'crew',
-                      filter: filter,
-                      showFilter: true,
+                    SliverToBoxAdapter(
+                      child: SizedBox(height: 10),
                     ),
-                  ),
-                ],
+                    currentUser != null
+                        ? SliverToBoxAdapter(
+                            child: ContentList(
+                              key: PageStorageKey('myFavorites'),
+                              title: 'Mga Favorite',
+                              seeAll: 'Tingnan Lahat',
+                              movies: movies,
+                              type: 'favorites',
+                              filter: filter,
+                              showFilter: true,
+                            ),
+                          )
+                        : SliverToBoxAdapter(),
+                    SliverToBoxAdapter(
+                      child: ContentList(
+                        key: PageStorageKey('movies'),
+                        title: 'Mga Pelikula',
+                        seeAll: 'Tingnan Lahat',
+                        movies: movies,
+                        type: 'movies',
+                        filter: filter,
+                        showFilter: true,
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: ContentList(
+                        key: PageStorageKey('crew'),
+                        title: 'Mga Personalidad',
+                        seeAll: 'Tingnan Lahat',
+                        crew: crew,
+                        type: 'crew',
+                        filter: filter,
+                        showFilter: true,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         backgroundColor: Colors.white,
         endDrawer: Theme(
