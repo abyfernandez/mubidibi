@@ -79,7 +79,7 @@ exports.review = app => {
       if (req.body.review_id == 0) {
         reviews = await client.query(query);
       } else {
-        reviews = await client.query(`update review set rating = $1, review = $2 where id = $3`, [req.body.rating == "null" || req.body.rating == 0 ? 0.00 : parseFloat(req.body.rating).toFixed(2), req.body.review, req.body.review_id]);
+        reviews = await client.query(`update review set rating = $1, review = $2, is_approved = false where id = $3`, [req.body.rating == "null" || req.body.rating == 0 ? 0.00 : parseFloat(req.body.rating).toFixed(2), req.body.review, req.body.review_id]);
       }
       release();
       res.send(err || JSON.stringify(reviews));

@@ -24,13 +24,8 @@ import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
 import 'dart:convert';
 
-// FOR DYNAMIC WIDGET ACTOR
-List<ActorWidget> dynamicList = [];
-var size;
-List<ValueNotifier<bool>> open = []; // state values of actors in listview
-
-List<int> actors = [];
-List<List<String>> roles = [];
+// For Dynamic Widgets
+List<int> actorsFilter = [];
 
 class AddMovie extends StatefulWidget {
   final Movie movie;
@@ -56,6 +51,8 @@ class _AddMovieState extends State<AddMovie> {
   List<DropdownMenuItem> genreItems = [];
   var selectedValue;
   String test;
+  List<ActorWidget> dynamicList = [];
+  // List<int> actorsFilter = [];
 
   // MOVIE FIELD CONTROLLERS
   DateTime _date;
@@ -135,6 +132,22 @@ class _AddMovieState extends State<AddMovie> {
         child: Text(value),
       );
     }).toList();
+  }
+
+  Future<bool> onBackPress() async {
+    // used in onwillpopscope function
+    var response = await _dialogService.showConfirmationDialog(
+        title: "Confirm cancellation",
+        cancelTitle: "No",
+        confirmationTitle: "Yes",
+        description: "Are you sure that you want to close the form?");
+    if (response.confirmed == true) {
+      setState(() {
+        actorsFilter = []; // clears list para pag binalikan sya empty na ulit
+      });
+      await _navigationService.pop();
+    }
+    return Future.value(false);
   }
 
   // Function: calls viewmodel's getAllCrew method
@@ -448,28 +461,39 @@ class _AddMovieState extends State<AddMovie> {
   // Function: adds ActorWidget in the ListView builder
   addActor() {
     setState(() {
-      size = dynamicList.length; // pass the index of the widget to the class
-      ValueNotifier<bool> temp = ValueNotifier<bool>(true);
-      // add actor wdiget to list
+      // add actor widget to list
       dynamicList.add(ActorWidget(
-          key: ObjectKey(size),
-          crew: new Crew(),
-          crewItems: crewItems,
-          crewList: crewList,
-          size: size));
-      open.add(
-          temp); // when an actor widget is added, it defaults to an open/editable widget
+        crew: new Crew(),
+        crewItems: crewItems,
+        crewList: crewList,
+        open: ValueNotifier<bool>(true),
+        // filterActorDropdown: filterActorDropdown(),
+      ));
     });
   }
+
+  // void filterActorDropdown(int id, String mode) {
+  //   if (mode == "add") {
+  //     setState(() {
+  //       if (!actorsFilter.contains(id)) {
+  //         actorsFilter.add(id);
+  //       }
+  //     });
+  //   } else if (mode == "remove") {
+  //     setState(() {
+  //       if (actorsFilter.contains(id)) {
+  //         actorsFilter.remove(id);
+  //       }
+  //     });
+  //   }
+  // }
 
   @override
   void initState() {
     fetchCrew();
     fetchGenres();
-    actors = [];
     directors = [];
     writers = [];
-    roles = [];
     super.initState();
   }
 
@@ -527,7 +551,10 @@ class _AddMovieState extends State<AddMovie> {
                   confirmationTitle: "Yes",
                   description: "Are you sure that you want to close the form?");
               if (response.confirmed == true) {
-                _navigationService.pop();
+                setState(() {
+                  actorsFilter = [];
+                });
+                await _navigationService.pop();
               }
             },
           ),
@@ -537,190 +564,194 @@ class _AddMovieState extends State<AddMovie> {
             style: TextStyle(color: Colors.black),
           ),
         ),
-        body: ModalProgressHUD(
-          inAsyncCall: _saving,
-          child: AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle.light,
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child: Stack(
-                children: <Widget>[
-                  Container(
-                    height: double.infinity,
-                    child: SingleChildScrollView(
-                      physics: AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30.0,
-                      ),
-                      child: Column(
-                        children: [
-                          SizedBox(height: 20),
-                          MyStepper(
-                            type: MyStepperType.vertical,
-                            currentStep: currentStep,
-                            onStepTapped: (step) async {
-                              if (currentStep == 0) {
-                                // first step
-                                setState(() {
-                                  if (_formKeys[currentStep]
-                                      .currentState
-                                      .validate()) {
-                                    currentStep = step;
-                                  }
-                                });
-                              } else {
-                                // allow tapping of steps
-                                setState(() => currentStep = step);
-                              }
-                            },
-                            onStepCancel: () => {
-                              if (currentStep != 0)
-                                setState(() => --currentStep)
-                            }, // else do nothing
-                            onStepContinue: () async {
-                              if (currentStep + 1 != stepperTitle.length) {
-                                // do not allow user to continue to next step if inputs aren't filled out yet
-                                switch (currentStep) {
-                                  case 0: // title, release date, running time, and synopsis
-                                    setState(() {
-                                      if (_formKeys[currentStep]
-                                          .currentState
-                                          .validate()) {
-                                        titleNode.unfocus();
-                                        dateNode.unfocus();
-                                        runtimeNode.unfocus();
-                                        synopsisNode.unfocus();
-
-                                        currentStep++;
-                                      }
-                                    });
-                                    break;
-
-                                  case 1: // poster
-                                    setState(() {
-                                      currentStep++;
-                                    });
-                                    break;
-                                  case 2: // crew members
-                                    setState(() {
-                                      directorNode.unfocus();
-                                      writerNode.unfocus();
-                                      // TO DO: unfocus keyboard when an actor/role textfield is currently active
-                                      currentStep++;
-                                    });
-                                    break;
-                                  case 3: // genre
-                                    // TO DO: unfocus keyboard when a genre textfield is currently active
-                                    setState(() => currentStep++);
-                                    break;
+        body: WillPopScope(
+          onWillPop: onBackPress,
+          child: ModalProgressHUD(
+            inAsyncCall: _saving,
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle.light,
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: Stack(
+                  children: <Widget>[
+                    Container(
+                      height: double.infinity,
+                      child: SingleChildScrollView(
+                        physics: AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 30.0,
+                        ),
+                        child: Column(
+                          children: [
+                            SizedBox(height: 20),
+                            MyStepper(
+                              type: MyStepperType.vertical,
+                              currentStep: currentStep,
+                              onStepTapped: (step) async {
+                                if (currentStep == 0) {
+                                  // first step
+                                  setState(() {
+                                    if (_formKeys[currentStep]
+                                        .currentState
+                                        .validate()) {
+                                      currentStep = step;
+                                    }
+                                  });
+                                } else {
+                                  // allow tapping of steps
+                                  setState(() => currentStep = step);
                                 }
-                              } else {
-                                // last step
-                                var confirm =
-                                    await _dialogService.showConfirmationDialog(
-                                        title: "Confirm Details",
-                                        cancelTitle: "No",
-                                        confirmationTitle: "Yes",
-                                        description:
-                                            "Are you sure that you want to continue?");
-                                if (confirm.confirmed == true) {
-                                  _saving =
-                                      true; // set saving to true to trigger circular progress indicator
+                              },
+                              onStepCancel: () => {
+                                if (currentStep != 0)
+                                  setState(() => --currentStep)
+                              }, // else do nothing
+                              onStepContinue: () async {
+                                if (currentStep + 1 != stepperTitle.length) {
+                                  // do not allow user to continue to next step if inputs aren't filled out yet
+                                  switch (currentStep) {
+                                    case 0: // title, release date, running time, and synopsis
+                                      setState(() {
+                                        if (_formKeys[currentStep]
+                                            .currentState
+                                            .validate()) {
+                                          titleNode.unfocus();
+                                          dateNode.unfocus();
+                                          runtimeNode.unfocus();
+                                          synopsisNode.unfocus();
 
-                                  final response = await model.addMovie(
-                                      title: titleController.text,
-                                      synopsis: synopsisController.text,
-                                      releaseDate: _date != null
-                                          ? _date.toIso8601String()
-                                          : '',
-                                      runtime: runtimeController.text,
-                                      posters: imageFiles,
-                                      // imageURI: imageURI, // poster edit???
-                                      screenshots: screenshots,
-                                      genre: filmGenres,
-                                      directors: directors,
-                                      writers: writers,
-                                      actors: actors,
-                                      roles: roles,
-                                      addedBy: currentUser.userId,
-                                      movieId: movieId);
+                                          currentStep++;
+                                        }
+                                      });
+                                      break;
 
-                                  // when response is returned, stop showing circular progress indicator
-
-                                  if (response != 0) {
-                                    _saving =
-                                        false; // set saving to false to trigger circular progress indicator
-                                    // show success snackbar
-                                    _scaffoldKey.currentState.showSnackBar(
-                                        mySnackBar(
-                                            context,
-                                            'Movie added successfully.',
-                                            Colors.green));
-
+                                    case 1: // poster
+                                      setState(() {
+                                        currentStep++;
+                                      });
+                                      break;
+                                    case 2: // crew members
+                                      setState(() {
+                                        directorNode.unfocus();
+                                        writerNode.unfocus();
+                                        // TO DO: unfocus keyboard when an actor/role textfield is currently active
+                                        currentStep++;
+                                      });
+                                      break;
+                                    case 3: // genre
+                                      // TO DO: unfocus keyboard when a genre textfield is currently active
+                                      setState(() => currentStep++);
+                                      break;
+                                  }
+                                } else {
+                                  // last step
+                                  var confirm = await _dialogService
+                                      .showConfirmationDialog(
+                                          title: "Confirm Details",
+                                          cancelTitle: "No",
+                                          confirmationTitle: "Yes",
+                                          description:
+                                              "Are you sure that you want to continue?");
+                                  if (confirm.confirmed == true) {
                                     _saving =
                                         true; // set saving to true to trigger circular progress indicator
 
-                                    // get movie using id redirect to detail view using response
-                                    var movie = await model.getOneMovie(
-                                        movieId: response.toString());
+                                    final response = await model.addMovie(
+                                        title: titleController.text,
+                                        synopsis: synopsisController.text,
+                                        releaseDate: _date != null
+                                            ? _date.toIso8601String()
+                                            : '',
+                                        runtime: runtimeController.text,
+                                        posters: imageFiles,
+                                        // imageURI: imageURI, // poster edit???
+                                        screenshots: screenshots,
+                                        genre: filmGenres,
+                                        directors: directors,
+                                        writers: writers,
+                                        // actors: actors,
+                                        // roles: roles,
+                                        addedBy: currentUser.userId,
+                                        movieId: movieId);
 
-                                    if (movie != null) {
+                                    // when response is returned, stop showing circular progress indicator
+
+                                    if (response != 0) {
                                       _saving =
                                           false; // set saving to false to trigger circular progress indicator
-                                      Timer(const Duration(milliseconds: 2000),
-                                          () {
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => MovieView(
-                                                movieId:
-                                                    movie.movieId.toString()),
-                                          ),
-                                        );
-                                      });
-                                    }
-                                  } else {
-                                    _saving =
-                                        false; // set saving to false to trigger circular progress indicator
-                                    // show error snackbar
-                                    _scaffoldKey.currentState.showSnackBar(
-                                        mySnackBar(
+                                      // show success snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Movie added successfully.',
+                                              Colors.green));
+
+                                      _saving =
+                                          true; // set saving to true to trigger circular progress indicator
+
+                                      // get movie using id redirect to detail view using response
+                                      var movie = await model.getOneMovie(
+                                          movieId: response.toString());
+
+                                      if (movie != null) {
+                                        _saving =
+                                            false; // set saving to false to trigger circular progress indicator
+                                        Timer(
+                                            const Duration(milliseconds: 2000),
+                                            () {
+                                          Navigator.pushReplacement(
                                             context,
-                                            'Something went wrong. Check your inputs and try again.',
-                                            Colors.red));
+                                            MaterialPageRoute(
+                                              builder: (context) => MovieView(
+                                                  movieId:
+                                                      movie.movieId.toString()),
+                                            ),
+                                          );
+                                        });
+                                      }
+                                    } else {
+                                      _saving =
+                                          false; // set saving to false to trigger circular progress indicator
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Something went wrong. Check your inputs and try again.',
+                                              Colors.red));
+                                    }
                                   }
                                 }
-                              }
-                            },
-                            steps: [
-                              for (var i = 0; i < stepperTitle.length; i++)
-                                MyStep(
-                                  title: Text(
-                                    stepperTitle[i],
-                                    style: TextStyle(
-                                      fontSize: 18,
+                              },
+                              steps: [
+                                for (var i = 0; i < stepperTitle.length; i++)
+                                  MyStep(
+                                    title: Text(
+                                      stepperTitle[i],
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    isActive: i <= currentStep,
+                                    state: i == currentStep
+                                        ? MyStepState.editing
+                                        : i < currentStep
+                                            ? MyStepState.complete
+                                            : MyStepState.indexed,
+                                    content: LimitedBox(
+                                      maxWidth: 300,
+                                      child: Form(
+                                          key: _formKeys[i],
+                                          child: getContent(i)),
                                     ),
                                   ),
-                                  isActive: i <= currentStep,
-                                  state: i == currentStep
-                                      ? MyStepState.editing
-                                      : i < currentStep
-                                          ? MyStepState.complete
-                                          : MyStepState.indexed,
-                                  content: LimitedBox(
-                                    maxWidth: 300,
-                                    child: Form(
-                                        key: _formKeys[i],
-                                        child: getContent(i)),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1183,6 +1214,7 @@ class _AddMovieState extends State<AddMovie> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
+              SizedBox(height: 10),
               Container(
                 width: 140,
                 child: dynamicList.isEmpty
@@ -1199,106 +1231,47 @@ class _AddMovieState extends State<AddMovie> {
                       )
                     : null,
               ),
-              Column(
-                children: [
-                  ListView.builder(
-                      itemCount: dynamicList.length,
-                      shrinkWrap: true,
-                      itemBuilder: (context, i) {
-                        return ValueListenableBuilder(
-                            key: ObjectKey(dynamicList[i]),
-                            valueListenable: open[i],
-                            builder: (context, value, widget) {
-                              return Stack(
-                                key: ObjectKey(dynamicList[i]),
-                                children: [
-                                  dynamicList[i],
-                                  value == true
-                                      ? Positioned(
-                                          bottom: 0,
-                                          right: 0,
-                                          child: Container(
-                                            child: OutlineButton(
-                                              padding: EdgeInsets.all(0),
-                                              color: Colors.white,
-                                              onPressed: () {
-                                                print(index);
-                                                FocusScope.of(context)
-                                                    .unfocus();
-                                                setState(() {
-                                                  open.removeAt(i);
-                                                  dynamicList.removeAt(i);
-                                                  // addedAward.removeAt() // TO DO: ANONG IDEDELETE
-                                                });
-                                              },
-                                              child: Text('Tanggalin'),
-                                            ),
-                                            alignment: Alignment.centerRight,
-                                          ),
-                                        )
-                                      : SizedBox(),
-                                ],
-                              );
-                            });
-                      })
-                  // ListView(
-                  //   shrinkWrap: true,
-                  //   children: dynamicList.map((item) {
-                  //     var index = dynamicList.indexOf(item);
-                  //     return ValueListenableBuilder(
-                  //         valueListenable: open[index],
-                  //         builder: (context, value, widget) {
-                  //           return Stack(
-                  //             key: ObjectKey(item),
-                  //             children: [
-                  //               item,
-                  //               value == true
-                  //                   ? Positioned(
-                  //                       bottom: 0,
-                  //                       right: 0,
-                  //                       child: Container(
-                  //                         child: OutlineButton(
-                  //                           padding: EdgeInsets.all(0),
-                  //                           color: Colors.white,
-                  //                           onPressed: () {
-                  //                             print(index);
-                  //                             FocusScope.of(context).unfocus();
-                  //                             setState(() {
-                  //                               open.removeAt(index);
-                  //                               // if (dynamicList[index]
-                  //                               //         .crew
-                  //                               //         .saved ==
-                  //                               //     true) {
-                  //                               //   // get index
-                  //                               //   var i = actors.indexOf(
-                  //                               //       dynamicList[index]
-                  //                               //           .crew
-                  //                               //           .crewId);
-                  //                               //   print('index in actors: $i');
-                  //                               //   roles.removeAt(i);
-                  //                               //   actors.remove(
-                  //                               //       dynamicList[index]
-                  //                               //           .crew
-                  //                               //           .crewId);
-                  //                               // }
-                  //                               dynamicList.remove(item);
 
-                  //                               // addedAward.removeAt() // TO DO: ANONG IDEDELETE
-                  //                             });
-                  //                           },
-                  //                           child: Text('Tanggalin'),
-                  //                         ),
-                  //                         alignment: Alignment.centerRight,
-                  //                       ),
-                  //                     )
-                  //                   : SizedBox(),
-                  //             ],
-                  //           );
-                  //         });
-                  //   }).toList(),
-                  // ),
-                ],
-              ),
+              ListView.builder(
+                  itemCount: dynamicList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: dynamicList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              dynamicList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              if (dynamicList[i].crew.crewId !=
+                                                  null) {
+                                                actorsFilter.remove(
+                                                    dynamicList[i].crew.crewId);
+                                              }
+                                              dynamicList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+
               SizedBox(
                 height: 10,
               ),
@@ -1591,65 +1564,6 @@ class _AddMovieState extends State<AddMovie> {
                         )
                       : SizedBox(),
                   displayActors(),
-                  // actors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  // // TO DO: Display actors
-                  // actors.isNotEmpty
-                  //     ? Container(
-                  //         alignment: Alignment.topLeft,
-                  //         child: Text(
-                  //           "Mga Aktor: ",
-                  //           style: TextStyle(
-                  //             fontWeight: FontWeight.bold,
-                  //             fontSize: 16,
-                  //           ),
-                  //         ),
-                  //       )
-                  //     : SizedBox(),
-                  // // TO DO: fix overflow issue when text is too long
-                  // actors.isNotEmpty
-                  //     ? Container(
-                  //         alignment: Alignment.topLeft,
-                  //         child: Column(
-                  //           children: actors.map((id) {
-                  //             var item =
-                  //                 crewList.firstWhere((p) => p.crewId == id);
-                  //             return new Wrap(
-                  //               children: [
-                  //                 new Icon(Icons.fiber_manual_record, size: 16),
-                  //                 SizedBox(
-                  //                   width: 5,
-                  //                 ),
-                  //                 new Text(
-                  //                     item.firstName +
-                  //                         (item.middleName != null
-                  //                             ? " " + item.middleName
-                  //                             : "") +
-                  //                         (item.lastName != null
-                  //                             ? " " + item.lastName
-                  //                             : "") +
-                  //                         (item.suffix != null
-                  //                             ? " " + item.suffix
-                  //                             : ""),
-                  //                     style: TextStyle(fontSize: 16),
-                  //                     softWrap: true,
-                  //                     overflow: TextOverflow.fade),
-                  //                 roles[actors.indexOf(id)].length != 0
-                  //                     ? Text(
-                  //                         " - " +
-                  //                             roles[actors.indexOf(id)]
-                  //                                 .join(" / "),
-                  //                         style: TextStyle(
-                  //                             fontStyle: FontStyle.italic,
-                  //                             fontSize: 16),
-                  //                         softWrap: true,
-                  //                         overflow: TextOverflow.fade)
-                  //                     : SizedBox(),
-                  //               ],
-                  //             );
-                  //           }).toList(),
-                  //         ),
-                  //       )
-                  //     : SizedBox(),
                   filmGenres.length != 0 ? SizedBox(height: 10) : SizedBox(),
                   filmGenres.length != 0
                       ? Container(
@@ -1692,10 +1606,16 @@ class ActorWidget extends StatefulWidget {
   final List<DropdownMenuItem> crewItems;
   final List<Crew> crewList;
   final Crew crew;
-  final size;
+  final open;
+  final Function filterActorDropdown;
 
   const ActorWidget(
-      {Key key, this.crew, this.crewItems, this.crewList, this.size})
+      {Key key,
+      this.crew,
+      this.crewItems,
+      this.crewList,
+      this.open,
+      this.filterActorDropdown})
       : super(key: key);
 
   @override
@@ -1703,22 +1623,20 @@ class ActorWidget extends StatefulWidget {
 }
 
 class ActorWidgetState extends State<ActorWidget> {
-  bool closed = false;
   var temp;
   Crew tempActor;
   List<String> tempRoles;
-  bool showError;
+  bool showError = true;
 
   @override
   void initState() {
     widget.crew.saved = widget.crew.saved == null ? false : widget.crew.saved;
-    showError = false;
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return open[widget.size].value == true
+    return widget.open.value == true
         ? Container(
             child: Column(children: [
             SizedBox(
@@ -1742,9 +1660,15 @@ class ActorWidgetState extends State<ActorWidget> {
                   contentPadding: EdgeInsets.all(10),
                 ),
                 findSuggestions: (String query) {
+                  var filteredList = actorsFilter.length != 0
+                      ? widget.crewList
+                          .where((r) => !actorsFilter.contains(r.crewId))
+                          .toList()
+                      : widget.crewList;
                   if (query.isNotEmpty) {
                     var lowercaseQuery = query.toLowerCase();
-                    return widget.crewList.where((item) {
+
+                    return filteredList.where((item) {
                       var fullName = item.firstName +
                           (item.middleName != null
                               ? " " + item.middleName
@@ -1762,20 +1686,45 @@ class ActorWidgetState extends State<ActorWidget> {
                               .toLowerCase()
                               .indexOf(lowercaseQuery)));
                   }
-                  return widget.crewList;
+                  return filteredList;
+                  // return widget.crewList;
                 },
                 onChanged: (data) {
-                  setState(() {
-                    widget.crew.crewId = data[0].crewId;
-                    widget.crew.firstName = data[0].firstName;
-                    widget.crew.middleName = data[0].middleName;
-                    widget.crew.lastName = data[0].lastName;
-                    widget.crew.suffix = data[0].suffix;
-                    showError =
-                        widget.crew.crewId != null && widget.crew.role != null
-                            ? false
-                            : true;
-                  });
+                  if (data.length != 0) {
+                    setState(() {
+                      widget.crew.crewId = data[0].crewId;
+                      widget.crew.firstName = data[0].firstName;
+                      widget.crew.middleName = data[0].middleName;
+                      widget.crew.lastName = data[0].lastName;
+                      widget.crew.suffix = data[0].suffix;
+                      showError = widget.crew.crewId != null &&
+                              widget.crew.role != null &&
+                              widget.crew.role.length != 0
+                          ? false
+                          : true;
+                      if (!actorsFilter.contains(data[0].crewId)) {
+                        actorsFilter.add(data[0].crewId);
+                      }
+                    });
+                  } else {
+                    setState(() {
+                      widget.crew.crewId = null;
+                      widget.crew.firstName = null;
+                      widget.crew.middleName = null;
+                      widget.crew.lastName = null;
+                      widget.crew.suffix = null;
+                      showError = widget.crew.crewId != null &&
+                              widget.crew.role != null &&
+                              widget.crew.role.length != 0
+                          ? false
+                          : true;
+                      widget.crew.saved = widget.crew.crewId != null &&
+                              widget.crew.role != null &&
+                              widget.crew.role.length != 0
+                          ? true
+                          : false;
+                    });
+                  }
                 },
                 chipBuilder: (context, state, c) {
                   return InputChip(
@@ -1792,7 +1741,12 @@ class ActorWidgetState extends State<ActorWidget> {
                                 ? " " + widget.crew.suffix
                                 : "")
                         : ""),
-                    onDeleted: () => state.deleteChip(c),
+                    onDeleted: () => {
+                      setState(() {
+                        actorsFilter.remove(c.crewId);
+                      }),
+                      state.deleteChip(c),
+                    },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
                 },
@@ -1803,7 +1757,15 @@ class ActorWidgetState extends State<ActorWidget> {
                         (c.middleName != null ? " " + c.middleName : "") +
                         (c.lastName != null ? " " + c.lastName : "") +
                         (c.suffix != null ? " " + c.suffix : "")),
-                    onTap: () => state.selectSuggestion(c),
+                    onTap: () => {
+                      if (!actorsFilter.contains(c.crewId))
+                        {
+                          setState(() {
+                            actorsFilter.add(c.crewId);
+                          })
+                        },
+                      state.selectSuggestion(c)
+                    },
                   );
                 },
               ),
@@ -1815,7 +1777,7 @@ class ActorWidgetState extends State<ActorWidget> {
               color: Color.fromRGBO(240, 240, 240, 1),
               child: TestChipsInput(
                 initialValue: widget.crew.role != null ? widget.crew.role : [],
-                key: ObjectKey(widget.size),
+                // key: ObjectKey(widget.size),
                 keyboardAppearance: Brightness.dark,
                 textCapitalization: TextCapitalization.words,
                 enabled: true,
@@ -1837,10 +1799,16 @@ class ActorWidgetState extends State<ActorWidget> {
 
                   setState(() {
                     widget.crew.role = tempList;
-                    showError =
-                        widget.crew.crewId != null && widget.crew.role != null
-                            ? false
-                            : true;
+                    showError = widget.crew.crewId != null &&
+                            widget.crew.role != null &&
+                            widget.crew.role.length != 0
+                        ? false
+                        : true;
+                    widget.crew.saved = widget.crew.crewId != null &&
+                            widget.crew.role != null &&
+                            widget.crew.role.length != 0
+                        ? true
+                        : false;
                   });
                 },
                 chipBuilder: (context, state, c) {
@@ -1874,8 +1842,7 @@ class ActorWidgetState extends State<ActorWidget> {
                   if (widget.crew.crewId != null && widget.crew.role != null) {
                     setState(() {
                       // save to actors and roles list
-                      open[widget.size].value = false;
-                      closed = true;
+                      widget.open.value = false;
                       widget.crew.saved = true;
                     });
                   } else {
@@ -1891,7 +1858,7 @@ class ActorWidgetState extends State<ActorWidget> {
             )
           ]))
         :
-        // display this instead if closed == true
+        // display this instead if widget.open == false
         Column(children: [
             ListTile(
               contentPadding: EdgeInsets.all(10),
@@ -1922,8 +1889,7 @@ class ActorWidgetState extends State<ActorWidget> {
                 child: Icon(Icons.edit),
                 onTap: () {
                   setState(() {
-                    closed = false;
-                    open[widget.size].value = true;
+                    widget.open.value = true;
                   });
                 },
               ),

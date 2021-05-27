@@ -791,16 +791,17 @@ class _MovieViewState extends State<MovieView>
                     : Container(),
                 SizedBox(height: 25),
                 // TO DO: add screenshots here
-                model.reviews.isNotEmpty
-                    ? Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text("Mga Review",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            )),
-                      )
-                    : SizedBox(),
+                // model.isEmpty == false
+                // ?
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Text("Mga Review",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      )),
+                ),
+                // : SizedBox(),
                 (currentUser == null && model.isEmpty == true) ||
                         (currentUser != null &&
                             currentUser.isAdmin == false &&
@@ -854,28 +855,28 @@ class _MovieViewState extends State<MovieView>
   }
 }
 
-class MyTooltip extends StatelessWidget {
-  final Widget child;
-  final String message;
+// class MyTooltip extends StatelessWidget {
+//   final Widget child;
+//   final String message;
 
-  MyTooltip({@required this.message, @required this.child});
+//   MyTooltip({@required this.message, @required this.child});
 
-  @override
-  Widget build(BuildContext context) {
-    final key = GlobalKey<State<Tooltip>>();
-    return Tooltip(
-      key: key,
-      message: message,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => _onTap(key),
-        child: child,
-      ),
-    );
-  }
+//   @override
+//   Widget build(BuildContext context) {
+//     final key = GlobalKey<State<Tooltip>>();
+//     return Tooltip(
+//       key: key,
+//       message: message,
+//       child: GestureDetector(
+//         behavior: HitTestBehavior.opaque,
+//         onTap: () => _onTap(key),
+//         child: child,
+//       ),
+//     );
+//   }
 
-  void _onTap(GlobalKey key) {
-    final dynamic tooltip = key.currentState;
-    tooltip?.ensureTooltipVisible();
-  }
-}
+//   void _onTap(GlobalKey key) {
+//     final dynamic tooltip = key.currentState;
+//     tooltip?.ensureTooltipVisible();
+//   }
+// }

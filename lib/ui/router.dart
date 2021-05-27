@@ -1,6 +1,7 @@
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
+import 'package:mubidibi/ui/views/configure_admin_view.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
@@ -76,6 +77,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: SearchView(),
+      );
+    case ConfigureAdminViewRoute:
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: ConfigureAdminView(),
       );
     case SeeAllViewRoute:
       var movies = settings.arguments as List<Movie>;

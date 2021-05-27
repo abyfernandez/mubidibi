@@ -48,13 +48,13 @@ class _AddCrewState extends State<AddCrew> {
   bool _saving = false;
   int crewId;
   File imageFile; // for uploading display photo w/ image picker
-  final picker = ImagePicker();
   var mimetype;
-  String base64Image; // picked image in base64 format
   var photos = List(); // for uploading crew photos
   var imageURI = ''; // for crew edit
   List<Movie> movieOptions;
-  List<int> movies = [];
+  List<int> movieDirector = [];
+  List<int> movieWriter = [];
+  List<int> movieActor = [];
 
   // CREW FIELD CONTROLLERS
   final firstNameController = TextEditingController();
@@ -807,20 +807,18 @@ class _AddCrewState extends State<AddCrew> {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SizedBox(height: 10),
-            Text('Mga Pelikula:',
+            Text('Bilang Direktor:',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             SizedBox(
               height: 10,
             ),
-
-            // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
             Container(
               decoration: BoxDecoration(
                 color: Color.fromRGBO(240, 240, 240, 1),
                 borderRadius: BorderRadius.circular(5),
               ),
               child: ChipsInput(
-                initialValue: movies,
+                initialValue: movieDirector,
                 keyboardAppearance: Brightness.dark,
                 textCapitalization: TextCapitalization.words,
                 enabled: true,
@@ -848,9 +846,70 @@ class _AddCrewState extends State<AddCrew> {
                 onChanged: (data) {
                   List<int> ids = [];
                   for (var c in data) {
-                    ids.add(c.crewId);
+                    ids.add(c.movieId);
                   }
-                  movies = ids;
+                  movieDirector = ids;
+                },
+                chipBuilder: (context, state, c) {
+                  return InputChip(
+                    key: ObjectKey(c),
+                    label: Text(c.title),
+                    onDeleted: () => state.deleteChip(c),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, c) {
+                  return ListTile(
+                    key: ObjectKey(c),
+                    title: Text(c.title),
+                    onTap: () => state.selectSuggestion(c),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 20),
+            Text('Bilang Manunulat:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: ChipsInput(
+                initialValue: movieWriter,
+                keyboardAppearance: Brightness.dark,
+                textCapitalization: TextCapitalization.words,
+                enabled: true,
+                textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                decoration: const InputDecoration(
+                  labelText: 'Pumili ng pelikula',
+                  contentPadding: EdgeInsets.all(10),
+                ),
+                findSuggestions: (String query) {
+                  if (query.isNotEmpty) {
+                    var lowercaseQuery = query.toLowerCase();
+                    return movieOptions.where((item) {
+                      return item.title
+                          .toLowerCase()
+                          .contains(query.toLowerCase());
+                    }).toList(growable: false)
+                      ..sort((a, b) => a.title
+                          .toLowerCase()
+                          .indexOf(lowercaseQuery)
+                          .compareTo(
+                              b.title.toLowerCase().indexOf(lowercaseQuery)));
+                  }
+                  return movieOptions;
+                },
+                onChanged: (data) {
+                  List<int> ids = [];
+                  for (var c in data) {
+                    ids.add(c.movieId);
+                  }
+                  movieWriter = ids;
                 },
                 chipBuilder: (context, state, c) {
                   return InputChip(
@@ -870,6 +929,7 @@ class _AddCrewState extends State<AddCrew> {
               ),
             ),
             SizedBox(height: 10),
+            // TO DO: DYNAMIC WIDGETS FOR ACTING ROLES
           ]),
         );
       case 2: // Photos
@@ -1194,6 +1254,79 @@ class _AddCrewState extends State<AddCrew> {
                                         : FontStyle.normal,
                                     fontSize: 16,
                                   )),
+                            )
+                          : SizedBox(),
+                      // TO DO: Movies associated with the personality
+                      movieDirector.isNotEmpty
+                          ? SizedBox(height: 10)
+                          : SizedBox(),
+                      movieDirector.isNotEmpty
+                          ? Container(
+                              alignment: Alignment.topLeft,
+                              child: Text("Mga Direktor: ",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  )),
+                            )
+                          : SizedBox(),
+                      movieDirector.isNotEmpty
+                          ? Container(
+                              alignment: Alignment.topLeft,
+                              child: Column(
+                                  children: movieDirector.map<Widget>((id) {
+                                var film = movieOptions
+                                    .firstWhere((item) => item.movieId == id);
+                                return new Row(
+                                  children: [
+                                    new Icon(Icons.fiber_manual_record,
+                                        size: 16),
+                                    SizedBox(
+                                      width: 5,
+                                    ),
+                                    new Text(
+                                      film.title,
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  ],
+                                );
+                              }).toList()),
+                            )
+                          : SizedBox(),
+                      movieWriter.isNotEmpty
+                          ? SizedBox(height: 10)
+                          : SizedBox(),
+                      movieWriter.isNotEmpty
+                          ? Container(
+                              alignment: Alignment.topLeft,
+                              child: Text("Mga Direktor: ",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  )),
+                            )
+                          : SizedBox(),
+                      movieWriter.isNotEmpty
+                          ? Container(
+                              alignment: Alignment.topLeft,
+                              child: Column(
+                                  children: movieWriter.map<Widget>((id) {
+                                var film = movieOptions
+                                    .firstWhere((item) => item.movieId == id);
+                                return new Row(
+                                  children: [
+                                    new Icon(Icons.fiber_manual_record,
+                                        size: 16),
+                                    SizedBox(
+                                      width: 5,
+                                    ),
+                                    new Text(
+                                      film.title,
+                                      style: TextStyle(fontSize: 16),
+                                    ),
+                                  ],
+                                );
+                              }).toList()),
                             )
                           : SizedBox(),
                       imageFile != null ? SizedBox(height: 10) : SizedBox(),

@@ -807,6 +807,7 @@ class ReviewFormState extends State<ReviewForm> {
                                                   userReview = newReview;
                                                   submitting = false;
                                                   _edit = false;
+                                                  isApproved = false;
                                                 });
 
                                                 // show success snackbar

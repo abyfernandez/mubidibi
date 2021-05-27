@@ -80,8 +80,9 @@ class _CrewViewState extends State<CrewView>
                     margin: EdgeInsets.only(right: 5),
                     child: Chip(
                       labelPadding: EdgeInsets.only(left: 2, right: 2),
-                      label: Text(type, style: TextStyle(fontSize: 12)),
-                      backgroundColor: Color.fromRGBO(176, 224, 230, 1),
+                      label: Text(type,
+                          style: TextStyle(fontSize: 12, color: Colors.white)),
+                      backgroundColor: Colors.lightBlue,
                     ));
               }).toList()
             : []);

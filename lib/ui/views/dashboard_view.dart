@@ -169,6 +169,24 @@ class _DashboardViewState extends State<DashboardView>
                   });
                 },
               ),
+
+              //Floating action menu item
+              Bubble(
+                title: "Mga Admin",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.people_outlined,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  _animationController.reverse();
+                  await _navigationService.navigateTo(ConfigureAdminViewRoute);
+                  setState(() {
+                    fabIcon = fabIcon == Icons.admin_panel_settings
+                        ? Icons.close
+                        : Icons.admin_panel_settings;
+                  });
+                },
+              )
             ],
 
             // animation controller
