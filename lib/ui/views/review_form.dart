@@ -60,34 +60,6 @@ class ReviewFormState extends State<ReviewForm> {
     return timeago.format(timeAgo, locale: 'en');
   }
 
-  Color trackColor(num rating) {
-    if (rating >= 1 && rating <= 2) {
-      // 1-2
-      return Colors.red[400];
-    } else if (rating > 2 && rating <= 3.5) {
-      // 2.5 - 3.5
-      return Colors.orange[400];
-    } else if (rating == null) {
-      return Colors.grey[400];
-    } else {
-      return Colors.yellow[400];
-    }
-  }
-
-  Color sliderColor(num rating) {
-    if (rating >= 1 && rating <= 2) {
-      // 1-2
-      return Colors.red[100];
-    } else if (rating > 2 && rating <= 3.5) {
-      // 2.5 - 3.5
-      return Colors.orange[100];
-    } else if (rating == null) {
-      return Colors.grey[100];
-    } else {
-      return Colors.yellow[100];
-    }
-  }
-
   void fetchUserReview() async {
     var model = ReviewViewModel();
 
@@ -123,7 +95,7 @@ class ReviewFormState extends State<ReviewForm> {
         widget.currentUser.isAdmin == true || isApproved == true
             ? Column(
                 children: [
-                  SizedBox(height: 15),
+                  // SizedBox(height: 15),
                   Stack(
                     children: [
                       Container(
@@ -138,16 +110,17 @@ class ReviewFormState extends State<ReviewForm> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              SizedBox(height: 10),
                               ListTile(
                                   title: Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       // NOTE: putting text in a container and setting overflow to ellipsis fixes the overflow problem
                                       Container(
                                         padding: EdgeInsets.only(top: 10),
-                                        width: 200,
+                                        width: 250,
                                         child: Text(
                                           userReview.firstName +
                                               (userReview.middleName != null
@@ -663,6 +636,7 @@ class ReviewFormState extends State<ReviewForm> {
                             max: 5,
                             initialValue: rate,
                             appearance: CircularSliderAppearance(
+                              animationEnabled: false,
                               size: 70,
                               startAngle: 270,
                               angleRange: 350,

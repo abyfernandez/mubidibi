@@ -97,7 +97,7 @@ class _SeeAllViewState extends State<SeeAllView> {
   void fetchMovies() async {
     if (movies == null) {
       var model = MovieViewModel();
-      films = await model.getAllMovies();
+      films = await model.getAllMovies(mode: "list");
 
       // fetch genre from API
       final response = await http.get(Config.api + 'genres/');
@@ -124,7 +124,7 @@ class _SeeAllViewState extends State<SeeAllView> {
   void fetchCrew() async {
     if (crew == null) {
       var model = CrewViewModel();
-      personalidad = await model.getAllCrew();
+      personalidad = await model.getAllCrew(mode: "list");
 
       setState(() {
         filtered = personalidad;

@@ -145,7 +145,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
 
     _focusNode.removeListener(_handleFocusChanged);
     if (null == widget.focusNode) {
-      _focusNode.dispose();
+      // _focusNode.dispose();
     }
 
     _suggestionsStreamController.close();
@@ -282,6 +282,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   }
 
   void _onSearchChanged(String value) async {
+    print(value);
     final localId = ++_searchId;
     final results = await widget.findSuggestions(value);
     if (_searchId == localId && mounted) {
@@ -322,8 +323,9 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
       } else {
         _updateTextInputState();
       }
-      _onSearchChanged(_value.normalCharactersText);
+      // _onSearchChanged(_value.normalCharactersText);
     }
+    _onSearchChanged(_value.normalCharactersText);
   }
 
   void _updateTextInputState({replaceText = false, putText = ''}) {

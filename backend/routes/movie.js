@@ -9,11 +9,9 @@ exports.movie = app => {
       var query = `SELECT * FROM movie `;
 
       // if user is not admin, show only the movies that are not soft-deleted
-      if (req.body.is_admin == "0") {
+      if (req.body.user != "admin" || req.body.mode == "form") {
         query = query.concat(` WHERE is_deleted = false `);
       }
-
-      query = query.concat(`order by id`);
 
       client.query(
         query,
@@ -100,7 +98,13 @@ exports.movie = app => {
     var title = movieData.title.replace(/'/g, "''");
     var synopsis = movieData.synopsis.replace(/'/g, "''");
 
-    console.log(movieData);
+    movieData.actors.forEach((a, i) => {
+      a.role.forEach((r, ind) => {
+        r = r.replace(/'/g, "''");
+      });
+    });
+
+    console.log("movieData: ", movieData);
 
     var query = `select add_movie (
       '${title}',
@@ -200,9 +204,10 @@ exports.movie = app => {
 
       console.log(query);
 
-      // add directors
       var result = await client.query(query).then((result) => {
         const id = result.rows[0].add_movie
+
+        // add directors
         if (movieData.directors.length != 0) {
           movieData.directors.forEach(director => {
             client.query(
@@ -232,25 +237,37 @@ exports.movie = app => {
           movieData.actors.forEach((actor, index) => {
             var actorQuery = `call add_movie_actor (
               ${id},
-              ${actor},
+              ${actor.id},
               `;
 
-            if (movieData.roles[index].length) {
+            if (actor.role.length) {
               actorQuery = actorQuery.concat(`array [`);
-              movieData.roles[index].forEach(role => {
+              actor.role.forEach(role => {
                 actorQuery = actorQuery.concat(`'`, role, `'`)
-                if (role != movieData.roles[movieData.roles.length - 1]) {
+                if (role != actor.role[actor.role.length - 1]) {
                   actorQuery = actorQuery.concat(',')
                 }
               });
-              actorQuery = actorQuery.concat(`]`)
+              actorQuery = actorQuery.concat(`])`)
             } else {
-              actorQuery = actorQuery.concat(`null`);
+              actorQuery = actorQuery.concat(`null)`);
             }
 
+            console.log("ACTORS => ", index, ": ", actorQuery);
             client.query(actorQuery);
           });
         }
+
+        // awards
+        if (movieData.awards.length != 0) {
+          movieData.awards.forEach((award, index) => {
+            var awardQuery = `insert into movie_award (movie_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
+
+            console.log("AWARDS => ", index, ": ", awardQuery);
+            client.query(awardQuery);
+          });
+        }
+
         return result;
       });
       release();
@@ -421,21 +438,11 @@ exports.movie = app => {
   });
 
   // DELETE MOVIE
-  app.delete('/mubidibi/movies/:id', (req, res) => {
+  app.get('/mubidibi/movies/:id', (req, res) => {
     app.pg.connect(onConnect);
 
     function onConnect(err, client, release) {
       if (err) return res.send(err);
-
-      // initial delete
-      // client.query('DELETE FROM movie where id = $1 RETURNING id', [parseInt(req.params.id)],
-      //   function onResult(err, result) {
-      //     console.log(result);
-
-      //     release()
-      //     res.send(err || JSON.stringify(result.rows[0].id));
-      //   }
-      // );
 
       // updated delete: soft-delete only, sets the is_deleted field to true
       client.query('UPDATE movie SET is_deleted = true where id = $1 RETURNING id', [parseInt(req.params.id)],

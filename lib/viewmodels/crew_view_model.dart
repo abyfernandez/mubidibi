@@ -2,6 +2,10 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:mubidibi/models/award.dart';
+import 'package:mubidibi/models/movie_actor.dart';
+import 'package:mubidibi/services/authentication_service.dart';
+import '../locator.dart';
 import 'base_model.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:http/http.dart' as http;
@@ -10,10 +14,26 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 class CrewViewModel extends BaseModel {
+  final AuthenticationService _authenticationService =
+      locator<AuthenticationService>();
+  var currentUser;
+
   // Function: GET CREW
-  Future<List<Crew>> getAllCrew() async {
+  Future<List<Crew>> getAllCrew({@required String mode}) async {
+    currentUser = _authenticationService.currentUser;
+
     setBusy(true);
-    final response = await http.get(Config.api + 'crew/');
+    final response = await http.post(Config.api + 'crew/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          "user": currentUser != null && currentUser.isAdmin == true
+              ? "admin"
+              : "non-admin",
+          "mode": mode,
+        }));
+
     setBusy(false);
     if (response.statusCode == 200) {
       // calls crewFromJson method from the model to convert from JSON to Crew datatype
@@ -25,18 +45,19 @@ class CrewViewModel extends BaseModel {
 
   // Function: GET CREW for Movie Detail View
   Future<List<List<Crew>>> getCrewForDetails({@required String movieId}) async {
-    var queryParams = {
-      'id': movieId,
-    };
-
     setBusy(true);
 
-    // create URI and attach the params
-    var uri =
-        Uri.http(Config.apiNoHTTP, '/mubidibi/crew/$movieId', queryParams);
+    final response = await http.post(Config.api + 'crew-for-movie/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          "user": currentUser != null && currentUser.isAdmin == true
+              ? "admin"
+              : "non-admin",
+          "movie_id": movieId,
+        }));
 
-    // send API Request
-    final response = await http.get(uri);
     List<List<Crew>> crew = [];
     var items = json.decode(response.body);
 
@@ -91,8 +112,11 @@ class CrewViewModel extends BaseModel {
       String imageURI,
       List photos,
       String addedBy,
-      int crewId // for edit function
-      }) async {
+      int crewId, // for edit function,
+      List<int> director,
+      List<int> writer,
+      List<MovieActor> actor,
+      List<Award> awards}) async {
     setBusy(true);
 
     var id;
@@ -141,6 +165,10 @@ class CrewViewModel extends BaseModel {
         'added_by': addedBy,
         'displayPicURI': imageURI,
         'displayPic': displayPic == null ? false : true,
+        'director': director,
+        'writer': writer,
+        'actor': actor,
+        'awards': awards,
       }),
       "files": images,
     });
@@ -178,9 +206,10 @@ class CrewViewModel extends BaseModel {
     var uri =
         Uri.http(Config.apiNoHTTP, '/mubidibi/delete-crew/$id', queryParams);
 
-    final response = await http.delete(uri);
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
+      print(json.decode(response.body));
       return (json.decode(response.body));
     }
     return 0;

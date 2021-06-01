@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
+// import 'package:intl/intl.dart';
 import 'package:mubidibi/ui/shared/ui_helpers.dart';
 
 import 'note_text.dart';

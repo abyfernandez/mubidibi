@@ -141,6 +141,7 @@ class MyStepper extends StatefulWidget {
   const MyStepper({
     Key key,
     @required this.steps,
+    this.stepperCircle,
     this.physics,
     this.type = MyStepperType.vertical,
     this.currentStep = 0,
@@ -240,6 +241,7 @@ class MyStepper extends StatefulWidget {
   /// ```
   /// {@end-tool}
   final ControlsWidgetBuilder controlsBuilder;
+  final List<IconData> stepperCircle;
 
   @override
   _StepperState createState() => _StepperState();
@@ -248,14 +250,6 @@ class MyStepper extends StatefulWidget {
 class _StepperState extends State<MyStepper> with TickerProviderStateMixin {
   List<GlobalKey> _keys;
   final Map<int, MyStepState> _oldStates = <int, MyStepState>{};
-
-  List<IconData> stepperCircle = [
-    Icons.edit,
-    Icons.image,
-    Icons.recent_actors,
-    Icons.category,
-    Icons.grading
-  ];
 
   @override
   void initState() {
@@ -311,7 +305,7 @@ class _StepperState extends State<MyStepper> with TickerProviderStateMixin {
       case MyStepState.indexed:
       case MyStepState.disabled:
         return Icon(
-          stepperCircle[index],
+          widget.stepperCircle[index],
           color: isDarkActive ? _kCircleActiveDark : _kCircleActiveLight,
           size: 18.0,
         );
@@ -451,7 +445,7 @@ class _StepperState extends State<MyStepper> with TickerProviderStateMixin {
           // version of this widget.
           children: <Widget>[
             TextButton(
-              child: index + 1 == stepperCircle.length
+              child: index + 1 == widget.stepperCircle.length
                   ? Text("SUBMIT")
                   : Text(localizations.continueButtonLabel),
               onPressed: widget.onStepContinue,

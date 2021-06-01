@@ -137,16 +137,20 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                 title: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     // NOTE: putting text in a container and setting overflow to ellipsis fixes the overflow problem
                                     Container(
                                       padding: EdgeInsets.only(top: 10),
-                                      width: 200,
+                                      width: 250,
                                       child: Text(
                                         review.firstName +
                                             (review.middleName != null
-                                                ? " " + review.middleName : "") +
-                                                 (review.lastName != null ? " " + review.lastName : "") +
+                                                ? " " + review.middleName
+                                                : "") +
+                                            (review.lastName != null
+                                                ? " " + review.lastName
+                                                : "") +
                                             (review.suffix != null
                                                 ? " " + review.suffix
                                                 : ""),
@@ -771,6 +775,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
                           max: 5,
                           initialValue: review.rating.toDouble(),
                           appearance: CircularSliderAppearance(
+                            animationEnabled: false,
                             size: 70,
                             startAngle: 270,
                             angleRange: 355,

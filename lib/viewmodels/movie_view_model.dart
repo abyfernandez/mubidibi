@@ -1,6 +1,8 @@
-import 'dart:io';
+// import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
+import 'package:mubidibi/models/award.dart';
+import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import '../locator.dart';
 import 'base_model.dart';
@@ -18,7 +20,7 @@ class MovieViewModel extends BaseModel {
   var currentUser;
 
   // Function: GET ALL MOVIES
-  Future<List<Movie>> getAllMovies() async {
+  Future<List<Movie>> getAllMovies({@required String mode}) async {
     currentUser = _authenticationService.currentUser;
 
     setBusy(true);
@@ -31,7 +33,10 @@ class MovieViewModel extends BaseModel {
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(<String, dynamic>{
-          "is_admin": currentUser != null ? currentUser.isAdmin : "0"
+          "user": currentUser != null && currentUser.isAdmin == true
+              ? "admin"
+              : "non-admin",
+          "mode": mode,
         }));
 
     setBusy(false);
@@ -73,15 +78,14 @@ class MovieViewModel extends BaseModel {
     String releaseDate,
     String mimetype,
     String runtime,
-    // File poster, // single file
     List posters, // multiple files
     // String imageURI, // poster edit ??
     List screenshots,
     List<String> genre,
     List<int> directors,
     List<int> writers,
-    List<int> actors,
-    List<List<String>> roles,
+    List<Crew> actors,
+    List<Award> awards,
     String addedBy,
     int movieId,
   }) async {
@@ -128,7 +132,7 @@ class MovieViewModel extends BaseModel {
         'poster': posters.isEmpty ? false : true,
         'poster_count': posters.length,
         'actors': actors,
-        'roles': roles
+        'awards': awards,
       }),
       "files": images,
     });
@@ -144,8 +148,6 @@ class MovieViewModel extends BaseModel {
         data: formData,
       );
     }
-
-    print(json.decode(response.data));
 
     if (response.statusCode == 200) {
       id = json.decode(response.data);
@@ -164,7 +166,7 @@ class MovieViewModel extends BaseModel {
 
     var uri = Uri.http(Config.apiNoHTTP, '/mubidibi/movies/$id', queryParams);
 
-    final response = await http.delete(uri);
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       return (json.decode(response.body));

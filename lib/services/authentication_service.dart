@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // import 'package:google_sign_in/google_sign_in.dart';
-import 'package:mubidibi/services/firestore_service.dart';
-import 'package:mubidibi/locator.dart';
+// import 'package:mubidibi/services/firestore_service.dart';
+// import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/models/user.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -10,7 +10,7 @@ import 'package:mubidibi/globals.dart' as Config;
 
 class AuthenticationService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final FirestoreService _firestoreService = locator<FirestoreService>();
+  // final FirestoreService _firestoreService = locator<FirestoreService>();
   // final GoogleSignIn googleSignIn = GoogleSignIn();
 
   User _currentUser;
@@ -159,7 +159,8 @@ class AuthenticationService {
       // await googleSignIn.signOut();
       await _firebaseAuth.signOut();
 
-      var hasLoggedInUser = isUserLoggedIn();
+      var hasLoggedInUser =
+          isUserLoggedIn(); // to refresh user information after logout
     } catch (e) {}
   }
 

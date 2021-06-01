@@ -1,3 +1,4 @@
+import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
@@ -15,6 +16,7 @@ import 'package:mubidibi/ui/views/signin_category_view.dart';
 import 'package:mubidibi/ui/views/signup_view.dart';
 import 'package:mubidibi/ui/views/startup_view.dart';
 import 'package:mubidibi/ui/views/add_movie.dart';
+import 'package:mubidibi/ui/views/add_award.dart';
 
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
@@ -60,6 +62,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: AddMovie(movie: movie),
+      );
+    case AddAwardRoute:
+      var award = settings.arguments as Award;
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: AddAward(award: award),
       );
     case AddCrewRoute:
       var crew = settings.arguments as Crew;

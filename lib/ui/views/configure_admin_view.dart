@@ -26,6 +26,8 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView> {
   List<int> changed =
       []; // records ids of users whose isAdmin status has been modified by the admin
 
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
+
   // SERVICES
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
@@ -49,8 +51,6 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView> {
 
   @override
   Widget build(BuildContext context) {
-    final _scaffoldKey = GlobalKey<ScaffoldState>();
-
     if (users.length == 0) return Center(child: CircularProgressIndicator());
 
     return ViewModelProvider<UserViewModel>.withConsumer(

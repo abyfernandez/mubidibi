@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mubidibi/models/award.dart';
+import 'package:mubidibi/ui/widgets/award_widget.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +15,7 @@ import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
+import 'package:mubidibi/viewmodels/award_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
@@ -25,7 +28,7 @@ import 'package:mubidibi/globals.dart' as Config;
 import 'dart:convert';
 
 // For Dynamic Widgets
-List<int> actorsFilter = [];
+List<int> actorsFilter = []; // actors
 
 class AddMovie extends StatefulWidget {
   final Movie movie;
@@ -51,8 +54,8 @@ class _AddMovieState extends State<AddMovie> {
   List<DropdownMenuItem> genreItems = [];
   var selectedValue;
   String test;
-  List<ActorWidget> dynamicList = [];
-  // List<int> actorsFilter = [];
+  List<ActorWidget> actorList = [];
+  List<AwardWidget> awardList = [];
 
   // MOVIE FIELD CONTROLLERS
   DateTime _date;
@@ -61,6 +64,7 @@ class _AddMovieState extends State<AddMovie> {
   final runtimeController = TextEditingController();
   final dateController = TextEditingController();
   final roleController = TextEditingController();
+  final linesController = TextEditingController();
 
   // MOVIE FIELD FOCUSNODES
   final titleNode = FocusNode();
@@ -71,9 +75,11 @@ class _AddMovieState extends State<AddMovie> {
   final directorNode = FocusNode();
   final writerNode = FocusNode();
   final addActorNode = FocusNode();
+  final linesNode = FocusNode();
 
   // MOVIE FORMKEYS
   List<GlobalKey<FormState>> _formKeys = [
+    GlobalKey<FormState>(),
     GlobalKey<FormState>(),
     GlobalKey<FormState>(),
     GlobalKey<FormState>(),
@@ -82,13 +88,14 @@ class _AddMovieState extends State<AddMovie> {
   ];
 
   // OTHER VARIABLES
-  // File imageFile; // for uploading poster w/ image picker (single file)
   var imageFiles =
       List(); // for uploading poster w/ image picker (multiple file)
   final picker = ImagePicker();
   String base64Image; // picked image in base64 format
   var screenshots = List(); // for uploading movie screenshots
   var imageURI = ''; // for movie edit
+  List<Award> awardOptions;
+  var currentUser;
 
   // SERVICES
   final AuthenticationService _authenticationService =
@@ -103,6 +110,7 @@ class _AddMovieState extends State<AddMovie> {
   List<DropdownMenuItem> crewItems = [];
   List<Crew> crewList = [];
   List<ActorWidget> filteredActors = []; // dynamic list with only saved values
+  List<AwardWidget> filteredAwards = []; // dynamic list with only saved values
 
   // STEPPER TITLES
   int currentStep = 0;
@@ -110,7 +118,8 @@ class _AddMovieState extends State<AddMovie> {
     "Mga Basic na Detalye",
     "Mga Poster, Screenshot, at Ibang Media",
     "Mga Personalidad",
-    "Mga Genre",
+    "Mga Award",
+    "Mga Sikat na Linya",
     "Review"
   ];
 
@@ -154,7 +163,7 @@ class _AddMovieState extends State<AddMovie> {
   void fetchCrew() async {
     var model = CrewViewModel();
 
-    crewList = await model.getAllCrew();
+    crewList = await model.getAllCrew(mode: "form");
     // converts from List<Crew> to List<DropdownMenuItem>
     crewItems = crewList.map<DropdownMenuItem<dynamic>>((Crew value) {
       String name = value.firstName +
@@ -187,32 +196,6 @@ class _AddMovieState extends State<AddMovie> {
         dateController.text = DateFormat("MMM. d, y").format(_date) ?? '';
       });
     }
-  }
-
-  // Function: (TO DO: MIGHT GET DEPRECATED) gets the id of the crew using the list of indices provided by the Director(s)/Writer(s) select fields.
-  List<int> crewIds(List<int> indices) {
-    List<int> crewIds = [];
-    for (var i in indices) {
-      for (var j = 0; j < crewList.length; j++) {
-        if (i == crewList[j].crewId) {
-          crewIds.add(crewList[j].crewId);
-        }
-      }
-    }
-    return crewIds;
-  }
-
-  // FUNCTION: (TO DO: IS THIS NEEDED???) the genre array passed from the detail view is in string and named form, not as indices of the genres itself so we have to convert it first
-  List<int> genreIndices(List<dynamic> genresFromDetail) {
-    List<int> genreIndices = [];
-    for (var item in genresFromDetail) {
-      for (var i = 0; i < movie.genre.length; i++) {
-        if (item == movie.genre[i]) {
-          genreIndices.add(i);
-        }
-      }
-    }
-    return genreIndices;
   }
 
   // Function: get image using image picker for movie poster
@@ -388,14 +371,14 @@ class _AddMovieState extends State<AddMovie> {
     );
   }
 
+  // Function: Display Actors in the Review Step
   Widget displayActors() {
     filteredActors =
-        dynamicList.where((actor) => actor.crew.saved == true).toList();
+        actorList.where((actor) => actor.crew.saved == true).toList();
 
     return Column(
       children: [
         filteredActors.length != 0 ? SizedBox(height: 10) : SizedBox(),
-        // TO DO: Display actors
         filteredActors.length != 0
             ? Container(
                 alignment: Alignment.topLeft,
@@ -419,33 +402,36 @@ class _AddMovieState extends State<AddMovie> {
                     if (actor.crew.saved == true) {
                       var item = crewList
                           .firstWhere((p) => p.crewId == actor.crew.crewId);
-                      return new Wrap(
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           new Icon(Icons.fiber_manual_record, size: 16),
                           SizedBox(
                             width: 5,
                           ),
-                          new Text(
-                              item.firstName +
-                                  (item.middleName != null
-                                      ? " " + item.middleName
-                                      : "") +
-                                  (item.lastName != null
-                                      ? " " + item.lastName
-                                      : "") +
-                                  (item.suffix != null
-                                      ? " " + item.suffix
-                                      : ""),
-                              style: TextStyle(fontSize: 16),
-                              softWrap: true,
-                              overflow: TextOverflow.fade),
+                          new Flexible(
+                            child: Text(item.name,
+                                // item.firstName +
+                                //     (item.middleName != null
+                                //         ? " " + item.middleName
+                                //         : "") +
+                                //     (item.lastName != null
+                                //         ? " " + item.lastName
+                                //         : "") +
+                                //     (item.suffix != null
+                                //         ? " " + item.suffix
+                                //         : ""),
+                                style: TextStyle(fontSize: 16),
+                                softWrap: true,
+                                overflow: TextOverflow.clip),
+                          ),
                           actor.crew.role.length != 0
                               ? Text(" - " + actor.crew.role.join(" / "),
                                   style: TextStyle(
                                       fontStyle: FontStyle.italic,
                                       fontSize: 16),
                                   softWrap: true,
-                                  overflow: TextOverflow.fade)
+                                  overflow: TextOverflow.clip)
                               : SizedBox(),
                         ],
                       );
@@ -460,37 +446,112 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: adds ActorWidget in the ListView builder
   addActor() {
+    FocusScope.of(context).unfocus();
     setState(() {
       // add actor widget to list
-      dynamicList.add(ActorWidget(
+      actorList.add(ActorWidget(
         crew: new Crew(),
-        crewItems: crewItems,
         crewList: crewList,
         open: ValueNotifier<bool>(true),
-        // filterActorDropdown: filterActorDropdown(),
       ));
     });
   }
 
-  // void filterActorDropdown(int id, String mode) {
-  //   if (mode == "add") {
-  //     setState(() {
-  //       if (!actorsFilter.contains(id)) {
-  //         actorsFilter.add(id);
-  //       }
-  //     });
-  //   } else if (mode == "remove") {
-  //     setState(() {
-  //       if (actorsFilter.contains(id)) {
-  //         actorsFilter.remove(id);
-  //       }
-  //     });
-  //   }
-  // }
+  // Function: Display Awards in the Review Step
+  Widget displayAwards() {
+    filteredAwards =
+        awardList.where((award) => award.item.saved == true).toList();
+
+    return Column(
+      children: [
+        filteredAwards.length != 0 ? SizedBox(height: 10) : SizedBox(),
+        filteredAwards.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  "Mga Award: ",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              )
+            : SizedBox(),
+        // TO DO: fix overflow issue when text is too long
+        filteredAwards.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: filteredAwards.map((award) {
+                    if (award.item.saved == true) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          new Icon(Icons.fiber_manual_record, size: 16),
+                          SizedBox(
+                            width: 5,
+                          ),
+                          Flexible(
+                            child: Text(
+                                award.item.name +
+                                    (award.item.year != null
+                                        ? " (" + award.item.year + ") "
+                                        : ""),
+                                style: TextStyle(fontSize: 16),
+                                softWrap: true,
+                                overflow: TextOverflow.clip),
+                          ),
+                          award.item.type != null
+                              ? Text(
+                                  " - " +
+                                      (award.item.type == "nominated"
+                                          ? "Nominado"
+                                          : "Panalo"),
+                                  style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 16),
+                                  softWrap: true,
+                                  overflow: TextOverflow.clip)
+                              : SizedBox(),
+                        ],
+                      );
+                    }
+                  }).toList(),
+                ),
+              )
+            : SizedBox(),
+      ],
+    );
+  }
+
+  // Function: adds AwardWidget in the ListView builder
+  addAward() {
+    setState(() {
+      awardList.add(AwardWidget(
+        awardOptions: awardOptions,
+        item: new Award(),
+        open: ValueNotifier<bool>(true),
+      ));
+    });
+  }
+
+  void fetchAwards() async {
+    var model = AwardViewModel();
+    awardOptions = await model.getAllAwards(
+        user: currentUser != null && currentUser.isAdmin == true
+            ? "admin"
+            : "non-admin",
+        mode: 'form',
+        category: 'movie');
+  }
 
   @override
   void initState() {
+    currentUser = _authenticationService.currentUser;
     fetchCrew();
+    fetchAwards();
     fetchGenres();
     directors = [];
     writers = [];
@@ -502,9 +563,7 @@ class _AddMovieState extends State<AddMovie> {
     var currentUser = _authenticationService.currentUser;
 
     final _scaffoldKey = GlobalKey<ScaffoldState>();
-    // TO DO: check if poster and screenshots are actually saved in cloudinary
     // TO DO: add awards in stepper
-    // TO DO: Check the &&  and || conditions if they're correct
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
       onModelReady: (model) async {
@@ -585,6 +644,16 @@ class _AddMovieState extends State<AddMovie> {
                           children: [
                             SizedBox(height: 20),
                             MyStepper(
+                              stepperCircle: [
+                                Icons.edit, // Mga Basic na Detalye
+                                Icons
+                                    .image, // Mga Poster, Screenshot, at iba pang Media
+                                Icons.recent_actors, // Mga Personalidad
+                                Icons.emoji_events_outlined, // Mga Award
+                                Icons
+                                    .format_quote_outlined, // Mga Sikat na Linya
+                                Icons.grading // Review
+                              ],
                               type: MyStepperType.vertical,
                               currentStep: currentStep,
                               onStepTapped: (step) async {
@@ -610,7 +679,7 @@ class _AddMovieState extends State<AddMovie> {
                                 if (currentStep + 1 != stepperTitle.length) {
                                   // do not allow user to continue to next step if inputs aren't filled out yet
                                   switch (currentStep) {
-                                    case 0: // title, release date, running time, and synopsis
+                                    case 0: // Mga Basic na Detalye
                                       setState(() {
                                         if (_formKeys[currentStep]
                                             .currentState
@@ -625,12 +694,12 @@ class _AddMovieState extends State<AddMovie> {
                                       });
                                       break;
 
-                                    case 1: // poster
+                                    case 1: // Mga Poster, Screenshot at iba pang Media
                                       setState(() {
                                         currentStep++;
                                       });
                                       break;
-                                    case 2: // crew members
+                                    case 2: // Mga Personalidad
                                       setState(() {
                                         directorNode.unfocus();
                                         writerNode.unfocus();
@@ -638,12 +707,17 @@ class _AddMovieState extends State<AddMovie> {
                                         currentStep++;
                                       });
                                       break;
-                                    case 3: // genre
+                                    case 3: // Mga Award
+                                      // TO DO: unfocus keyboard when a genre textfield is currently active
+                                      setState(() => currentStep++);
+                                      break;
+                                    case 4: // Mga Sikat na Linya
                                       // TO DO: unfocus keyboard when a genre textfield is currently active
                                       setState(() => currentStep++);
                                       break;
                                   }
                                 } else {
+                                  // Review
                                   // last step
                                   var confirm = await _dialogService
                                       .showConfirmationDialog(
@@ -655,6 +729,24 @@ class _AddMovieState extends State<AddMovie> {
                                   if (confirm.confirmed == true) {
                                     _saving =
                                         true; // set saving to true to trigger circular progress indicator
+
+                                    // loop through the awards and actors widgets to
+
+                                    // actors
+                                    List<Crew> actorsToSave = [];
+                                    if (filteredActors.isNotEmpty) {
+                                      actorsToSave = filteredActors
+                                          .map((a) => a.crew)
+                                          .toList();
+                                    }
+
+                                    // awards
+                                    List<Award> awardsToSave = [];
+                                    if (filteredAwards.isNotEmpty) {
+                                      awardsToSave = filteredAwards
+                                          .map((a) => a.item)
+                                          .toList();
+                                    }
 
                                     final response = await model.addMovie(
                                         title: titleController.text,
@@ -669,13 +761,13 @@ class _AddMovieState extends State<AddMovie> {
                                         genre: filmGenres,
                                         directors: directors,
                                         writers: writers,
-                                        // actors: actors,
-                                        // roles: roles,
+                                        // TO DO: add actors, roles, awards, and famous lines here
+                                        actors: actorsToSave,
+                                        awards: awardsToSave,
                                         addedBy: currentUser.userId,
                                         movieId: movieId);
 
                                     // when response is returned, stop showing circular progress indicator
-
                                     if (response != 0) {
                                       _saving =
                                           false; // set saving to false to trigger circular progress indicator
@@ -762,7 +854,7 @@ class _AddMovieState extends State<AddMovie> {
 
   Widget getContent(int index) {
     switch (index) {
-      case 0:
+      case 0: // Mga Basic na Detalye
         return Container(
           child: Column(
             children: [
@@ -878,7 +970,7 @@ class _AddMovieState extends State<AddMovie> {
                   style: TextStyle(
                     color: Colors.black,
                   ),
-                  maxLines: null, // 5
+                  maxLines: null,
                   decoration: InputDecoration(
                     labelText: "Buod *",
                     contentPadding: EdgeInsets.all(10),
@@ -896,10 +988,93 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 15,
               ),
+              Container(
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Color.fromRGBO(240, 240, 240, 1),
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Column(
+                        children: <Widget>[
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Color.fromRGBO(240, 240, 240, 1),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: TestChipsInput(
+                              textCapitalization: TextCapitalization.words,
+                              enabled: true,
+                              textStyle: const TextStyle(
+                                  fontFamily: 'Poppins', fontSize: 16),
+                              decoration: const InputDecoration(
+                                labelText: 'Pumili ng genre',
+                                contentPadding: EdgeInsets.all(10),
+                              ),
+                              findSuggestions: (String query) {
+                                setState(() {
+                                  test = query;
+                                });
+                                if (query.isNotEmpty) {
+                                  var lowercaseQuery = query.toLowerCase();
+                                  return genres.where((item) {
+                                    return item
+                                        .toLowerCase()
+                                        .contains(query.toLowerCase());
+                                  }).toList(growable: false)
+                                    ..sort((a, b) => a
+                                        .toLowerCase()
+                                        .indexOf(lowercaseQuery)
+                                        .compareTo(b
+                                            .toLowerCase()
+                                            .indexOf(lowercaseQuery)));
+                                }
+                                return genres;
+                              },
+                              submittedText: test != null
+                                  ? test.trimLeft().trimRight()
+                                  : "",
+                              onChanged: (data) {
+                                List<String> categories = data.length != 0
+                                    ? data
+                                        .map((item) => item.toString().trim())
+                                        .toList()
+                                    : [];
+                                setState(() {
+                                  filmGenres = categories;
+                                });
+                              },
+                              chipBuilder: (context, state, c) {
+                                return InputChip(
+                                  key: ObjectKey(c),
+                                  label: Text(c),
+                                  onDeleted: () => state.deleteChip(c),
+                                  materialTapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                );
+                              },
+                              suggestionBuilder: (context, state, c) {
+                                return ListTile(
+                                  key: ObjectKey(c),
+                                  title: Text(c),
+                                  onTap: () => state.selectSuggestion(c),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                        "Pindutin ang 'ENTER' para magdagdag ng genre na wala sa listahan."),
+                  ],
+                ),
+              ),
             ],
           ),
         );
-      case 1:
+      case 1: // Mga Poster, Screenshot, at iba pang Media
         return Container(
           alignment: Alignment.topLeft,
           child: Column(
@@ -937,76 +1112,6 @@ class _AddMovieState extends State<AddMovie> {
                   ),
                 ),
               ),
-              // Stack(
-              //   children: [
-              //     GestureDetector(
-              //       onTap: getImage,
-              //       child: Container(
-              //         margin: EdgeInsets.only(left: 20),
-              //         height: 200,
-              //         width: 150,
-              //         decoration: BoxDecoration(
-              //           borderRadius: BorderRadius.circular(5),
-              //         ),
-              //         child: imageFile != null ||  imageURI.trim() != ''
-              //             ? Container(
-              //                 height: 200,
-              //                 width: 150,
-              //                 child: imageFile != null
-              //                     ? Image.file(
-              //                         imageFile,
-              //                         width: 150,
-              //                         height: 200,
-              //                         fit: BoxFit.cover,
-              //                       )
-              //                     : Image.network(
-              //                         imageURI,
-              //                         width: 150,
-              //                         height: 200,
-              //                         fit: BoxFit.cover,
-              //                       ))
-              //             : Container(
-              //                 height: 200,
-              //                 width: 150,
-              //                 child: Icon(
-              //                   Icons.camera_alt,
-              //                   color: Colors.grey[800],
-              //                 ),
-              //                 decoration: BoxDecoration(
-              //                   color: Color.fromRGBO(240, 240, 240, 1),
-              //                   borderRadius: BorderRadius.circular(5),
-              //                 ),
-              //               ),
-              //       ),
-              //     ),
-              //     imageFile != null || imageURI.trim() != ''
-              //         ? Container(
-              //             margin: EdgeInsets.only(left: 25, top: 5),
-              //             width: 25,
-              //             alignment: Alignment.center,
-              //             child: GestureDetector(
-              //               child: Icon(Icons.close),
-              //               onTap: () {
-              //                 setState(() {
-              //                   imageFile = null;
-              //                   imageURI = '';
-              //                 });
-              //               },
-              //             ),
-              //             decoration: BoxDecoration(
-              //               borderRadius: BorderRadius.circular(50.0),
-              //               boxShadow: [
-              //                 BoxShadow(
-              //                   color: Colors.white,
-              //                   offset: Offset(0.0, 0.0),
-              //                   blurRadius: 0.0,
-              //                 ),
-              //               ],
-              //             ),
-              //           )
-              //         : Container(),
-              //   ],
-              // ),
               SizedBox(
                 height: 15,
               ),
@@ -1015,7 +1120,6 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              // TO DO: multiple files for screenshots
               Padding(
                 padding: EdgeInsets.only(left: 15),
                 child: Container(
@@ -1040,10 +1144,13 @@ class _AddMovieState extends State<AddMovie> {
                   ),
                 ),
               ),
+              SizedBox(
+                height: 10,
+              ),
             ],
           ),
         );
-      case 2:
+      case 2: // Mga Personalidad
         return Container(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1054,8 +1161,6 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-
-              // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
               Container(
                 decoration: BoxDecoration(
                   color: Color.fromRGBO(240, 240, 240, 1),
@@ -1133,7 +1238,6 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              // TO DO: (Note: When this widget is used instead of CSearchableDropdown, there is no need to convert the ids. CrewItems is also not necessary)
               Container(
                 decoration: BoxDecoration(
                   color: Color.fromRGBO(240, 240, 240, 1),
@@ -1217,7 +1321,7 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(height: 10),
               Container(
                 width: 140,
-                child: dynamicList.isEmpty
+                child: actorList.isEmpty
                     ? FlatButton(
                         focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
@@ -1231,17 +1335,16 @@ class _AddMovieState extends State<AddMovie> {
                       )
                     : null,
               ),
-
               ListView.builder(
-                  itemCount: dynamicList.length,
+                  itemCount: actorList.length,
                   shrinkWrap: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
-                        valueListenable: dynamicList[i].open,
+                        valueListenable: actorList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
                             children: [
-                              dynamicList[i],
+                              actorList[i],
                               value == true
                                   ? Positioned(
                                       bottom: 0,
@@ -1253,12 +1356,12 @@ class _AddMovieState extends State<AddMovie> {
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
-                                              if (dynamicList[i].crew.crewId !=
+                                              if (actorList[i].crew.crewId !=
                                                   null) {
                                                 actorsFilter.remove(
-                                                    dynamicList[i].crew.crewId);
+                                                    actorList[i].crew.crewId);
                                               }
-                                              dynamicList.removeAt(i);
+                                              actorList.removeAt(i);
                                             });
                                           },
                                           child: Text('Tanggalin'),
@@ -1271,16 +1374,15 @@ class _AddMovieState extends State<AddMovie> {
                           );
                         });
                   }),
-
               SizedBox(
                 height: 10,
               ),
               Container(
                 width: 140,
-                child: dynamicList.isNotEmpty
+                child: actorList.isNotEmpty
                     ? FlatButton(
                         focusNode: addActorNode,
-                        color: Color.fromRGBO(192, 192, 192, 1),
+                        color: Color.fromRGBO(240, 240, 240, 1),
                         onPressed: addActor,
                         child: Row(
                           children: [
@@ -1294,92 +1396,125 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 10,
               ),
-              Divider(height: 1, thickness: 2),
             ],
           ),
         );
-      case 3:
+      case 3: // Mga Award
         return Container(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // SizedBox(height: 10),
               Container(
-                decoration: BoxDecoration(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Column(
-                  children: <Widget>[
-                    Container(
-                      decoration: BoxDecoration(
+                width: 140,
+                child: awardList.isEmpty
+                    ? FlatButton(
+                        // focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: TestChipsInput(
-                        textCapitalization: TextCapitalization.words,
-                        enabled: true,
-                        textStyle: const TextStyle(
-                            fontFamily: 'Poppins', fontSize: 16),
-                        decoration: const InputDecoration(
-                          labelText: 'Pumili ng genre',
-                          contentPadding: EdgeInsets.all(10),
+                        onPressed: addAward,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add_alt_1_outlined),
+                            Text(" Dagdagan")
+                          ],
                         ),
-                        findSuggestions: (String query) {
-                          setState(() {
-                            test = query;
-                          });
-                          if (query.isNotEmpty) {
-                            var lowercaseQuery = query.toLowerCase();
-                            return genres.where((item) {
-                              return item
-                                  .toLowerCase()
-                                  .contains(query.toLowerCase());
-                            }).toList(growable: false)
-                              ..sort((a, b) => a
-                                  .toLowerCase()
-                                  .indexOf(lowercaseQuery)
-                                  .compareTo(
-                                      b.toLowerCase().indexOf(lowercaseQuery)));
-                          }
-                          return genres;
-                        },
-                        submittedText:
-                            test != null ? test.trimLeft().trimRight() : "",
-                        onChanged: (data) {
-                          List<String> categories = data.length != 0
-                              ? data
-                                  .map((item) => item.toString().trim())
-                                  .toList()
-                              : [];
-                          setState(() {
-                            filmGenres = categories;
-                          });
-                        },
-                        chipBuilder: (context, state, c) {
-                          return InputChip(
-                            key: ObjectKey(c),
-                            label: Text(c),
-                            onDeleted: () => state.deleteChip(c),
-                            materialTapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          );
-                        },
-                        suggestionBuilder: (context, state, c) {
-                          return ListTile(
-                            key: ObjectKey(c),
-                            title: Text(c),
-                            onTap: () => state.selectSuggestion(c),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+                      )
+                    : null,
               ),
-              Text("Pindutin ang 'ENTER' para magdagdag ng genre."),
+              ListView.builder(
+                  itemCount: awardList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: awardList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              awardList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              awardList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                width: 140,
+                child: awardList.isNotEmpty
+                    ? FlatButton(
+                        // focusNode: addActorNode,
+                        color: Color.fromRGBO(240, 240, 240, 1),
+                        onPressed: addAward,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add_alt_1_outlined),
+                            Text(" Dagdagan")
+                          ],
+                        ),
+                      )
+                    : null,
+              ),
+              SizedBox(
+                height: 10,
+              ),
             ],
           ),
         );
-      case 4: // review
+      case 4: // Mga Sikat na Linya
+        // TO DO: dynamic widget ???
+        return Container(
+            child: Column(
+          children: [
+            SizedBox(
+              height: 15,
+            ),
+            Container(
+              decoration:
+                  BoxDecoration(borderRadius: BorderRadius.circular(10)),
+              child: TextFormField(
+                focusNode: linesNode,
+                controller: linesController,
+                textCapitalization: TextCapitalization.sentences,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+                maxLines: null,
+                decoration: InputDecoration(
+                  labelText: "Mga Sikat na Linya",
+                  contentPadding: EdgeInsets.all(10),
+                  filled: true,
+                  fillColor: Color.fromRGBO(240, 240, 240, 1),
+                ),
+              ),
+            ),
+            SizedBox(
+              height: 15,
+            ),
+          ],
+        ));
+      case 5: // Review
         return Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
@@ -1407,6 +1542,8 @@ class _AddMovieState extends State<AddMovie> {
                       style: TextStyle(
                         fontSize: 16,
                       ),
+                      overflow: TextOverflow.clip,
+                      softWrap: true,
                     ),
                   ),
                   _date != null ? SizedBox(height: 10) : SizedBox(),
@@ -1498,23 +1635,19 @@ class _AddMovieState extends State<AddMovie> {
                             var direk = crewList
                                 .firstWhere((item) => item.crewId == id);
                             return new Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 new Icon(Icons.fiber_manual_record, size: 16),
                                 SizedBox(
                                   width: 5,
                                 ),
-                                new Text(
-                                  direk.firstName +
-                                      (direk.middleName != null
-                                          ? " " + direk.middleName
-                                          : "") +
-                                      (direk.lastName != null
-                                          ? " " + direk.lastName
-                                          : "") +
-                                      (direk.suffix != null
-                                          ? " " + direk.suffix
-                                          : ""),
-                                  style: TextStyle(fontSize: 16),
+                                Expanded(
+                                  child: Text(
+                                    direk.name,
+                                    style: TextStyle(fontSize: 16),
+                                    overflow: TextOverflow.clip,
+                                    softWrap: true,
+                                  ),
                                 ),
                               ],
                             );
@@ -1540,23 +1673,19 @@ class _AddMovieState extends State<AddMovie> {
                             var writer = crewList
                                 .firstWhere((item) => item.crewId == id);
                             return new Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 new Icon(Icons.fiber_manual_record, size: 16),
                                 SizedBox(
                                   width: 5,
                                 ),
-                                new Text(
-                                  writer.firstName +
-                                      (writer.middleName != null
-                                          ? " " + writer.middleName
-                                          : "") +
-                                      (writer.lastName != null
-                                          ? " " + writer.lastName
-                                          : "") +
-                                      (writer.suffix != null
-                                          ? " " + writer.suffix
-                                          : ""),
-                                  style: TextStyle(fontSize: 16),
+                                Expanded(
+                                  child: Text(
+                                    writer.name,
+                                    style: TextStyle(fontSize: 16),
+                                    overflow: TextOverflow.clip,
+                                    softWrap: true,
+                                  ),
                                 ),
                               ],
                             );
@@ -1590,6 +1719,7 @@ class _AddMovieState extends State<AddMovie> {
                                   .toList()),
                         )
                       : SizedBox(),
+                  displayAwards(),
                 ],
               ),
             ),
@@ -1600,23 +1730,19 @@ class _AddMovieState extends State<AddMovie> {
   }
 }
 
-// Dynamic Widget (Adding Actors and their respective roles)
+// Dynamic ActorWidget (Adding Actors and their respective roles)
 
 class ActorWidget extends StatefulWidget {
-  final List<DropdownMenuItem> crewItems;
   final List<Crew> crewList;
   final Crew crew;
   final open;
-  final Function filterActorDropdown;
 
-  const ActorWidget(
-      {Key key,
-      this.crew,
-      this.crewItems,
-      this.crewList,
-      this.open,
-      this.filterActorDropdown})
-      : super(key: key);
+  const ActorWidget({
+    Key key,
+    this.crew,
+    this.crewList,
+    this.open,
+  }) : super(key: key);
 
   @override
   ActorWidgetState createState() => ActorWidgetState();
@@ -1627,10 +1753,17 @@ class ActorWidgetState extends State<ActorWidget> {
   Crew tempActor;
   List<String> tempRoles;
   bool showError = true;
+  List<Crew> actorId = [];
 
   @override
   void initState() {
     widget.crew.saved = widget.crew.saved == null ? false : widget.crew.saved;
+    if (widget.crew.crewId != null) {
+      var actor =
+          widget.crewList.singleWhere((a) => a.crewId == widget.crew.crewId);
+
+      if (actor != null) actorId = [actor];
+    }
     super.initState();
   }
 
@@ -1648,8 +1781,7 @@ class ActorWidgetState extends State<ActorWidget> {
                 borderRadius: BorderRadius.circular(5),
               ),
               child: ChipsInput(
-                initialValue:
-                    widget.crew.crewId != null ? [widget.crew.crewId] : [],
+                initialValue: actorId,
                 maxChips: 1,
                 keyboardAppearance: Brightness.dark,
                 textCapitalization: TextCapitalization.words,
@@ -1669,22 +1801,15 @@ class ActorWidgetState extends State<ActorWidget> {
                     var lowercaseQuery = query.toLowerCase();
 
                     return filteredList.where((item) {
-                      var fullName = item.firstName +
-                          (item.middleName != null
-                              ? " " + item.middleName
-                              : "") +
-                          (item.lastName != null ? " " + item.lastName : "") +
-                          (item.suffix != null ? " " + item.suffix : "");
-                      return fullName
+                      return item.name
                           .toLowerCase()
                           .contains(query.toLowerCase());
                     }).toList(growable: false)
-                      ..sort((a, b) => a.firstName
+                      ..sort((a, b) => a.name
                           .toLowerCase()
                           .indexOf(lowercaseQuery)
-                          .compareTo(b.firstName
-                              .toLowerCase()
-                              .indexOf(lowercaseQuery)));
+                          .compareTo(
+                              b.name.toLowerCase().indexOf(lowercaseQuery)));
                   }
                   return filteredList;
                   // return widget.crewList;
@@ -1702,6 +1827,7 @@ class ActorWidgetState extends State<ActorWidget> {
                               widget.crew.role.length != 0
                           ? false
                           : true;
+                      actorId = [data[0]];
                       if (!actorsFilter.contains(data[0].crewId)) {
                         actorsFilter.add(data[0].crewId);
                       }
@@ -1720,27 +1846,18 @@ class ActorWidgetState extends State<ActorWidget> {
                           : true;
                       widget.crew.saved = widget.crew.crewId != null &&
                               widget.crew.role != null &&
-                              widget.crew.role.length != 0
+                              widget.crew.role.length != 0 &&
+                              widget.crew.saved == true
                           ? true
                           : false;
+                      actorId = [];
                     });
                   }
                 },
                 chipBuilder: (context, state, c) {
                   return InputChip(
                     key: ObjectKey(c),
-                    label: Text(c != null
-                        ? widget.crew.firstName +
-                            (widget.crew.middleName != null
-                                ? " " + widget.crew.middleName
-                                : "") +
-                            (widget.crew.lastName != null
-                                ? " " + widget.crew.lastName
-                                : "") +
-                            (widget.crew.suffix != null
-                                ? " " + widget.crew.suffix
-                                : "")
-                        : ""),
+                    label: Text(c != null ? c.name : ""),
                     onDeleted: () => {
                       setState(() {
                         actorsFilter.remove(c.crewId);
@@ -1753,10 +1870,7 @@ class ActorWidgetState extends State<ActorWidget> {
                 suggestionBuilder: (context, state, c) {
                   return ListTile(
                     key: ObjectKey(c),
-                    title: Text(c.firstName +
-                        (c.middleName != null ? " " + c.middleName : "") +
-                        (c.lastName != null ? " " + c.lastName : "") +
-                        (c.suffix != null ? " " + c.suffix : "")),
+                    title: Text(c.name),
                     onTap: () => {
                       if (!actorsFilter.contains(c.crewId))
                         {
@@ -1777,7 +1891,6 @@ class ActorWidgetState extends State<ActorWidget> {
               color: Color.fromRGBO(240, 240, 240, 1),
               child: TestChipsInput(
                 initialValue: widget.crew.role != null ? widget.crew.role : [],
-                // key: ObjectKey(widget.size),
                 keyboardAppearance: Brightness.dark,
                 textCapitalization: TextCapitalization.words,
                 enabled: true,
@@ -1806,7 +1919,8 @@ class ActorWidgetState extends State<ActorWidget> {
                         : true;
                     widget.crew.saved = widget.crew.crewId != null &&
                             widget.crew.role != null &&
-                            widget.crew.role.length != 0
+                            widget.crew.role.length != 0 &&
+                            widget.crew.saved == true
                         ? true
                         : false;
                   });
@@ -1859,8 +1973,9 @@ class ActorWidgetState extends State<ActorWidget> {
           ]))
         :
         // display this instead if widget.open == false
-        Column(children: [
-            ListTile(
+        Container(
+            margin: EdgeInsets.symmetric(vertical: 10),
+            child: ListTile(
               contentPadding: EdgeInsets.all(10),
               tileColor: Color.fromRGBO(240, 240, 240, 1),
               title: Text(
@@ -1894,7 +2009,6 @@ class ActorWidgetState extends State<ActorWidget> {
                 },
               ),
             ),
-            SizedBox(height: 10)
-          ]);
+          );
   }
 }

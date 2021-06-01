@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
-import 'package:mubidibi/services/navigation_service.dart';
-import 'package:mubidibi/locator.dart';
+// import 'package:mubidibi/services/navigation_service.dart';
+// import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
@@ -23,7 +23,7 @@ class SearchView extends StatefulWidget {
 }
 
 class _SearchViewState extends State<SearchView> {
-  final NavigationService _navigationService = locator<NavigationService>();
+  // final NavigationService _navigationService = locator<NavigationService>();
   final searchController = TextEditingController();
 
   List<Movie> movieQueryResult = [];
@@ -35,12 +35,12 @@ class _SearchViewState extends State<SearchView> {
 
   void fetchMovies() async {
     var model = MovieViewModel();
-    movies = await model.getAllMovies();
+    movies = await model.getAllMovies(mode: "list");
   }
 
   void fetchCrew() async {
     var model = CrewViewModel();
-    crew = await model.getAllCrew();
+    crew = await model.getAllCrew(mode: "list");
   }
 
   @override
@@ -105,8 +105,8 @@ class _SearchViewState extends State<SearchView> {
                                     ),
                                     onChanged: (query) {
                                       // Search for the movie/s that fit/s the query string
-                                      List<String> parsedQuery = [];
-                                      parsedQuery = query.split(' ');
+                                      // List<String> parsedQuery = [];
+                                      // parsedQuery = query.split(' ');
 
                                       // TO DO: MORE ACCURATE SEARCHES
 
@@ -134,17 +134,7 @@ class _SearchViewState extends State<SearchView> {
                                             ? setState(() {
                                                 crewQueryResult =
                                                     crew.where((c) {
-                                                  var name = c.firstName +
-                                                      (c.middleName != null
-                                                          ? " " + c.middleName
-                                                          : "") +
-                                                      (c.lastName != null
-                                                          ? " " + c.lastName
-                                                          : "") +
-                                                      (c.suffix != null
-                                                          ? " " + c.suffix
-                                                          : "");
-                                                  return (name.contains(
+                                                  return (c.name.contains(
                                                     new RegExp(
                                                         query.trimRight(),
                                                         caseSensitive: false),
@@ -213,7 +203,7 @@ class _SearchViewState extends State<SearchView> {
                                               "" &&
                                           _searchBy == "Personalidad") {
                                         crewQueryResult = crew.where((c) {
-                                          return c.firstName.contains(
+                                          return c.name.contains(
                                             new RegExp(
                                                 searchController.text
                                                     .trimRight(),
@@ -262,7 +252,7 @@ class _SearchViewState extends State<SearchView> {
                                     .map(
                                       (movie) => GestureDetector(
                                         child: Container(
-                                          height: 210.0,
+                                          height: 190.0, //210
                                           child: Stack(
                                             children: [
                                               Container(
@@ -270,7 +260,7 @@ class _SearchViewState extends State<SearchView> {
                                                 margin:
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 8.0),
-                                                height: 200.0,
+                                                height: 180.0,
                                                 width: 120.0,
                                                 decoration: BoxDecoration(
                                                   boxShadow: [
@@ -297,7 +287,7 @@ class _SearchViewState extends State<SearchView> {
                                                 margin:
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 8.0),
-                                                height: 200.0,
+                                                height: 180.0,
                                                 width: 120.0,
                                                 decoration: BoxDecoration(
                                                   borderRadius:
@@ -385,15 +375,15 @@ class _SearchViewState extends State<SearchView> {
                                     .map(
                                       (c) => GestureDetector(
                                         child: Container(
-                                          height: 210.0,
+                                          height: 190.0, //210
                                           child: Stack(
                                             children: [
                                               Container(
                                                 margin:
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 8.0),
-                                                height: 200.0,
-                                                width: 120.0,
+                                                height: 180.0, //200
+                                                width: 120.0, //120
                                                 decoration: BoxDecoration(
                                                   borderRadius:
                                                       BorderRadius.circular(5),
@@ -418,16 +408,7 @@ class _SearchViewState extends State<SearchView> {
                                                   alignment:
                                                       Alignment.bottomLeft,
                                                   child: Text(
-                                                    c.firstName +
-                                                        (c.middleName != null
-                                                            ? " " + c.middleName
-                                                            : "") +
-                                                        (c.lastName != null
-                                                            ? c.lastName
-                                                            : "") +
-                                                        (c.suffix != null
-                                                            ? " " + c.suffix
-                                                            : ""),
+                                                    c.name,
                                                     style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 14,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:photo_view/photo_view.dart';
 
 class FullPhoto extends StatelessWidget {

@@ -63,3 +63,30 @@ class MyTooltip extends StatelessWidget {
   }
 }
 
+Color trackColor(num rating) {
+  if (rating >= 1 && rating <= 2) {
+    // 1-2
+    return Colors.red[400];
+  } else if (rating > 2 && rating <= 3.5) {
+    // 2.5 - 3.5
+    return Colors.orange[400];
+  } else if (rating == null) {
+    return Colors.grey[400];
+  } else {
+    return Colors.yellow[400];
+  }
+}
+
+Color sliderColor(num rating) {
+  if (rating >= 1 && rating <= 2) {
+    // 1-2
+    return Colors.red[100];
+  } else if (rating > 2 && rating <= 3.5) {
+    // 2.5 - 3.5
+    return Colors.orange[100];
+  } else if (rating == null) {
+    return Colors.grey[100];
+  } else {
+    return Colors.yellow[100];
+  }
+}

@@ -1,11 +1,11 @@
 import 'package:intl/intl.dart';
-import 'package:mubidibi/services/navigation_service.dart';
+// import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/viewmodels/signup_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:flutter/services.dart';
-import 'package:mubidibi/locator.dart';
+// import 'package:mubidibi/locator.dart';
 
 class SignUpFirstPage extends StatefulWidget {
   SignUpFirstPage({Key key}) : super(key: key);
@@ -208,7 +208,7 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
   var birthdayController;
   DateTime _birthday;
 
-  final NavigationService _navigationService = locator<NavigationService>();
+  // final NavigationService _navigationService = locator<NavigationService>();
 
   bool _isButtonDisabled = true;
 

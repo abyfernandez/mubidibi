@@ -344,8 +344,9 @@ class ChipsInputState<T> extends State<TestChipsInput<T>>
       } else {
         _updateTextInputState();
       }
-      _onSearchChanged(_value.normalCharactersText);
+      // _onSearchChanged(_value.normalCharactersText);
     }
+    _onSearchChanged(_value.normalCharactersText);
   }
 
   void _updateTextInputState({replaceText = false, putText = ''}) {

@@ -39,7 +39,7 @@ class _TextCursorState extends State<TextCursor>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // final theme = Theme.of(context);
     return FractionallySizedBox(
       heightFactor: 0.7,
       child: Opacity(

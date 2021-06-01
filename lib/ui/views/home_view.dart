@@ -91,13 +91,16 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final Size screenSize = MediaQuery.of(context).size;
+    // final Size screenSize = MediaQuery.of(context).size;
 
     if (genreItems == null) return CircularProgressIndicator();
     return Scaffold(
       key: _scaffoldKey,
       drawerEnableOpenDragGesture: false,
-      body: Center(child: _showPage),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Center(child: _showPage),
+      ),
       extendBodyBehindAppBar: pageIndex == 0 ? true : false,
       // TO DO: Show dialog box on back press
       // WillPopScope(

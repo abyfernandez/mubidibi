@@ -5,29 +5,31 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
+import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'package:mubidibi/models/movie_actor.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
+import 'package:mubidibi/ui/widgets/award_widget.dart';
+import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
+import 'package:mubidibi/viewmodels/award_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
+// import 'package:mubidibi/globals.dart' as Config;
 
-// FOR DYNAMIC WIDGET ACTOR
-List dynamicList = [];
-List<Award> addedAward = [];
-var size;
-List<bool> opened = []; // state values of awards in listview
+// Global Variables for dynamic Widgets
+List<int> movieActorsFilter = []; // movies
 
 class AddCrew extends StatefulWidget {
   final Crew crew;
@@ -45,16 +47,22 @@ class _AddCrewState extends State<AddCrew> {
   _AddCrewState(this.crew);
 
   // Local state variables
+  var currentUser;
   bool _saving = false;
   int crewId;
   File imageFile; // for uploading display photo w/ image picker
   var mimetype;
   var photos = List(); // for uploading crew photos
   var imageURI = ''; // for crew edit
+
   List<Movie> movieOptions;
+  List<Award> awardOptions;
   List<int> movieDirector = [];
   List<int> movieWriter = [];
-  List<int> movieActor = [];
+  List<AwardWidget> awardList = [];
+  List<AwardWidget> filteredAwards = [];
+  List<MovieActorWidget> movieActorList = [];
+  List<MovieActorWidget> filteredMovieActorList = [];
 
   // CREW FIELD CONTROLLERS
   final firstNameController = TextEditingController();
@@ -104,6 +112,77 @@ class _AddCrewState extends State<AddCrew> {
       locator<AuthenticationService>();
   final NavigationService _navigationService = locator<NavigationService>();
   final DialogService _dialogService = locator<DialogService>();
+
+  // Function: Display MovieActor in the Review Step
+  Widget displayMovieActors() {
+    filteredMovieActorList =
+        movieActorList.where((item) => item.movieActor.saved == true).toList();
+
+    return Column(
+      children: [
+        filteredMovieActorList.length != 0 ? SizedBox(height: 10) : SizedBox(),
+        filteredMovieActorList.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  "Bilang Aktor: ",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              )
+            : SizedBox(),
+        // TO DO: fix overflow issue when text is too long
+        filteredMovieActorList.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: filteredMovieActorList.map((film) {
+                    if (film.movieActor.saved == true) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          new Icon(Icons.fiber_manual_record, size: 16),
+                          SizedBox(
+                            width: 5,
+                          ),
+                          new Flexible(
+                            child: Text(film.movieActor.movieTitle,
+                                style: TextStyle(fontSize: 16),
+                                softWrap: true,
+                                overflow: TextOverflow.clip),
+                          ),
+                          film.movieActor.role.length != 0
+                              ? Text(" - " + film.movieActor.role.join(" / "),
+                                  style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 16),
+                                  softWrap: true,
+                                  overflow: TextOverflow.clip)
+                              : SizedBox(),
+                        ],
+                      );
+                    }
+                  }).toList(),
+                ),
+              )
+            : SizedBox(),
+      ],
+    );
+  }
+
+  addMovieActor() {
+    setState(() {
+      // add Movie Actor widget to the list
+      movieActorList.add(MovieActorWidget(
+          movieOptions: movieOptions,
+          movieActor: new MovieActor(),
+          open: ValueNotifier<bool>(true)));
+    });
+  }
 
   // Function: Shows datepicker and update value of Date
   Future<Null> _selectDate(BuildContext context, String mode) async {
@@ -230,10 +309,10 @@ class _AddCrewState extends State<AddCrew> {
                           },
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5.0),
+                          borderRadius: BorderRadius.circular(50),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey,
+                              color: Colors.white,
                               offset: Offset(0.0, 0.0),
                               blurRadius: 0.0,
                             ),
@@ -251,34 +330,120 @@ class _AddCrewState extends State<AddCrew> {
   // Function: adds AwardWidget in the ListView builder
   addAward() {
     setState(() {
-      size = dynamicList.length; // pass the index of the widget to the class
-
       // add award widget to list
-      dynamicList.add(
-          AwardWidget(key: ObjectKey(size), item: new Award(), size: size));
-      opened.add(true);
+      awardList.add(AwardWidget(
+          awardOptions: awardOptions,
+          item: new Award(),
+          open: ValueNotifier<bool>(true)));
     });
   }
 
+  // Function: Display Awards in the Review Step
   Widget displayAwards() {
-    var count = 1;
-    // return Container();
+    filteredAwards =
+        awardList.where((award) => award.item.saved == true).toList();
+
     return Column(
-        children: dynamicList.map((item) {
-      return Text(count.toString() + ". " + item.item.name != null
-          ? item.item.name
-          : "test" + " ");
-    }).toList());
+      children: [
+        filteredAwards.length != 0 ? SizedBox(height: 10) : SizedBox(),
+        filteredAwards.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  "Mga Award: ",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              )
+            : SizedBox(),
+        // TO DO: fix overflow issue when text is too long
+        filteredAwards.length != 0
+            ? Container(
+                alignment: Alignment.topLeft,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: filteredAwards.map((award) {
+                    if (award.item.saved == true) {
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          new Icon(Icons.fiber_manual_record, size: 16),
+                          SizedBox(
+                            width: 5,
+                          ),
+                          Flexible(
+                            child: Text(
+                                award.item.name +
+                                    (award.item.year != null
+                                        ? " (" + award.item.year + ") "
+                                        : ""),
+                                style: TextStyle(fontSize: 16),
+                                softWrap: true,
+                                overflow: TextOverflow.clip),
+                          ),
+                          award.item.type != null
+                              ? Text(
+                                  " - " +
+                                      (award.item.type == "nominated"
+                                          ? "Nominado"
+                                          : "Panalo"),
+                                  style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 16),
+                                  softWrap: true,
+                                  overflow: TextOverflow.clip)
+                              : SizedBox(),
+                        ],
+                      );
+                    }
+                  }).toList(),
+                ),
+              )
+            : SizedBox(),
+      ],
+    );
+  }
+
+  Future<bool> onBackPress() async {
+    // used in onwillpopscope function
+    var response = await _dialogService.showConfirmationDialog(
+        title: "Confirm cancellation",
+        cancelTitle: "No",
+        confirmationTitle: "Yes",
+        description: "Are you sure that you want to close the form?");
+    if (response.confirmed == true) {
+      setState(() {
+        movieActorsFilter =
+            []; // clears list para pag binalikan sya empty na ulit
+      });
+      await _navigationService.pop();
+    }
+    return Future.value(false);
   }
 
   void fetchMovies() async {
     var model = MovieViewModel();
-    movieOptions = await model.getAllMovies();
+    movieOptions = await model.getAllMovies(mode: "form");
+  }
+
+  void fetchAwards() async {
+    var model = AwardViewModel();
+    awardOptions = await model.getAllAwards(
+        user: currentUser != null && currentUser.isAdmin == true
+            ? "admin"
+            : "non-admin",
+        mode: 'form',
+        category: 'crew');
   }
 
   @override
   void initState() {
+    currentUser = _authenticationService.currentUser;
     fetchMovies();
+    fetchAwards();
     super.initState();
   }
 
@@ -321,6 +486,9 @@ class _AddCrewState extends State<AddCrew> {
                   confirmationTitle: "Yes",
                   description: "Are you sure that you want to close the form?");
               if (response.confirmed == true) {
+                setState(() {
+                  movieActorsFilter = [];
+                });
                 _navigationService.pop();
               }
             },
@@ -333,204 +501,227 @@ class _AddCrewState extends State<AddCrew> {
             style: TextStyle(color: Colors.black),
           ),
         ),
-        body: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: SystemUiOverlayStyle.light,
-          child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: Stack(
-              children: <Widget>[
-                Container(
-                  height: double.infinity,
-                  child: SingleChildScrollView(
-                    physics: AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 30.0,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(height: 20),
-                        MyStepper(
-                          type: MyStepperType.vertical,
-                          currentStep: currentStep,
-                          onStepTapped: (step) async {
-                            FocusScope.of(context).unfocus();
-                            if (currentStep == 0) {
-                              // first step
-                              setState(() {
-                                if (_formKeys[currentStep]
-                                    .currentState
-                                    .validate()) {
-                                  currentStep = step;
-                                }
-                              });
-                            } else {
-                              // allow tapping of steps
-                              setState(() => currentStep = step);
-                            }
-                          },
-                          onStepCancel: () {
-                            FocusScope.of(context).unfocus();
-
-                            if (currentStep != 0) setState(() => --currentStep);
-                          }, // else do nothing
-                          onStepContinue: () async {
-                            if (currentStep + 1 != stepperTitle.length) {
-                              FocusScope.of(context).unfocus();
-                              // do not allow user to continue to next step if inputs aren't filled out yet
-                              switch (currentStep) {
-                                case 0: // basic details
+        body: WillPopScope(
+          onWillPop: onBackPress,
+          child: ModalProgressHUD(
+            inAsyncCall: _saving,
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle.light,
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: Stack(
+                  children: <Widget>[
+                    Container(
+                      height: double.infinity,
+                      child: SingleChildScrollView(
+                        physics: AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 30.0,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(height: 20),
+                            MyStepper(
+                              stepperCircle: [
+                                Icons.edit, // Mga Basic na Detalye
+                                Icons.movie_outlined, // Mga Pelikula
+                                Icons.image, // Mga Larawan
+                                Icons.emoji_events_outlined, // Mga Award
+                                Icons.grading // Review
+                              ],
+                              type: MyStepperType.vertical,
+                              currentStep: currentStep,
+                              onStepTapped: (step) async {
+                                FocusScope.of(context).unfocus();
+                                if (currentStep == 0) {
+                                  // first step
                                   setState(() {
                                     if (_formKeys[currentStep]
                                         .currentState
                                         .validate()) {
-                                      currentStep++;
+                                      currentStep = step;
                                     }
                                   });
-                                  break;
+                                } else {
+                                  // allow tapping of steps
+                                  setState(() => currentStep = step);
+                                }
+                              },
+                              onStepCancel: () {
+                                FocusScope.of(context).unfocus();
 
-                                case 1: // movies
-                                  setState(() {
-                                    FocusScope.of(context).unfocus();
-                                    currentStep++;
-                                  });
-                                  break;
-
-                                case 2: // photos
+                                if (currentStep != 0)
+                                  setState(() => --currentStep);
+                              }, // else do nothing
+                              onStepContinue: () async {
+                                if (currentStep + 1 != stepperTitle.length) {
                                   FocusScope.of(context).unfocus();
-                                  setState(() => ++currentStep);
-                                  break;
+                                  // do not allow user to continue to next step if inputs aren't filled out yet
+                                  switch (currentStep) {
+                                    case 0: // basic details
+                                      setState(() {
+                                        if (_formKeys[currentStep]
+                                            .currentState
+                                            .validate()) {
+                                          currentStep++;
+                                        }
+                                      });
+                                      break;
 
-                                case 3: // awards
-                                  FocusScope.of(context).unfocus();
-                                  setState(() => ++currentStep);
-                                  break;
-                              }
-                            } else {
-                              // last step
-                              FocusScope.of(context).unfocus();
-                              var confirm =
-                                  await _dialogService.showConfirmationDialog(
-                                      title: "Confirm Details",
-                                      cancelTitle: "No",
-                                      confirmationTitle: "Yes",
-                                      description:
-                                          "Are you sure that you want to continue?");
-                              if (confirm.confirmed == true) {
-                                _saving =
-                                    true; // set saving to true to trigger circular progress indicator
+                                    case 1: // movies
+                                      setState(() {
+                                        FocusScope.of(context).unfocus();
+                                        currentStep++;
+                                      });
+                                      break;
 
-                                final response = await model.addCrew(
-                                    firstName: firstNameController.text,
-                                    middleName: middleNameController.text,
-                                    lastName: lastNameController.text,
-                                    suffix: suffixController.text,
-                                    birthday: _birthday != null
-                                        ? _birthday.toIso8601String()
-                                        : '',
-                                    birthplace: birthplaceController.text,
-                                    isAlive: isAlive,
-                                    deathdate: _deathdate != null
-                                        ? _deathdate.toIso8601String()
-                                        : '',
-                                    description: descriptionController.text,
-                                    displayPic: imageFile,
-                                    imageURI: imageURI,
-                                    photos: photos,
-                                    mimetype: mimetype,
-                                    addedBy: currentUser.userId,
-                                    crewId: crewId);
+                                    case 2: // photos
+                                      FocusScope.of(context).unfocus();
+                                      setState(() => ++currentStep);
+                                      break;
 
-                                // when response is returned, stop showing circular progress indicator
-
-                                if (response != 0) {
-                                  _saving =
-                                      false; // set saving to false to trigger circular progress indicator
-                                  // show success snackbar
-                                  _scaffoldKey.currentState.showSnackBar(
-                                      mySnackBar(
-                                          context,
-                                          'Crew added successfully.',
-                                          Colors.green));
-
-                                  _saving =
-                                      true; // set saving to true to trigger circular progress indicator
-
-                                  // get movie using id redirect to detail view using response
-                                  var crewRes = await model.getOneCrew(
-                                      crewId: response.toString());
-
-                                  if (crewRes != null) {
-                                    _saving =
-                                        false; // set saving to false to trigger circular progress indicator
-                                    Timer(const Duration(milliseconds: 2000),
-                                        () {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => CrewView(
-                                              crewId:
-                                                  crewRes.crewId.toString()),
-                                        ),
-                                      );
-                                    });
+                                    case 3: // awards
+                                      FocusScope.of(context).unfocus();
+                                      setState(() => ++currentStep);
+                                      break;
                                   }
                                 } else {
-                                  _saving =
-                                      false; // set saving to false to trigger circular progress indicator
-                                  // show error snackbar
-                                  _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                                      context,
-                                      'Something went wrong. Check your inputs and try again.',
-                                      Colors.red));
+                                  // last step
+                                  FocusScope.of(context).unfocus();
+                                  var confirm = await _dialogService
+                                      .showConfirmationDialog(
+                                          title: "Confirm Details",
+                                          cancelTitle: "No",
+                                          confirmationTitle: "Yes",
+                                          description:
+                                              "Are you sure that you want to continue?");
+                                  if (confirm.confirmed == true) {
+                                    _saving =
+                                        true; // set saving to true to trigger circular progress indicator
+
+                                    // actors
+                                    List<MovieActor> movieActorsToSave = [];
+                                    if (filteredMovieActorList.isNotEmpty) {
+                                      movieActorsToSave = filteredMovieActorList
+                                          .map((a) => a.movieActor)
+                                          .toList();
+                                    }
+
+                                    // awards
+                                    List<Award> awardsToSave = [];
+                                    if (filteredAwards.isNotEmpty) {
+                                      awardsToSave = filteredAwards
+                                          .map((a) => a.item)
+                                          .toList();
+                                    }
+
+                                    final response = await model.addCrew(
+                                        firstName: firstNameController.text,
+                                        middleName: middleNameController.text,
+                                        lastName: lastNameController.text,
+                                        suffix: suffixController.text,
+                                        birthday: _birthday != null
+                                            ? _birthday.toIso8601String()
+                                            : '',
+                                        birthplace: birthplaceController.text,
+                                        isAlive: isAlive,
+                                        deathdate: _deathdate != null
+                                            ? _deathdate.toIso8601String()
+                                            : '',
+                                        description: descriptionController.text,
+                                        displayPic: imageFile,
+                                        imageURI: imageURI,
+                                        photos: photos,
+                                        mimetype: mimetype,
+                                        addedBy: currentUser.userId,
+                                        // TO DO: pelikula bilang, awards
+                                        director: movieDirector,
+                                        writer: movieWriter,
+                                        actor: movieActorsToSave,
+                                        awards: awardsToSave,
+                                        crewId: crewId);
+
+                                    // when response is returned, stop showing circular progress indicator
+
+                                    if (response != 0) {
+                                      _saving =
+                                          false; // set saving to false to trigger circular progress indicator
+                                      // show success snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Crew added successfully.',
+                                              Colors.green));
+
+                                      _saving =
+                                          true; // set saving to true to trigger circular progress indicator
+
+                                      // get movie using id redirect to detail view using response
+                                      var crewRes = await model.getOneCrew(
+                                          crewId: response.toString());
+
+                                      if (crewRes != null) {
+                                        _saving =
+                                            false; // set saving to false to trigger circular progress indicator
+                                        Timer(
+                                            const Duration(milliseconds: 2000),
+                                            () {
+                                          Navigator.pushReplacement(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => CrewView(
+                                                  crewId: crewRes.crewId
+                                                      .toString()),
+                                            ),
+                                          );
+                                        });
+                                      }
+                                    } else {
+                                      _saving =
+                                          false; // set saving to false to trigger circular progress indicator
+                                      // show error snackbar
+                                      _scaffoldKey.currentState.showSnackBar(
+                                          mySnackBar(
+                                              context,
+                                              'Something went wrong. Check your inputs and try again.',
+                                              Colors.red));
+                                    }
+                                  }
                                 }
-                              }
-                            }
-                          },
-                          steps: [
-                            for (var i = 0; i < stepperTitle.length; i++)
-                              MyStep(
-                                title: Text(
-                                  stepperTitle[i],
-                                  style: TextStyle(
-                                    fontSize: 18,
+                              },
+                              steps: [
+                                for (var i = 0; i < stepperTitle.length; i++)
+                                  MyStep(
+                                    title: Text(
+                                      stepperTitle[i],
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    isActive: i <= currentStep,
+                                    state: i == currentStep
+                                        ? MyStepState.editing
+                                        : i < currentStep
+                                            ? MyStepState.complete
+                                            : MyStepState.indexed,
+                                    content: LimitedBox(
+                                      maxWidth: 300,
+                                      child: Form(
+                                          key: _formKeys[i],
+                                          child: getContent(i)),
+                                    ),
                                   ),
-                                ),
-                                isActive: i <= currentStep,
-                                state: i == currentStep
-                                    ? MyStepState.editing
-                                    : i < currentStep
-                                        ? MyStepState.complete
-                                        : MyStepState.indexed,
-                                content: LimitedBox(
-                                  maxWidth: 300,
-                                  child: Form(
-                                      key: _formKeys[i], child: getContent(i)),
-                                ),
-                              ),
+                              ],
+                            ),
+                            SizedBox(height: 20),
                           ],
                         ),
-                        // Container(
-                        //   alignment: Alignment.center,
-                        //   height: 130,
-                        //   width: 130,
-                        //   decoration: BoxDecoration(
-                        //       color: Color.fromRGBO(240, 240, 240, 1),
-                        //       borderRadius: BorderRadius.circular(100)),
-                        //   child: GestureDetector(
-                        //       child: Icon(Icons.camera_alt_outlined,
-                        //           size: 30, color: Colors.grey),
-                        //       onTap: () {
-                        //         print('add display pic');
-                        //       }),
-                        // ),
-
-                        // SizedBox(height: 20),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -928,8 +1119,85 @@ class _AddCrewState extends State<AddCrew> {
                 },
               ),
             ),
-            SizedBox(height: 10),
-            // TO DO: DYNAMIC WIDGETS FOR ACTING ROLES
+            SizedBox(height: 20),
+            Text('Bilang Aktor:',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              width: 140,
+              child: movieActorList.isEmpty
+                  ? FlatButton(
+                      // focusNode: addActorNode,
+                      color: Color.fromRGBO(240, 240, 240, 1),
+                      onPressed: addMovieActor,
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_add_alt_1_outlined),
+                          Text(" Dagdagan")
+                        ],
+                      ),
+                    )
+                  : null,
+            ),
+            ListView.builder(
+                itemCount: movieActorList.length,
+                shrinkWrap: true,
+                itemBuilder: (BuildContext context, int i) {
+                  return ValueListenableBuilder(
+                      valueListenable: movieActorList[i].open,
+                      builder: (context, value, widget) {
+                        return Stack(
+                          children: [
+                            movieActorList[i],
+                            value == true
+                                ? Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      child: OutlineButton(
+                                        padding: EdgeInsets.all(0),
+                                        color: Colors.white,
+                                        onPressed: () {
+                                          FocusScope.of(context).unfocus();
+                                          setState(() {
+                                            movieActorList.removeAt(i);
+                                          });
+                                        },
+                                        child: Text('Tanggalin'),
+                                      ),
+                                      alignment: Alignment.centerRight,
+                                    ),
+                                  )
+                                : SizedBox(),
+                          ],
+                        );
+                      });
+                }),
+            SizedBox(
+              height: 10,
+            ),
+            Container(
+              width: 140,
+              child: movieActorList.isNotEmpty
+                  ? FlatButton(
+                      // focusNode: addActorNode,
+                      color: Color.fromRGBO(240, 240, 240, 1),
+                      onPressed: addMovieActor,
+                      child: Row(
+                        children: [
+                          Icon(Icons.person_add_alt_1_outlined),
+                          Text(" Dagdagan")
+                        ],
+                      ),
+                    )
+                  : null,
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Divider(height: 1, thickness: 2),
           ]),
         );
       case 2: // Photos
@@ -948,17 +1216,33 @@ class _AddCrewState extends State<AddCrew> {
               ),
               Stack(
                 children: [
+                  // SizedBox(height: 20),
                   GestureDetector(
                     onTap: getImage,
                     child: Container(
                       margin: EdgeInsets.only(left: 20),
-                      height: 200,
-                      width: 150,
+                      height: 200, // 200
+                      width: 150, // 150
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(5),
                       ),
                       child: imageFile != null || imageURI.trim() != ''
-                          ? Container(
+                          ?
+                          // Container(
+                          //     alignment: Alignment.center,
+                          //     height: 130,
+                          //     width: 130,
+                          //     decoration: BoxDecoration(
+                          //         color: Color.fromRGBO(240, 240, 240, 1),
+                          //         borderRadius: BorderRadius.circular(100)),
+                          //     child: GestureDetector(
+                          //         child: Icon(Icons.camera_alt_outlined,
+                          //             size: 30, color: Colors.black),
+                          //         onTap: () {
+                          //           print('add display pic');
+                          //         }),
+                          //   )
+                          Container(
                               height: 200,
                               width: 150,
                               child: imageFile != null
@@ -974,7 +1258,22 @@ class _AddCrewState extends State<AddCrew> {
                                       height: 200,
                                       fit: BoxFit.cover,
                                     ))
-                          : Container(
+                          :
+                          // Container(
+                          //     alignment: Alignment.center,
+                          //     height: 130,
+                          //     width: 130,
+                          //     decoration: BoxDecoration(
+                          //         color: Color.fromRGBO(240, 240, 240, 1),
+                          //         borderRadius: BorderRadius.circular(100)),
+                          //     child: GestureDetector(
+                          //         child: Icon(Icons.camera_alt_outlined,
+                          //             size: 30, color: Colors.black),
+                          //         onTap: () {
+                          //           print('add display pic');
+                          //         }),
+                          //   ),
+                          Container(
                               height: 200,
                               width: 150,
                               child: Icon(
@@ -1003,10 +1302,10 @@ class _AddCrewState extends State<AddCrew> {
                             },
                           ),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5.0),
+                            borderRadius: BorderRadius.circular(50),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey,
+                                color: Colors.white,
                                 offset: Offset(0.0, 0.0),
                                 blurRadius: 0.0,
                               ),
@@ -1049,24 +1348,17 @@ class _AddCrewState extends State<AddCrew> {
             ],
           ),
         );
-      case 3: // awards
+      case 3: // Awards
         return Container(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Mga Award:',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
-              ),
               Container(
                 width: 140,
-                child: dynamicList.isEmpty
+                child: awardList.isEmpty
                     ? FlatButton(
+                        // focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
                         onPressed: addAward,
                         child: Row(
@@ -1078,64 +1370,63 @@ class _AddCrewState extends State<AddCrew> {
                       )
                     : null,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListView(
-                    shrinkWrap: true,
-                    children: dynamicList.map((item) {
-                      // TO DO: remove delete button when item is closed
-                      return Stack(
-                        key: ObjectKey(item),
-                        children: [
-                          item,
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              child: OutlineButton(
-                                padding: EdgeInsets.all(0),
-                                color: Colors.white,
-                                onPressed: () {
-                                  FocusScope.of(context).unfocus();
-                                  setState(() {
-                                    opened.removeAt(dynamicList
-                                        .indexOf(item)); // TO DO: Fix this
-                                    dynamicList
-                                        .removeAt(dynamicList.indexOf(item));
-                                    // addedAward.removeAt() // TO DO: ANONG IDEDELETE
-                                  });
-                                },
-                                child: Text('Tanggalin'),
-                              ),
-                              alignment: Alignment.centerRight,
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                  Container(
-                    width: 140,
-                    alignment: Alignment.centerLeft,
-                    child: dynamicList.isNotEmpty
-                        ? FlatButton(
-                            color: Color.fromRGBO(192, 192, 192, 1),
-                            onPressed: addAward,
-                            child: Row(
-                              children: [
-                                Icon(Icons.person_add_alt_1_outlined),
-                                Text(" Dagdagan")
-                              ],
-                            ),
-                          )
-                        : null,
-                  ),
-                ],
+              ListView.builder(
+                  itemCount: awardList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: awardList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              awardList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              awardList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+              SizedBox(
+                height: 10,
+              ),
+              Container(
+                width: 140,
+                child: awardList.isNotEmpty
+                    ? FlatButton(
+                        // focusNode: addActorNode,
+                        color: Color.fromRGBO(240, 240, 240, 1),
+                        onPressed: addAward,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_add_alt_1_outlined),
+                            Text(" Dagdagan")
+                          ],
+                        ),
+                      )
+                    : null,
               ),
               SizedBox(
                 height: 10,
               ),
+              Divider(height: 1, thickness: 2),
             ],
           ),
         );
@@ -1151,6 +1442,7 @@ class _AddCrewState extends State<AddCrew> {
                   physics: AlwaysScrollableScrollPhysics(),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         alignment: Alignment.topLeft,
@@ -1177,6 +1469,8 @@ class _AddCrewState extends State<AddCrew> {
                           style: TextStyle(
                             fontSize: 16,
                           ),
+                          overflow: TextOverflow.clip,
+                          softWrap: true,
                         ),
                       ),
                       _birthday != null ? SizedBox(height: 10) : SizedBox(),
@@ -1227,6 +1521,8 @@ class _AddCrewState extends State<AddCrew> {
                                 style: TextStyle(
                                   fontSize: 16,
                                 ),
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
                               ))
                           : SizedBox(),
                       isAlive == false ? SizedBox(height: 10) : SizedBox(),
@@ -1245,7 +1541,7 @@ class _AddCrewState extends State<AddCrew> {
                               alignment: Alignment.topLeft,
                               child: Text(
                                   _deathdate == null
-                                      ? 'No information'
+                                      ? 'Walang record'
                                       : DateFormat("MMM. d, y")
                                           .format(_deathdate),
                                   style: TextStyle(
@@ -1256,14 +1552,13 @@ class _AddCrewState extends State<AddCrew> {
                                   )),
                             )
                           : SizedBox(),
-                      // TO DO: Movies associated with the personality
                       movieDirector.isNotEmpty
                           ? SizedBox(height: 10)
                           : SizedBox(),
                       movieDirector.isNotEmpty
                           ? Container(
                               alignment: Alignment.topLeft,
-                              child: Text("Mga Direktor: ",
+                              child: Text("Bilang Direktor: ",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -1278,15 +1573,20 @@ class _AddCrewState extends State<AddCrew> {
                                 var film = movieOptions
                                     .firstWhere((item) => item.movieId == id);
                                 return new Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     new Icon(Icons.fiber_manual_record,
                                         size: 16),
                                     SizedBox(
                                       width: 5,
                                     ),
-                                    new Text(
-                                      film.title,
-                                      style: TextStyle(fontSize: 16),
+                                    new Expanded(
+                                      child: Text(
+                                        film.title,
+                                        style: TextStyle(fontSize: 16),
+                                        overflow: TextOverflow.clip,
+                                        softWrap: true,
+                                      ),
                                     ),
                                   ],
                                 );
@@ -1299,7 +1599,7 @@ class _AddCrewState extends State<AddCrew> {
                       movieWriter.isNotEmpty
                           ? Container(
                               alignment: Alignment.topLeft,
-                              child: Text("Mga Direktor: ",
+                              child: Text("Bilang Manunulat: ",
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
@@ -1314,21 +1614,27 @@ class _AddCrewState extends State<AddCrew> {
                                 var film = movieOptions
                                     .firstWhere((item) => item.movieId == id);
                                 return new Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     new Icon(Icons.fiber_manual_record,
                                         size: 16),
                                     SizedBox(
                                       width: 5,
                                     ),
-                                    new Text(
-                                      film.title,
-                                      style: TextStyle(fontSize: 16),
+                                    new Expanded(
+                                      child: Text(
+                                        film.title,
+                                        style: TextStyle(fontSize: 16),
+                                        overflow: TextOverflow.clip,
+                                        softWrap: true,
+                                      ),
                                     ),
                                   ],
                                 );
                               }).toList()),
                             )
                           : SizedBox(),
+                      displayMovieActors(),
                       imageFile != null ? SizedBox(height: 10) : SizedBox(),
                       imageFile != null
                           ? Container(
@@ -1368,9 +1674,8 @@ class _AddCrewState extends State<AddCrew> {
                             )
                           : SizedBox(),
                       photos.isNotEmpty ? displayPhotos("display") : SizedBox(),
-
-                      // TO DO: add awards
-                      // dynamicList.isNotEmpty ? displayAwards() : SizedBox()
+                      displayAwards(),
+                      SizedBox(height: 15),
                     ],
                   )),
             ));
@@ -1379,258 +1684,273 @@ class _AddCrewState extends State<AddCrew> {
   }
 }
 
-// CLASS AWARD WIDGET
-class AwardWidget extends StatefulWidget {
-  final Award item;
-  final size;
+// Movie Actor Widget
+class MovieActorWidget extends StatefulWidget {
+  final List<Movie> movieOptions;
+  final MovieActor movieActor;
+  final open;
 
-  const AwardWidget({Key key, this.item, this.size}) : super(key: key);
+  const MovieActorWidget(
+      {Key key, this.movieActor, this.movieOptions, this.open})
+      : super(key: key);
 
   @override
-  AwardWidgetState createState() => AwardWidgetState();
+  MovieActorWidgetState createState() => MovieActorWidgetState();
 }
 
-class AwardWidgetState extends State<AwardWidget> {
-  // Temp Variables
-  String name;
-  String year;
-  String description;
-  String type; // nominated, won
-  bool closed = false;
-
-  // FocusNodes
-  final nameNode = FocusNode();
-  final descriptionNode = FocusNode();
-  final typeNode = FocusNode();
-  final yearNode = FocusNode();
-
-  final _formKey = GlobalKey<FormState>();
+class MovieActorWidgetState extends State<MovieActorWidget> {
+  List<String> tempRoles;
+  Movie tempMovie;
+  var temp;
+  bool showError = true;
+  List<Movie> movieActorId = [];
 
   @override
   void initState() {
+    widget.movieActor.saved =
+        widget.movieActor.saved == null ? false : widget.movieActor.saved;
+    if (widget.movieActor.movieId != null) {
+      var film = widget.movieOptions
+          .singleWhere((a) => a.movieId == widget.movieActor.movieId);
+
+      if (film != null) movieActorId = [film];
+    }
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return closed == false
-        ? Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 15,
+    return widget.open.value == true
+        ? Container(
+            child: Column(children: [
+            SizedBox(
+              height: 15,
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: Color.fromRGBO(240, 240, 240, 1),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: ChipsInput(
+                initialValue: movieActorId,
+                maxChips: 1,
+                keyboardAppearance: Brightness.dark,
+                textCapitalization: TextCapitalization.words,
+                enabled: true,
+                textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                decoration: const InputDecoration(
+                  labelText: 'Pumili ng pelikula',
+                  contentPadding: EdgeInsets.all(10),
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                  ),
-                  child: TextFormField(
-                    initialValue: widget.item.name,
-                    autofocus: true,
-                    focusNode: nameNode,
-                    textCapitalization: TextCapitalization.words,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    style: TextStyle(
-                      color: Colors.black,
-                    ),
-                    onFieldSubmitted: (val) {
-                      yearNode.requestFocus();
-                    },
-                    onChanged: (val) {
-                      setState(() {
-                        name = val;
-                        widget.item.name = val;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      labelText: "Award *",
-                      // contentPadding: EdgeInsets.all(10),
-                      filled: true,
-                      fillColor: Color.fromRGBO(240, 240, 240, 1),
-                    ),
-                    validator: (value) {
-                      if (value.isEmpty || value == null) {
-                        return 'Required ang field na ito.';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Color.fromRGBO(240, 240, 240, 1),
-                        ),
-                        child: TextFormField(
-                          initialValue: widget.item.year,
-                          focusNode: yearNode,
-                          keyboardType: TextInputType.number,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          style: TextStyle(
-                            color: Colors.black,
-                          ),
-                          onFieldSubmitted: (val) {
-                            typeNode.requestFocus();
-                          },
-                          onChanged: (val) {
-                            setState(() {
-                              year = val;
-                              widget.item.year = val;
-                            });
-                          },
-                          decoration: InputDecoration(
-                            labelText: "Year",
-                            contentPadding: EdgeInsets.all(10),
-                            filled: true,
-                            fillColor: Color.fromRGBO(240, 240, 240, 1),
-                          ),
-                          validator: (value) {
-                            var date = DateFormat("y").format(DateTime.now());
-                            if ((value.length < 4 && value.length > 0) ||
-                                (value.length > 4 &&
-                                    int.parse(value) > int.parse(date))) {
-                              return 'Mag-enter ng tamang taon.';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: Container(
-                        padding: EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          border:
-                              Border(bottom: BorderSide(color: Colors.black54)),
-                          color: Color.fromRGBO(240, 240, 240, 1),
-                        ),
-                        child: DropdownButton(
-                          autofocus: false,
-                          focusNode: typeNode,
-                          value: widget.item.type,
-                          items: [
-                            DropdownMenuItem(
-                                child: Text("Pumili ng isa",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.grey,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    softWrap: true),
-                                value: ""),
-                            DropdownMenuItem(
-                                child: Text("Nominated"), value: "nominated"),
-                            DropdownMenuItem(child: Text("Won"), value: "won"),
-                          ],
-                          hint: Text('Type'),
-                          elevation: 0,
-                          isDense: false,
-                          underline: Container(),
-                          onChanged: (val) {
-                            setState(() {
-                              type = val;
-                              widget.item.type = val;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-                Container(
-                  decoration:
-                      BoxDecoration(borderRadius: BorderRadius.circular(10)),
-                  child: TextFormField(
-                    initialValue: widget.item.description,
-                    focusNode: descriptionNode,
-                    textCapitalization: TextCapitalization.sentences,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    style: TextStyle(
-                      color: Colors.black,
-                    ),
-                    maxLines: null, // 5
-                    decoration: InputDecoration(
-                      labelText: "Description",
-                      contentPadding: EdgeInsets.all(10),
-                      filled: true,
-                      fillColor: Color.fromRGBO(240, 240, 240, 1),
-                    ),
-                    onFieldSubmitted: (val) {
-                      FocusScope.of(context).unfocus();
-                    },
-                    onChanged: (val) {
-                      setState(() {
-                        description = val;
-                        widget.item.description = val;
-                      });
-                    },
-                  ),
-                ),
-                SizedBox(
-                  height: 15,
-                ),
-                Container(
-                  child: OutlineButton(
-                    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                    color: Colors.white,
-                    onPressed: () {
-                      FocusScope.of(context).unfocus();
-                      if (_formKey.currentState.validate()) {
-                        setState(() {
-                          opened[widget.size] = false;
-                          widget.item.name = name;
-                          widget.item.year = year;
-                          widget.item.description = description;
-                          widget.item.type = type;
-                          closed = true;
+                findSuggestions: (String query) {
+                  var filteredList = movieActorsFilter.length != 0
+                      ? widget.movieOptions
+                          .where((r) => !movieActorsFilter.contains(r.movieId))
+                          .toList()
+                      : widget.movieOptions;
+                  if (query.isNotEmpty) {
+                    var lowercaseQuery = query.toLowerCase();
 
-                          addedAward[widget.size] = widget.item;
-                        });
+                    return filteredList.where((item) {
+                      return item.title
+                          .toLowerCase()
+                          .contains(query.toLowerCase());
+                    }).toList(growable: false)
+                      ..sort((a, b) => a.title
+                          .toLowerCase()
+                          .indexOf(lowercaseQuery)
+                          .compareTo(
+                              b.title.toLowerCase().indexOf(lowercaseQuery)));
+                  }
+                  return filteredList;
+                },
+                onChanged: (data) {
+                  if (data.length != 0) {
+                    setState(() {
+                      widget.movieActor.movieId = data[0].movieId;
+                      widget.movieActor.movieTitle = data[0].title;
+                      showError = widget.movieActor.movieId != null &&
+                              widget.movieActor.role != null &&
+                              widget.movieActor.role.length != 0
+                          ? false
+                          : true;
+
+                      movieActorId = [data[0]];
+                      if (!movieActorsFilter.contains(data[0].movieId)) {
+                        movieActorsFilter.add(data[0].movieId);
                       }
+                    });
+                  } else {
+                    setState(() {
+                      widget.movieActor.movieId = null;
+                      widget.movieActor.movieTitle = null;
+                      showError = widget.movieActor.movieId != null &&
+                              widget.movieActor.role != null &&
+                              widget.movieActor.role.length != 0
+                          ? false
+                          : true;
+                      widget.movieActor.saved =
+                          widget.movieActor.movieId != null &&
+                                  widget.movieActor.role != null &&
+                                  widget.movieActor.role.length != 0 &&
+                                  widget.movieActor.saved == true
+                              ? true
+                              : false;
+                      movieActorId = [];
+                    });
+                  }
+                },
+                chipBuilder: (context, state, c) {
+                  return InputChip(
+                    key: ObjectKey(c),
+                    label: Text(c != null ? c.title : ""),
+                    onDeleted: () => {
+                      setState(() {
+                        movieActorsFilter.remove(c.movieId);
+                      }),
+                      state.deleteChip(c),
                     },
-                    child: Text('Save'),
-                  ),
-                  alignment: Alignment.center,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, c) {
+                  return ListTile(
+                    key: ObjectKey(c),
+                    title: Text(c.title),
+                    onTap: () => {
+                      if (!movieActorsFilter.contains(c.movieId))
+                        {
+                          setState(() {
+                            movieActorsFilter.add(c.movieId);
+                          })
+                        },
+                      state.selectSuggestion(c)
+                    },
+                  );
+                },
+              ),
+            ),
+            SizedBox(
+              height: 15,
+            ),
+            Container(
+              color: Color.fromRGBO(240, 240, 240, 1),
+              child: TestChipsInput(
+                initialValue: widget.movieActor.role != null
+                    ? widget.movieActor.role
+                    : [],
+                keyboardAppearance: Brightness.dark,
+                textCapitalization: TextCapitalization.words,
+                enabled: true,
+                textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
+                decoration: const InputDecoration(
+                  labelText: 'Role',
+                  contentPadding: EdgeInsets.all(10),
                 ),
-              ],
-            ))
-        : ListTile(
-            contentPadding: EdgeInsets.all(10),
-            tileColor: Color.fromRGBO(240, 240, 240, 1),
-            title: Text(
-                (widget.item.name != null ? widget.item.name : '') +
-                    (widget.item.year != null
-                        ? " (" + widget.item.year + ") "
-                        : ''),
-                softWrap: true,
-                overflow: TextOverflow.clip),
-            subtitle: Text(
-                widget.item.description != null ? widget.item.description : '',
+                findSuggestions: (String query) {
+                  setState(() {
+                    temp = query;
+                  });
+                  return [];
+                },
+                submittedText: temp != null ? temp.trimLeft().trimRight() : "",
+                onChanged: (data) {
+                  List<String> tempList = [];
+                  tempList = data.map((role) => role.toString()).toList();
+
+                  setState(() {
+                    widget.movieActor.role = tempList;
+                    showError = widget.movieActor.movieId != null &&
+                            widget.movieActor.role != null &&
+                            widget.movieActor.role.length != 0
+                        ? false
+                        : true;
+                    widget.movieActor.saved =
+                        widget.movieActor.movieId != null &&
+                                widget.movieActor.role != null &&
+                                widget.movieActor.role.length != 0 &&
+                                widget.movieActor.saved == true
+                            ? true
+                            : false;
+                  });
+                },
+                chipBuilder: (context, state, c) {
+                  return InputChip(
+                    key: ObjectKey(c),
+                    label: Text(c),
+                    onDeleted: () => state.deleteChip(c),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  );
+                },
+                suggestionBuilder: (context, state, c) {
+                  return null;
+                },
+              ),
+            ),
+            SizedBox(height: 5),
+            Text("Pindutin ang 'ENTER' para i-save ang role."),
+            SizedBox(height: 15),
+            showError == true
+                ? Text('Required ang mga field ng Aktor at Role.',
+                    style: TextStyle(
+                        color: Colors.red, fontStyle: FontStyle.italic))
+                : SizedBox(),
+            showError == true ? SizedBox(height: 15) : SizedBox(),
+            Container(
+              child: OutlineButton(
+                padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                color: Colors.white,
+                onPressed: () {
+                  FocusScope.of(context).unfocus();
+                  if (widget.movieActor.movieId != null &&
+                      widget.movieActor.role.length != 0) {
+                    setState(() {
+                      // save to actors and roles list
+                      widget.open.value = false;
+                      widget.movieActor.saved = true;
+                    });
+                  } else {
+                    setState(() {
+                      widget.movieActor.saved = false;
+                      showError = true;
+                    });
+                  }
+                },
+                child: Text('Save'),
+              ),
+              alignment: Alignment.center,
+            )
+          ]))
+        :
+        // display this instead if widget.open == false
+        Container(
+            margin: EdgeInsets.symmetric(vertical: 10),
+            child: ListTile(
+              contentPadding: EdgeInsets.all(10),
+              tileColor: Color.fromRGBO(240, 240, 240, 1),
+              title: Text(
+                  (widget.movieActor != null
+                      ? (widget.movieActor.movieTitle)
+                      : ""),
+                  softWrap: true,
+                  overflow: TextOverflow.clip),
+              subtitle: Text(
+                widget.movieActor.role != null
+                    ? widget.movieActor.role.join(", ")
+                    : "",
                 style: TextStyle(
                   fontSize: 14,
+                  color: Colors.black54,
                 ),
-                textAlign: TextAlign.justify),
-            trailing: GestureDetector(
-              child: Icon(Icons.edit),
-              onTap: () {
-                setState(() {
-                  closed = false;
-                  opened[widget.size] = true;
-                });
-              },
+              ),
+              trailing: GestureDetector(
+                child: Icon(Icons.edit),
+                onTap: () {
+                  setState(() {
+                    widget.open.value = true;
+                  });
+                },
+              ),
             ),
           );
   }

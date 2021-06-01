@@ -1,16 +1,20 @@
 exports.crew = app => {
 
-  // TO DO: Remove cloudinary declaration in this file and check whether the app will still work
-
   // GET CREW
-  app.get('/mubidibi/crew/', (req, res) => {
+  app.post('/mubidibi/crew/', (req, res) => {
     app.pg.connect(onConnect)
 
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
+      var query = `SELECT *, concat_ws(' ', first_name, middle_name, last_name, suffix) as name FROM crew`;
+
+      if (req.body.user != "admin" || req.body.mode == "form") query = query.concat(' where is_deleted = false');
+
+      query = query.concat(` order by name asc `);
+
       client.query(
-        'SELECT * FROM crew',
+        query,
         async function onResult(err, result) {
           var crew = result.rows;
 
@@ -34,32 +38,8 @@ exports.crew = app => {
     }
   });
 
-  // // GET ALL CREW -- // TO DO: might get deprecated
-  // app.get('/mubidibi/all-crew/', (req, res) => {
-  //   app.pg.connect(onConnect)
-
-  //   async function onConnect(err, client, release) {
-  //     if (err) return res.send(err)
-
-  //     var crew = [];
-
-  //     var directors = await client.query('select distinct(crew.*) from crew left join movie_director on crew.id = movie_director.director_id where id in (select distinct(director_id) from movie_director)');
-
-  //     var writers = await client.query('select distinct(crew.*) from crew left join movie_writer on crew.id = movie_writer.writer_id where id in (select distinct(writer_id) from movie_writer)');
-
-  //     var actors = await client.query('select distinct(crew.*) from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (select distinct(actor_id) from movie_actor)');
-
-  //     crew.push(directors.rows);
-  //     crew.push(writers.rows);
-  //     crew.push(actors.rows);
-
-  //     release();
-  //     res.send(err || JSON.stringify(crew));
-  //   }
-  // });
-
   // GET CREW BY MOVIE ID -- MOVIE VIEW
-  app.get('/mubidibi/crew/:id', (req, res) => {
+  app.post('/mubidibi/crew-for-movie/', (req, res) => {
     app.pg.connect(onConnect);
 
     async function onConnect(err, client, release) {
@@ -68,17 +48,19 @@ exports.crew = app => {
       var crew = [];
 
       // DIRECTORS
-      var director = await client.query(
-        "SELECT * from crew where id in (SELECT director_id FROM movie_director where movie_id = $1)", [parseInt(req.params.id)]
-      );
+      var directorQuery = `SELECT * from crew where id in (SELECT director_id FROM movie_director where movie_id = ${req.body.movie_id})`;
+      if (req.body.user != "admin") directorQuery = directorQuery.concat(` and is_deleted = false`)
+      var director = await client.query(directorQuery);
 
-      var writer = await client.query(
-        "SELECT * from crew where id in (SELECT writer_id FROM movie_writer where movie_id = $1)", [parseInt(req.params.id)]
-      );
+      // WRITERS
+      var writerQuery = `SELECT * from crew where id in (SELECT writer_id FROM movie_writer where movie_id = ${req.body.movie_id})`;
+      if (req.body.user != "admin") writerQuery = writerQuery.concat(` and is_deleted = false`)
+      var writer = await client.query(writerQuery);
 
-      var actor = await client.query(
-        "SELECT crew.*, movie_actor.role from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (SELECT actor_id FROM movie_actor where movie_id = $1)", [parseInt(req.params.id)]
-      );
+      // ACTORS
+      var actorQuery = `SELECT crew.*, movie_actor.role from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (SELECT actor_id FROM movie_actor where movie_id = ${req.body.movie_id}) and movie_actor.movie_id = ${req.body.movie_id}`;
+      if (req.body.user != "admin") actorQuery = actorQuery.concat(` and is_deleted = false`)
+      var actor = await client.query(actorQuery);
 
       crew.push(director.rows);
       crew.push(writer.rows);
@@ -97,7 +79,7 @@ exports.crew = app => {
       if (err) return res.send(err)
 
       client.query(
-        'SELECT * FROM crew where id = $1', [parseInt(req.params.id)],
+        `SELECT *, concat_ws(' ', first_name, middle_name, last_name, suffix) as name FROM crew where id = $1`, [parseInt(req.params.id)],
         async function onResult(err, result) {
           var crew = result.rows[0];
           var type = [];
@@ -192,23 +174,14 @@ exports.crew = app => {
     var birthplace = crewData.birthplace.replace(/'/g, "''");
     var description = crewData.description.replace(/'/g, "''");
 
-    console.log(crewData);
-    // -- select add_crew (
-    //   --   _first_name => 'Joy',
-    //   --   _last_name => 'Viado',
-    //   --   _birthday => '1959-04-10',
-    //   --   _birthplace => 'Manila, Philippines',
-    //   --   _display_pic => 'https://res.cloudinary.com/mubidibi-sp/image/upload/v1617670644/crew/Joy%20Viado/undefined_tyiaq3.jpg',
-    //   --   _photos => array ['https://res.cloudinary.com/mubidibi-sp/image/upload/v1617670652/crew/Joy%20Viado/undefined_vfm6di.jpg', 'https://res.cloudinary.com/mubidibi-sp/image/upload/v1617670661/crew/Joy%20Viado/images_zvuprr.jpg'],
-    //   --   _description => 'Joy Viado acted in theater plays, horror, drama, romance and comedy films. She also appeared in several television shows, particularly from ABS-CBN.',
-    //   --   _added_by => '2015-66134',
-    //   --   _is_alive => false
-    //   -- );
-
     var query = `select add_crew (
     _first_name => '${first_name}',
-    _last_name => '${last_name}',
     `;
+
+    if (last_name != "" && last_name != null) {
+      query = query.concat(`_last_name => '${last_name}', 
+      `);
+    }
 
     if (middle_name != "" && middle_name != null) {
       query = query.concat(`_middle_name => '${middle_name}', 
@@ -284,10 +257,65 @@ exports.crew = app => {
       if (err) return res.send(err);
 
       console.log(query);
-      // TO DO: Add awards
+
       var result = await client.query(query).then((result) => {
         const id = result.rows[0].add_crew
-        // awards here 
+
+        // add movies as director
+        if (crewData.director.length != 0) {
+          crewData.director.forEach((d) => {
+            client.query(`call add_movie_director (
+              ${d},
+              ${id}
+            )`);
+          });
+        }
+
+        // add movies as writer
+        if (crewData.writer.length != 0) {
+          crewData.writer.forEach((w) => {
+            client.query(`call add_movie_writer (
+              ${w},
+              ${id}
+            )`)
+          });
+        }
+
+        // add actors
+        if (crewData.actor.length != 0) {
+          crewData.actor.forEach((a, index) => {
+            var actorQuery = `call add_movie_actor (
+              ${a.id},
+              ${id},
+              `;
+
+            if (a.role.length) {
+              actorQuery = actorQuery.concat(`array [`);
+              a.role.forEach(role => {
+                actorQuery = actorQuery.concat(`'`, role, `'`)
+                if (role != a.role[a.role.length - 1]) {
+                  actorQuery = actorQuery.concat(',')
+                }
+              });
+              actorQuery = actorQuery.concat(`])`)
+            } else {
+              actorQuery = actorQuery.concat(`null)`);
+            }
+
+            console.log("ACTORS => ", index, ": ", actorQuery);
+            client.query(actorQuery);
+          });
+        }
+
+        // awards
+        if (crewData.awards.length != 0) {
+          crewData.awards.forEach((award, index) => {
+            var awardQuery = `insert into crew_award (crew_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
+
+            console.log("AWARDS => ", index, ": ", awardQuery);
+            client.query(awardQuery);
+          });
+        }
         return result;
 
       });
@@ -296,8 +324,8 @@ exports.crew = app => {
     }
   });
 
-  // DELETE MOVIE
-  app.delete('/mubidibi/delete-crew/:id', (req, res) => {
+  // DELETE CREW
+  app.get('/mubidibi/delete-crew/:id', (req, res) => {
     app.pg.connect(onConnect);
 
     function onConnect(err, client, release) {
@@ -306,6 +334,7 @@ exports.crew = app => {
       // soft-delete only, sets the is_deleted field to true
       client.query('UPDATE crew SET is_deleted = true where id = $1 RETURNING id', [parseInt(req.params.id)],
         function onResult(err, result) {
+          console.log(result, result.rows[0].id);
           release();
           res.send(err || JSON.stringify(result.rows[0].id));
         }
@@ -313,14 +342,14 @@ exports.crew = app => {
     }
   });
 
-  // RESTORE MOVIE
+  // RESTORE CREW
   app.post('/mubidibi/crew/restore/', (req, res) => {
     app.pg.connect(onConnect);
 
     function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      // restore movie: sets the is_deleted field to false;
+      // restore Crew: sets the is_deleted field to false;
       client.query('UPDATE crew SET is_deleted = false where id = $1 RETURNING id', [parseInt(req.body.id)],
         function onResult(err, result) {
           release();

@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 class ReviewViewModel extends BaseModel {
   List<Review> reviews = [];
   Review userReview;
-  Review _editingReview;
+  // Review _editingReview;
   bool isEditing = false;
   bool isEmpty = false;
   num overAllRating = 0.0;
@@ -23,17 +23,17 @@ class ReviewViewModel extends BaseModel {
     notifyListeners();
   }
 
-  // TO DO: Deprecate
-  void setEditing(Review editingReview) {
-    _editingReview = editingReview;
-    notifyListeners();
-  }
+  // // TO DO: Deprecate
+  // void setEditing(Review editingReview) {
+  //   _editingReview = editingReview;
+  //   notifyListeners();
+  // }
 
-  // TO DO: Deprecate
-  void setEdit(bool value) {
-    isEditing = value;
-    notifyListeners();
-  }
+  // // TO DO: Deprecate
+  // void setEdit(bool value) {
+  //   isEditing = value;
+  //   notifyListeners();
+  // }
 
   void setLength(bool empty) {
     isEmpty = empty;

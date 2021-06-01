@@ -45,10 +45,10 @@ class _DashboardViewState extends State<DashboardView>
   var currentUser;
   bool test = false;
 
-  // function for calling viewmodel's getAllCrew method
+  // function for calling viewmodel's getAllMovies method
   void fetchMovies() async {
     var model = MovieViewModel();
-    movies = await model.getAllMovies();
+    movies = await model.getAllMovies(mode: "list");
 
     if (movies != null && movies.length != 0) {
       var rand = new Random();
@@ -66,7 +66,7 @@ class _DashboardViewState extends State<DashboardView>
   // function for calling viewmodel's getAllCrew method
   void fetchCrew() async {
     var model = CrewViewModel();
-    crew = await model.getAllCrew();
+    crew = await model.getAllCrew(mode: "list");
 
     setState(() {
       crew = crew;
@@ -74,7 +74,6 @@ class _DashboardViewState extends State<DashboardView>
   }
 
   Widget crewView(BuildContext context, AsyncSnapshot snapshot) {
-    var values = snapshot.data;
     if (snapshot.connectionState == ConnectionState.done) {
       return CustomScrollView(
         controller: _crewScrollController,
@@ -135,6 +134,23 @@ class _DashboardViewState extends State<DashboardView>
           child: FloatingActionBubble(
             // Menu items
             items: <Bubble>[
+              // Floating action menu item
+              Bubble(
+                title: "Award",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.add,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  _animationController.reverse();
+                  await _navigationService.navigateTo(AddAwardRoute);
+                  setState(() {
+                    fabIcon = fabIcon == Icons.admin_panel_settings
+                        ? Icons.close
+                        : Icons.admin_panel_settings;
+                  });
+                },
+              ),
               // Floating action menu item
               Bubble(
                 title: "Pelikula",

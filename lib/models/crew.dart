@@ -7,16 +7,13 @@ List<Crew> crewFromJson(String str) =>
 String crewToJson(List<Crew> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
-// Crew crewFromJson(String str) => Crew.fromJson(json.decode(str));
-
-// String crewToJson(Crew data) => json.encode(data.toJson());
-
 class Crew {
   int crewId;
   String firstName;
   String middleName;
   String lastName;
   String suffix;
+  String name;
   final String birthday;
   final String deathdate;
   final bool isAlive;
@@ -36,6 +33,7 @@ class Crew {
       this.middleName,
       this.lastName,
       this.suffix,
+      this.name,
       this.birthday,
       this.deathdate,
       this.isAlive,
@@ -56,6 +54,7 @@ class Crew {
       middleName: json['middle_name'],
       lastName: json['last_name'],
       suffix: json['suffix'],
+      name: json['name'],
       birthday: json['birthday'],
       deathdate: json['deathdate'],
       isAlive: json['is_alive'],
@@ -85,6 +84,7 @@ class Crew {
         "middle_name": middleName,
         "last_name": lastName,
         "suffix": suffix,
+        "name": name,
         "birthday": birthday,
         "deathdate": deathdate,
         "is_alive": isAlive,

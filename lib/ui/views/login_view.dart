@@ -6,7 +6,7 @@ import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/login_view_model.dart';
 import 'package:mubidibi/services/navigation_service.dart';
-import 'package:mubidibi/services/dialog_service.dart';
+// import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 import 'package:mubidibi/constants/route_names.dart';
 
@@ -27,7 +27,7 @@ class _LoginViewState extends State<LoginView> {
   final passwordlNode = FocusNode();
   final loginButtonNode = FocusNode();
 
-  final DialogService _dialogService = locator<DialogService>();
+  // final DialogService _dialogService = locator<DialogService>();
   final NavigationService _navigationService = locator<NavigationService>();
 
   // we update the value of this variable so that we can manipulate the 'next' button

@@ -1,15 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/models/crew.dart';
-import 'package:mubidibi/services/navigation_service.dart';
+// import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:mubidibi/ui/views/see_all_view.dart';
-
-import '../../locator.dart';
+// import '../../locator.dart';
 
 class ContentList extends StatelessWidget {
   final String title;
@@ -33,7 +31,7 @@ class ContentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final NavigationService _navigationService = locator<NavigationService>();
+    // final NavigationService _navigationService = locator<NavigationService>();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Column(

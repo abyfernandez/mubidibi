@@ -47,7 +47,7 @@ class _MovieViewState extends State<MovieView>
   Future<List<List<Crew>>> crew;
   List<List<Crew>> crewEdit;
   Future<List<Review>> reviews;
-  ScrollController _scrollController;
+  // ScrollController _scrollController;
   Animation<double> _animation;
   AnimationController _animationController;
   final NavigationService _navigationService = locator<NavigationService>();
@@ -62,7 +62,6 @@ class _MovieViewState extends State<MovieView>
   ValueNotifier<double> rating = ValueNotifier<double>(0.0);
   var tempRating = 0.0;
   var numItems = 0;
-  int _current = 0;
   final CarouselController _controller = CarouselController();
 
   // variables needed for adding reviews
@@ -160,10 +159,11 @@ class _MovieViewState extends State<MovieView>
     super.initState();
   }
 
-  GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // formkey
+  // GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // formkey
   FocusNode focusNode =
       new FocusNode(); // to close keyboard after posting review
-  GlobalKey _toolTipKey = GlobalKey();
+  // GlobalKey _toolTipKey = GlobalKey();
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void didUpdateWidget(MovieView oldWidget) {
@@ -172,8 +172,6 @@ class _MovieViewState extends State<MovieView>
 
   @override
   Widget build(BuildContext context) {
-    final _scaffoldKey = GlobalKey<ScaffoldState>();
-
     if (movie == null) return Center(child: CircularProgressIndicator());
 
     return ViewModelProvider<ReviewViewModel>.withConsumer(
@@ -247,15 +245,17 @@ class _MovieViewState extends State<MovieView>
                           var deleteRes = await model.deleteMovie(
                               id: movie.movieId.toString());
                           if (deleteRes != 0) {
+                            _saving = false;
+
                             // show success snackbar
                             _scaffoldKey.currentState.showSnackBar(mySnackBar(
                                 context,
                                 'Movie deleted successfully.',
                                 Colors.green));
 
-                            Timer(const Duration(milliseconds: 2000), () {
-                              _saving = false;
+                            _saving = true;
 
+                            Timer(const Duration(milliseconds: 2000), () {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -303,6 +303,8 @@ class _MovieViewState extends State<MovieView>
                           var restoreRes = await model.restoreMovie(
                               id: movie.movieId.toString());
                           if (restoreRes != 0) {
+                            _saving = false;
+
                             // show success snackbar
                             _scaffoldKey.currentState.showSnackBar(mySnackBar(
                                 context,
@@ -310,7 +312,6 @@ class _MovieViewState extends State<MovieView>
                                 Colors.green));
 
                             Timer(const Duration(milliseconds: 2000), () {
-                              _saving = false;
                               // redirect to homepage
                               Navigator.pushReplacement(
                                 context,
@@ -559,34 +560,6 @@ class _MovieViewState extends State<MovieView>
                                 : SizedBox(),
                       ],
                     ),
-                    // movie.poster.length > 1
-                    //     ? PositionedDirectional(
-                    //         // bottom: 2,
-                    //         child: Row(
-                    //           mainAxisAlignment: MainAxisAlignment.center,
-                    //           crossAxisAlignment: CrossAxisAlignment.center,
-                    //           children: movie.poster.map((url) {
-                    //             int index = movie.poster.indexOf(url);
-                    //             return GestureDetector(
-                    //                 child: Container(
-                    //                   width: 8.0,
-                    //                   height: 8.0,
-                    //                   margin: EdgeInsets.symmetric(
-                    //                       vertical: 10.0, horizontal: 2.0),
-                    //                   decoration: BoxDecoration(
-                    //                     shape: BoxShape.circle,
-                    //                     color: _current == index
-                    //                         ? Color.fromRGBO(0, 0, 0, 0.9)
-                    //                         : Colors.white,
-                    //                   ),
-                    //                 ),
-                    //                 onTap: () {
-                    //                   _controller.animateToPage(_current);
-                    //                 });
-                    //           }).toList(),
-                    //         ),
-                    //       )
-                    //     : SizedBox()
                   ],
                 ),
                 Padding(
@@ -638,26 +611,61 @@ class _MovieViewState extends State<MovieView>
                       ValueListenableBuilder(
                         valueListenable: rating,
                         builder: (context, value, widget) {
-                          return Center(
-                              child: Text(
-                                  value != 0
-                                      ? value.toString()
-                                      : "No ratings yet",
+                          return value != 0
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                        value != 0
+                                            ? value % 1 != 0
+                                                ? value.toString()
+                                                : value.toInt().toString()
+                                            : "",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                          color: Colors.black,
+                                        )),
+                                    Text("/5",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                        ))
+                                  ],
+                                )
+                              : Text("No ratings yet",
                                   style: TextStyle(
                                       fontSize: 16,
-                                      color: value != 0
-                                          ? Colors.black
-                                          : Colors.grey[700],
-                                      fontStyle: value != 0
-                                          ? FontStyle.normal
-                                          : FontStyle.italic)));
+                                      color: Colors.grey[700],
+                                      fontStyle: FontStyle.italic));
                         },
                       ),
+
+                      // ValueListenableBuilder(
+                      //   valueListenable: rating,
+                      //   builder: (context, value, widget) {
+                      //     return Center(
+                      //         child: Text(
+                      //             value != 0
+                      //                 ? value % 1 != 0
+                      //                     ? value.toString()
+                      //                     : value.toInt().toString()
+                      //                 : "No ratings yet",
+                      //             style: TextStyle(
+                      //                 fontSize: value != 0 ? 17 : 16,
+                      //                 color: value != 0
+                      //                     ? Colors.black
+                      //                     : Colors.grey[700],
+                      //                 fontStyle: value != 0
+                      //                     ? FontStyle.normal
+                      //                     : FontStyle.italic)));
+                      //   },
+                      // ),
                       SizedBox(height: 15),
                     ],
                   ),
                 ),
-
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Container(
@@ -714,7 +722,7 @@ class _MovieViewState extends State<MovieView>
                     )),
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 30),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
                   child: Text(
@@ -737,6 +745,7 @@ class _MovieViewState extends State<MovieView>
                     ),
                   ),
                 ),
+
                 crewEdit != null && crewEdit[0].length != 0
                     ? SizedBox(height: 15)
                     : Container(),
@@ -790,9 +799,7 @@ class _MovieViewState extends State<MovieView>
                       )
                     : Container(),
                 SizedBox(height: 25),
-                // TO DO: add screenshots here
-                // model.isEmpty == false
-                // ?
+
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
                   child: Text("Mga Review",
@@ -801,7 +808,6 @@ class _MovieViewState extends State<MovieView>
                         fontWeight: FontWeight.bold,
                       )),
                 ),
-                // : SizedBox(),
                 (currentUser == null && model.isEmpty == true) ||
                         (currentUser != null &&
                             currentUser.isAdmin == false &&

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:mubidibi/ui/views/dashboard_view.dart';
-import 'package:mubidibi/ui/views/home_view.dart';
+// import 'package:mubidibi/ui/views/dashboard_view.dart';
+// import 'package:mubidibi/ui/views/home_view.dart';
 import 'base_model.dart';
-import 'package:mubidibi/services/navigation_service.dart';
+// import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/locator.dart';
-import 'package:mubidibi/constants/route_names.dart';
+// import 'package:mubidibi/constants/route_names.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/src/widgets/navigator.dart';
+// import 'package:flutter/src/widgets/navigator.dart';
 
 class LoginViewModel extends BaseModel {
   final DialogService _dialogService = locator<DialogService>();
-  final NavigationService _navigationService = locator<NavigationService>();
+  // final NavigationService _navigationService = locator<NavigationService>();
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
 
