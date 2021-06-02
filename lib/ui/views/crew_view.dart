@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mubidibi/locator.dart';
+import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
@@ -17,6 +18,8 @@ import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
 // import 'package:mubidibi/ui/views/home_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/ui/views/see_all_view.dart';
+import 'package:mubidibi/viewmodels/award_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:provider_architecture/viewmodel_provider.dart';
 import 'package:mubidibi/globals.dart' as Config;
@@ -48,6 +51,7 @@ class _CrewViewState extends State<CrewView>
   AnimationController _animationController;
   IconData fabIcon;
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  List<Award> awards;
 
   void fetchCrew() async {
     var model = CrewViewModel();
@@ -58,9 +62,23 @@ class _CrewViewState extends State<CrewView>
     });
   }
 
+  void fetchAwards() async {
+    var model = AwardViewModel();
+    var c = await model.getCrewAwards(
+        crewId: crewId,
+        user: currentUser != null && currentUser.isAdmin == true
+            ? "admin"
+            : "non-admin");
+
+    setState(() {
+      awards = c;
+    });
+  }
+
   @override
   void initState() {
     fetchCrew();
+    fetchAwards();
     currentUser = _authenticationService.currentUser;
     fabIcon = Icons.settings;
 
@@ -105,7 +123,7 @@ class _CrewViewState extends State<CrewView>
                         borderRadius: BorderRadius.circular(5),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey,
+                            color: Colors.black54,
                             blurRadius: 2, // 7
                           )
                         ]),
@@ -118,36 +136,39 @@ class _CrewViewState extends State<CrewView>
                                 MovieView(movieId: movie.movieId.toString()),
                           ),
                         );
-                        print(movie.title);
                       },
-
-                      // Make this a stack/ conditional statement so that the movie title can still be seen if poster is not available
-                      child: CachedNetworkImage(
-                        placeholder: (context, url) => Container(
-                          child: Container(
+                      child: Stack(
+                        children: [
+                          Container(
                             alignment: Alignment.center,
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Theme.of(context).accentColor),
+                            margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Text(
+                              movie.title,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ),
-                        errorWidget: (context, url, error) => Material(
-                          child: Image.network(
-                            Config.imgNotFound,
-                            height: 350,
-                            width: 250,
-                            fit: BoxFit.cover,
-                            alignment: Alignment.center,
+                          Container(
+                            height: 180.0, //200
+                            width: 120.0, //130
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5),
+                              image: DecorationImage(
+                                image: CachedNetworkImageProvider(
+                                  movie.poster != null &&
+                                          movie.poster.length != 0
+                                      ? movie.poster[0]
+                                      : Config.imgNotFound,
+                                ),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
                           ),
-                        ),
-                        imageUrl:
-                            movie.poster != null && movie.poster.length != 0
-                                ? movie.poster[0]
-                                : Config.imgNotFound,
-                        width: 180, // 200
-                        height: 120, // 130
-                        fit: BoxFit.cover,
+                        ],
                       ),
                     ),
                   );
@@ -397,7 +418,6 @@ class _CrewViewState extends State<CrewView>
                   Expanded(
                     child: Container(
                       margin: EdgeInsets.all(20),
-                      // width: 200,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
@@ -556,23 +576,31 @@ class _CrewViewState extends State<CrewView>
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              "Mga Pelikula bilang Direktor",
-                                              style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold),
+                                            Flexible(
+                                              child: Text(
+                                                "Mga Pelikula bilang Direktor",
+                                                style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                                overflow: TextOverflow.clip,
+                                                softWrap: true,
+                                              ),
                                             ),
                                             crew.movies[0].length >= 4
-                                                ? GestureDetector(
-                                                    // child: Text(
-                                                    //   'Tingnan Lahat',
-                                                    //   style: TextStyle(
-                                                    //       fontSize: 14,
-                                                    //       fontWeight: FontWeight.bold),
-                                                    // ),
-                                                    child: Icon(Icons
-                                                        .arrow_forward_ios_outlined),
-                                                    onTap: () {},
+                                                ? Container(
+                                                    child: GestureDetector(
+                                                      child: Text(
+                                                        'Tingnan Lahat',
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors.blue),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        softWrap: true,
+                                                      ),
+                                                      onTap: () {},
+                                                    ),
                                                   )
                                                 : Container(),
                                           ],
@@ -596,23 +624,31 @@ class _CrewViewState extends State<CrewView>
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              "Mga Pelikula bilang Manunulat",
-                                              style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold),
+                                            Flexible(
+                                              child: Text(
+                                                "Mga Pelikula bilang Manunulat",
+                                                style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                                overflow: TextOverflow.clip,
+                                                softWrap: true,
+                                              ),
                                             ),
                                             crew.movies[1].length >= 4
-                                                ? GestureDetector(
-                                                    // child: Text(
-                                                    //   'Tingnan Lahat',
-                                                    //   style: TextStyle(
-                                                    //       fontSize: 14,
-                                                    //       fontWeight: FontWeight.bold),
-                                                    // ),
-                                                    child: Icon(Icons
-                                                        .arrow_forward_ios_outlined),
-                                                    onTap: () {},
+                                                ? Container(
+                                                    child: GestureDetector(
+                                                      child: Text(
+                                                        'Tingnan Lahat',
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors.blue),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        softWrap: true,
+                                                      ),
+                                                      onTap: () {},
+                                                    ),
                                                   )
                                                 : Container(),
                                           ],
@@ -636,26 +672,29 @@ class _CrewViewState extends State<CrewView>
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Text(
-                                              "Mga Pelikula bilang Aktor",
-                                              style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold),
+                                            Flexible(
+                                              child: Text(
+                                                "Mga Pelikula bilang Aktor",
+                                                style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
                                             ),
                                             crew.movies[2].length >= 4
-                                                ? GestureDetector(
-                                                    child: Text(
-                                                      'Tingnan Lahat',
-                                                      style: TextStyle(
-                                                          fontSize: 14,
-                                                          color: Colors.blue),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      softWrap: true,
+                                                ? Container(
+                                                    child: GestureDetector(
+                                                      child: Text(
+                                                        'Tingnan Lahat',
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors.blue),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        softWrap: true,
+                                                      ),
+                                                      onTap: () {},
                                                     ),
-                                                    // child: Icon(Icons
-                                                    //     .arrow_forward_ios_outlined),
-                                                    onTap: () {},
                                                   )
                                                 : Container(),
                                           ],
@@ -668,7 +707,63 @@ class _CrewViewState extends State<CrewView>
                             ],
                           )
                         : SizedBox(),
-                    SizedBox(height: 20),
+                    awards != null && awards.length != 0
+                        ? SizedBox(height: 20)
+                        : SizedBox(),
+                    // Mga Award
+                    awards != null && awards.length != 0
+                        ? Text("Mga Award",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ))
+                        : SizedBox(),
+                    awards != null && awards.length != 0
+                        ? Column(
+                            children: awards.map((award) {
+                              return ListTile(
+                                title: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    new Icon(Icons.fiber_manual_record,
+                                        size: 16),
+                                    SizedBox(
+                                      width: 5,
+                                    ),
+                                    Flexible(
+                                      child: Text(
+                                          award.name +
+                                              (award.year != null
+                                                  ? " (" + award.year + ") "
+                                                  : ""),
+                                          style: TextStyle(fontSize: 16),
+                                          softWrap: true,
+                                          overflow: TextOverflow.clip),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: award.type != null
+                                    ? Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 20.0),
+                                        child: Text(
+                                            award.type == "nominated"
+                                                ? "Nominado"
+                                                : "Panalo",
+                                            style: TextStyle(
+                                                fontStyle: FontStyle.italic,
+                                                fontSize: 16),
+                                            softWrap: true,
+                                            overflow: TextOverflow.clip),
+                                      )
+                                    : SizedBox(),
+                              );
+                            }).toList(),
+                          )
+                        : SizedBox(),
+                    awards != null && awards.length != 0
+                        ? SizedBox(height: 25)
+                        : SizedBox(),
                     crew.photos.isNotEmpty
                         ? Column(
                             mainAxisAlignment: MainAxisAlignment.start,
@@ -684,23 +779,38 @@ class _CrewViewState extends State<CrewView>
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold),
                                   ),
-                                  // TO DO: MAKE A PAGE TO VIEW ALL PHOTOS / IMAGE VIEWER (FOR MULTIPLE IMAGES)
                                   crew.photos.length >= 4
                                       ? GestureDetector(
-                                          child: Icon(
-                                              Icons.arrow_forward_ios_outlined),
-
-                                          // child: Text('Tingnan Lahat',
-                                          //     style: TextStyle(
-                                          //         fontSize: 18,
-                                          //         fontWeight: FontWeight.bold)),
-                                          onTap: () {},
+                                          child: Text(
+                                            'Tingnan Lahat',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.blue),
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: true,
+                                          ),
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    SeeAllView(
+                                                  type: 'photos',
+                                                  title: "Mga Larawan",
+                                                  photos: crew.photos,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                         )
                                       : Container(),
                                 ],
                               ),
-                              SizedBox(height: 10),
-                              displayPhotos()
+                              crew.photos.isNotEmpty
+                                  ? SizedBox(height: 10)
+                                  : SizedBox(),
+                              displayPhotos(),
+                              SizedBox(height: 20)
                             ],
                           )
                         : Container(),

@@ -37,8 +37,29 @@ exports.award = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = `SELECT award.*, m.type, m.year from award left join movie_award as m on m.movie_id = award.id where movie_id = ${req.body.movie_id}`;
-      if (req.body.user != "admin") query = query.concat(` and is_deleted = false`);
+      var query = `SELECT award.*, m.type, m.year from award left join movie_award as m on m.award_id = award.id where movie_id = ${req.body.movie_id}`;
+      if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
+
+      client.query(
+        query,
+        async function onResult(err, result) {
+          console.log(result);
+          release()
+          res.send(err || JSON.stringify(result.rows));
+        }
+      )
+    }
+  });
+
+  // GET AWARDS FOR CREW DETAIL VIEW
+  app.post('/mubidibi/crew-awards/', (req, res) => {
+    app.pg.connect(onConnect)
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err)
+
+      var query = `SELECT award.*, c.type, c.year from award left join crew_award as c on c.award_id = award.id where crew_id = ${req.body.crew_id}`;
+      if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
 
       client.query(
         query,
@@ -60,7 +81,6 @@ exports.award = app => {
       client.query(
         'SELECT * from award where id = $1', [req.body.award_id],
         function onResult(err, result) {
-          console.log(result.rows[0])
           release()
           if (result) res.send(JSON.stringify(result.rows[0]));
           else res.send(err);
@@ -135,7 +155,6 @@ exports.award = app => {
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
-      console.log('query: ', query);
       var award = await client.query(query);
 
       release();

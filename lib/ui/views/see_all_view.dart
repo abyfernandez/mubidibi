@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
+import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
@@ -24,7 +25,6 @@ class SeeAllView extends StatefulWidget {
   final String filter;
   final bool showFilter;
   final String title;
-  // TO DO: photos and crew
 
   SeeAllView({
     Key key,
@@ -590,7 +590,105 @@ class _SeeAllViewState extends State<SeeAllView> {
             ],
           ),
         );
+        break;
+      case "photos":
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 10),
+              Wrap(
+                  children: photos.length != 0
+                      ? photos
+                          .map(
+                            (p) => GestureDetector(
+                              child: Container(
+                                height: 210.0,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  height: 200.0,
+                                  width: 120.0,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5),
+                                    image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        p != null ? p : Config.imgNotFound,
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FullPhoto(url: p),
+                                    ));
+                              },
+                            ),
+                          )
+                          .toList()
+                      : [
+                          Center(
+                            child: Text("No content found."),
+                          ),
+                        ]),
+            ],
+          ),
+        );
+        break;
+      case "screenshots":
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 10),
+              Wrap(
+                  children: screenshots.length != 0
+                      ? screenshots
+                          .map(
+                            (p) => GestureDetector(
+                              child: Container(
+                                height: 210.0,
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  height: 200.0,
+                                  width: 120.0,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5),
+                                    image: DecorationImage(
+                                      image: CachedNetworkImageProvider(
+                                        p != null ? p : Config.imgNotFound,
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FullPhoto(url: p),
+                                    ));
+                              },
+                            ),
+                          )
+                          .toList()
+                      : [
+                          Center(
+                            child: Text("No content found."),
+                          ),
+                        ]),
+            ],
+          ),
+        );
+        break;
     }
+
     return null;
   }
 }

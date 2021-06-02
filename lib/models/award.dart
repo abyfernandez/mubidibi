@@ -39,7 +39,7 @@ class Award {
         category: json["category"] == null
             ? []
             : List<String>.from(json["category"].map((x) => x)),
-        year: json['year'],
+        year: json['year'].toString(),
         type: json['type'],
         description: json['description'],
         addedBy: json['added_by'],

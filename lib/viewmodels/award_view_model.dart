@@ -31,7 +31,7 @@ class AwardViewModel extends BaseModel {
     }
   }
 
-  // Function: GET AWARDS for Awards Detail View
+  // Function: GET AWARDS for Movie Detail View -- // TO DO: include the awards received by the movie's crew
   Future<List<Award>> getAwards(
       {@required String movieId, @required String user}) async {
     setBusy(true);
@@ -41,7 +41,7 @@ class AwardViewModel extends BaseModel {
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(<String, dynamic>{"movieId": movieId, "user": user}));
+        body: jsonEncode(<String, dynamic>{"movie_id": movieId, "user": user}));
 
     if (response.statusCode == 200) {
       awards.addAll(awardFromJson(response.body));
@@ -52,7 +52,28 @@ class AwardViewModel extends BaseModel {
     }
   }
 
-  // Function: GET AWARD
+  // Function: GET AWARDS for Awards Detail View -- // TO DO: include what movie the award was for
+  Future<List<Award>> getCrewAwards(
+      {@required String crewId, @required String user}) async {
+    setBusy(true);
+
+    // send API Request
+    final response = await http.post(Config.api + "crew-awards/",
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{"crew_id": crewId, "user": user}));
+
+    if (response.statusCode == 200) {
+      awards.addAll(awardFromJson(response.body));
+      notifyListeners();
+      return awardFromJson(response.body);
+    } else {
+      throw Exception('Failed to get awards');
+    }
+  }
+
+  // Function: GET AWARD (single)
   Future<Award> getAward({int awardId}) async {
     setBusy(true);
 
@@ -64,7 +85,6 @@ class AwardViewModel extends BaseModel {
         body: jsonEncode(<String, dynamic>{"award_id": awardId}));
 
     if (response.statusCode == 200) {
-      print(json.encode(Award.fromJson(json.decode(response.body))));
       return Award.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to get award');

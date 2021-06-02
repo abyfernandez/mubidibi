@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/models/review.dart';
@@ -16,6 +17,7 @@ import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/views/add_movie.dart';
 import 'package:mubidibi/ui/views/see_all_view.dart';
 import 'package:mubidibi/ui/widgets/content_scroll.dart';
+import 'package:mubidibi/viewmodels/award_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/review_view_model.dart';
@@ -46,6 +48,7 @@ class _MovieViewState extends State<MovieView>
   Movie movie;
   Future<List<List<Crew>>> crew;
   List<List<Crew>> crewEdit;
+  List<Award> awards;
   Future<List<Review>> reviews;
   // ScrollController _scrollController;
   Animation<double> _animation;
@@ -56,6 +59,8 @@ class _MovieViewState extends State<MovieView>
   final DialogService _dialogService = locator<DialogService>();
   var currentUser;
   IconData fabIcon;
+  int _screenshotSlider = 0;
+  int _posterSlider = 0;
 
   // local variables
   bool _saving = false;
@@ -63,6 +68,7 @@ class _MovieViewState extends State<MovieView>
   var tempRating = 0.0;
   var numItems = 0;
   final CarouselController _controller = CarouselController();
+  final CarouselController _posterController = CarouselController();
 
   // variables needed for adding reviews
   final reviewController = TextEditingController();
@@ -103,7 +109,7 @@ class _MovieViewState extends State<MovieView>
     }
   }
 
-// refresh page when over all rating is changed
+  // TO DO: Deprecate - refresh page when over all rating is changed
   refresh() {
     setState(() {});
   }
@@ -115,6 +121,20 @@ class _MovieViewState extends State<MovieView>
 
     setState(() {
       movie = film;
+    });
+  }
+
+  // function for calling award viewmodel's getAwards method
+  Future fetchAwards() async {
+    var model = AwardViewModel();
+    var temp = await model.getAwards(
+        movieId: movieId,
+        user: currentUser != null && currentUser.isAdmin == true
+            ? "admin"
+            : "non-admin");
+
+    setState(() {
+      awards = temp;
     });
   }
 
@@ -144,6 +164,7 @@ class _MovieViewState extends State<MovieView>
   void initState() {
     fetchMovie();
     crew = fetchCrew();
+    fetchAwards();
     fabIcon = Icons.settings;
 
     currentUser = _authenticationService.currentUser;
@@ -159,11 +180,9 @@ class _MovieViewState extends State<MovieView>
     super.initState();
   }
 
-  // GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // formkey
   FocusNode focusNode =
       new FocusNode(); // to close keyboard after posting review
-  // GlobalKey _toolTipKey = GlobalKey();
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void didUpdateWidget(MovieView oldWidget) {
@@ -366,20 +385,14 @@ class _MovieViewState extends State<MovieView>
                   children: <Widget>[
                     movie.poster.length > 1
                         ? CarouselSlider(
+                            key: ValueKey('poster'),
+                            carouselController: _posterController,
                             options: CarouselOptions(
-                              autoPlay: true,
-                              autoPlayAnimationDuration: Duration(seconds: 1),
+                              // autoPlay: true,
+                              // autoPlayAnimationDuration: Duration(seconds: 1),
                               height: 400,
                               viewportFraction: 1.0,
-                              // onPageChanged: (index, reason) {
-                              //   print(index);
-                              //   print(reason);
-                              //   setState(() {
-                              //     _current = index;
-                              //   });
-                              // },
                             ),
-                            carouselController: _controller,
                             items: movie.poster.map((p) {
                               return Container(
                                 height: 400,
@@ -520,6 +533,39 @@ class _MovieViewState extends State<MovieView>
                               ],
                             ),
                           ),
+                    movie.poster.length > 1
+                        ? Positioned(
+                            left: MediaQuery.of(context).size.width / 2,
+                            bottom: 0,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: movie.poster.map((url) {
+                                int index = movie.poster.indexOf(url);
+                                return GestureDetector(
+                                  child: Container(
+                                    width: 8.0,
+                                    height: 8.0,
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: 10.0, horizontal: 2.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _posterSlider == index
+                                          ? Color.fromRGBO(255, 255, 255, 0.9)
+                                          : Color.fromRGBO(0, 0, 0, 0.9),
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    _posterController.animateToPage(index);
+                                    setState(() {
+                                      _posterSlider = index;
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          )
+                        : SizedBox(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: <Widget>[
@@ -562,6 +608,7 @@ class _MovieViewState extends State<MovieView>
                     ),
                   ],
                 ),
+
                 Padding(
                   padding:
                       EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
@@ -607,7 +654,7 @@ class _MovieViewState extends State<MovieView>
                                     });
                               }).toList(),
                             )
-                          : Container(),
+                          : SizedBox(),
                       ValueListenableBuilder(
                         valueListenable: rating,
                         builder: (context, value, widget) {
@@ -641,28 +688,7 @@ class _MovieViewState extends State<MovieView>
                                       fontStyle: FontStyle.italic));
                         },
                       ),
-
-                      // ValueListenableBuilder(
-                      //   valueListenable: rating,
-                      //   builder: (context, value, widget) {
-                      //     return Center(
-                      //         child: Text(
-                      //             value != 0
-                      //                 ? value % 1 != 0
-                      //                     ? value.toString()
-                      //                     : value.toInt().toString()
-                      //                 : "No ratings yet",
-                      //             style: TextStyle(
-                      //                 fontSize: value != 0 ? 17 : 16,
-                      //                 color: value != 0
-                      //                     ? Colors.black
-                      //                     : Colors.grey[700],
-                      //                 fontStyle: value != 0
-                      //                     ? FontStyle.normal
-                      //                     : FontStyle.italic)));
-                      //   },
-                      // ),
-                      SizedBox(height: 15),
+                      SizedBox(height: 25),
                     ],
                   ),
                 ),
@@ -745,10 +771,9 @@ class _MovieViewState extends State<MovieView>
                     ),
                   ),
                 ),
-
                 crewEdit != null && crewEdit[0].length != 0
-                    ? SizedBox(height: 15)
-                    : Container(),
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
                 crewEdit != null && crewEdit[0].length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -762,10 +787,10 @@ class _MovieViewState extends State<MovieView>
                           imageWidth: 110.0,
                         ),
                       )
-                    : Container(),
+                    : SizedBox(),
                 crewEdit != null && crewEdit[1].length != 0
-                    ? SizedBox(height: 15)
-                    : Container(),
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
                 crewEdit != null && crewEdit[1].length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -779,11 +804,10 @@ class _MovieViewState extends State<MovieView>
                           imageWidth: 110.0,
                         ),
                       )
-                    : Container(),
-
+                    : SizedBox(),
                 crewEdit != null && crewEdit[2].length != 0
-                    ? SizedBox(height: 15)
-                    : Container(),
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
                 crewEdit != null && crewEdit[2].length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -797,9 +821,252 @@ class _MovieViewState extends State<MovieView>
                           imageWidth: 110.0,
                         ),
                       )
-                    : Container(),
+                    : SizedBox(),
+                crewEdit != null && crewEdit[2].length != 0
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
+                // Mga Award
+                awards != null && awards.length != 0
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Text("Mga Award",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      )
+                    : SizedBox(),
+                awards != null && awards.length != 0
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Column(
+                          children: awards.map((award) {
+                            return ListTile(
+                              title: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  new Icon(Icons.fiber_manual_record, size: 16),
+                                  SizedBox(
+                                    width: 5,
+                                  ),
+                                  Flexible(
+                                    child: Text(
+                                        award.name +
+                                            (award.year != null
+                                                ? " (" + award.year + ") "
+                                                : ""),
+                                        style: TextStyle(fontSize: 16),
+                                        softWrap: true,
+                                        overflow: TextOverflow.clip),
+                                  ),
+                                ],
+                              ),
+                              subtitle: award.type != null
+                                  ? Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 20.0),
+                                      child: Text(
+                                          award.type == "nominated"
+                                              ? "Nominado"
+                                              : "Panalo",
+                                          style: TextStyle(
+                                              fontStyle: FontStyle.italic,
+                                              fontSize: 16),
+                                          softWrap: true,
+                                          overflow: TextOverflow.clip),
+                                    )
+                                  : SizedBox(),
+                            );
+                          }).toList(),
+                        ),
+                      )
+                    : SizedBox(),
+                awards != null && awards.length != 0
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
+                // Screenshots
+                movie.screenshot != null && movie.screenshot.length != 0
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Text("Mga Screenshot",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      )
+                    : SizedBox(),
+                movie.screenshot != null && movie.screenshot.length != 0
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
+                movie.screenshot != null && movie.screenshot.length != 0
+                    ? SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            CarouselSlider(
+                              key: ValueKey('screenshot'),
+                              options: CarouselOptions(
+                                  enlargeCenterPage: false,
+                                  height: 200,
+                                  aspectRatio: 1,
+                                  viewportFraction: 1),
+                              carouselController: _controller,
+                              items: movie.screenshot.map((p) {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      child: GestureDetector(
+                                        child: Center(
+                                          child: CachedNetworkImage(
+                                            placeholder: (context, url) =>
+                                                Container(
+                                              child: Container(
+                                                alignment: Alignment.center,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                              Color>(
+                                                          Theme.of(context)
+                                                              .accentColor),
+                                                ),
+                                              ),
+                                            ),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    Material(
+                                              child: Image.network(
+                                                Config.imgNotFound,
+                                                width: 300,
+                                                height: 200,
+                                                fit: BoxFit.cover,
+                                                alignment: Alignment.center,
+                                              ),
+                                            ),
+                                            imageUrl: p ?? Config.imgNotFound,
+                                            width: 300,
+                                            height: 200,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => FullPhoto(
+                                                  url: p ?? Config.imgNotFound),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    // Arrow Buttons
+                                    Container(
+                                      alignment: Alignment.center,
+                                      margin:
+                                          EdgeInsets.only(left: 15, right: 15),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          _screenshotSlider != 0
+                                              ? Stack(
+                                                  children: [
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Color.fromRGBO(
+                                                            240, 240, 240, 1),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(50),
+                                                      ),
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          _controller
+                                                              .previousPage();
+                                                          setState(() {
+                                                            _screenshotSlider -=
+                                                                1;
+                                                          });
+                                                        },
+                                                        child: Icon(
+                                                            Icons
+                                                                .navigate_before_outlined,
+                                                            size: 30),
+                                                      ),
+                                                    )
+                                                  ],
+                                                )
+                                              : Container(),
+                                          _screenshotSlider !=
+                                                  movie.screenshot.length - 1
+                                              ? Stack(
+                                                  children: [
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color: Color.fromRGBO(
+                                                            240, 240, 240, 1),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(50),
+                                                      ),
+                                                      child: GestureDetector(
+                                                        onTap: () {
+                                                          _controller
+                                                              .nextPage();
+                                                          setState(() {
+                                                            _screenshotSlider +=
+                                                                1;
+                                                          });
+                                                        },
+                                                        child: Icon(
+                                                            Icons
+                                                                .navigate_next_outlined,
+                                                            size: 30),
+                                                      ),
+                                                    )
+                                                  ],
+                                                )
+                                              : Container(),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: movie.screenshot.map((url) {
+                                int index = movie.screenshot.indexOf(url);
+                                return GestureDetector(
+                                  child: Container(
+                                    width: 8.0,
+                                    height: 8.0,
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: 10.0, horizontal: 2.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _screenshotSlider == index
+                                          ? Color.fromRGBO(0, 0, 0, 0.9)
+                                          : Color.fromRGBO(0, 0, 0, 0.4),
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    _controller.animateToPage(index);
+                                    setState(() {
+                                      _screenshotSlider = index;
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SizedBox(),
                 SizedBox(height: 25),
-
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
                   child: Text("Mga Review",
@@ -827,7 +1094,7 @@ class _MovieViewState extends State<MovieView>
                         padding: EdgeInsets.symmetric(horizontal: 20),
                         child: Column(
                           children: [
-                            SizedBox(height: 15),
+                            SizedBox(height: 25),
                             ReviewForm(
                                 computeOverallRating: computeOverallRating,
                                 sKey: _scaffoldKey,
@@ -860,29 +1127,3 @@ class _MovieViewState extends State<MovieView>
     );
   }
 }
-
-// class MyTooltip extends StatelessWidget {
-//   final Widget child;
-//   final String message;
-
-//   MyTooltip({@required this.message, @required this.child});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final key = GlobalKey<State<Tooltip>>();
-//     return Tooltip(
-//       key: key,
-//       message: message,
-//       child: GestureDetector(
-//         behavior: HitTestBehavior.opaque,
-//         onTap: () => _onTap(key),
-//         child: child,
-//       ),
-//     );
-//   }
-
-//   void _onTap(GlobalKey key) {
-//     final dynamic tooltip = key.currentState;
-//     tooltip?.ensureTooltipVisible();
-//   }
-// }
