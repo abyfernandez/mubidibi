@@ -89,7 +89,6 @@ class CrewViewModel extends BaseModel {
     setBusy(false);
 
     if (response.statusCode == 200) {
-      print(json.decode(response.body));
       return Crew.fromJson(json.decode(response.body));
     } else {
       throw Exception('Failed to load crew');
@@ -174,7 +173,6 @@ class CrewViewModel extends BaseModel {
     });
 
     if (crewId != 0) {
-      print(crewId);
       // UPDATE CREW
       response = await dio.put(Config.api + 'update-crew/$crewId',
           data: formData, queryParameters: {'id': crewId});
@@ -185,8 +183,6 @@ class CrewViewModel extends BaseModel {
         data: formData,
       );
     }
-
-    print(json.decode(response.data));
 
     if (response.statusCode == 200) {
       id = json.decode(response.data);
@@ -209,7 +205,6 @@ class CrewViewModel extends BaseModel {
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
-      print(json.decode(response.body));
       return (json.decode(response.body));
     }
     return 0;

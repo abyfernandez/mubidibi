@@ -57,8 +57,8 @@ class _AddCrewState extends State<AddCrew> {
 
   List<Movie> movieOptions;
   List<Award> awardOptions;
-  List<int> movieDirector = [];
-  List<int> movieWriter = [];
+  List<Movie> movieDirector = [];
+  List<Movie> movieWriter = [];
   List<AwardWidget> awardList = [];
   List<AwardWidget> filteredAwards = [];
   List<MovieActorWidget> movieActorList = [];
@@ -142,27 +142,35 @@ class _AddCrewState extends State<AddCrew> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: filteredMovieActorList.map((film) {
                     if (film.movieActor.saved == true) {
-                      return Row(
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          new Icon(Icons.fiber_manual_record, size: 16),
-                          SizedBox(
-                            width: 5,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              new Icon(Icons.fiber_manual_record, size: 16),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              new Expanded(
+                                child: Text(film.movieActor.movieTitle,
+                                    style: TextStyle(fontSize: 16),
+                                    softWrap: true,
+                                    overflow: TextOverflow.clip),
+                              ),
+                            ],
                           ),
-                          new Flexible(
-                            child: Text(film.movieActor.movieTitle,
-                                style: TextStyle(fontSize: 16),
-                                softWrap: true,
-                                overflow: TextOverflow.clip),
+                          Padding(
+                            padding: EdgeInsets.only(left: 10),
+                            child: film.movieActor.role.length != 0
+                                ? Text(" - " + film.movieActor.role.join(" / "),
+                                    style: TextStyle(
+                                        fontStyle: FontStyle.italic,
+                                        fontSize: 16),
+                                    softWrap: true,
+                                    overflow: TextOverflow.clip)
+                                : SizedBox(),
                           ),
-                          film.movieActor.role.length != 0
-                              ? Text(" - " + film.movieActor.role.join(" / "),
-                                  style: TextStyle(
-                                      fontStyle: FontStyle.italic,
-                                      fontSize: 16),
-                                  softWrap: true,
-                                  overflow: TextOverflow.clip)
-                              : SizedBox(),
                         ],
                       );
                     }
@@ -616,6 +624,22 @@ class _AddCrewState extends State<AddCrew> {
                                           .toList();
                                     }
 
+                                    // movieDirectors
+                                    List<int> movieDirectorsToSave = [];
+                                    if (movieDirector.isNotEmpty) {
+                                      movieDirectorsToSave = movieDirector
+                                          .map((a) => a.movieId)
+                                          .toList();
+                                    }
+
+                                    // movieWriters
+                                    List<int> movieWritersToSave = [];
+                                    if (movieWriter.isNotEmpty) {
+                                      movieWritersToSave = movieWriter
+                                          .map((a) => a.movieId)
+                                          .toList();
+                                    }
+
                                     final response = await model.addCrew(
                                         firstName: firstNameController.text,
                                         middleName: middleNameController.text,
@@ -635,9 +659,8 @@ class _AddCrewState extends State<AddCrew> {
                                         photos: photos,
                                         mimetype: mimetype,
                                         addedBy: currentUser.userId,
-                                        // TO DO: pelikula bilang, awards
-                                        director: movieDirector,
-                                        writer: movieWriter,
+                                        director: movieDirectorsToSave,
+                                        writer: movieWritersToSave,
                                         actor: movieActorsToSave,
                                         awards: awardsToSave,
                                         crewId: crewId);
@@ -1035,11 +1058,7 @@ class _AddCrewState extends State<AddCrew> {
                   return movieOptions;
                 },
                 onChanged: (data) {
-                  List<int> ids = [];
-                  for (var c in data) {
-                    ids.add(c.movieId);
-                  }
-                  movieDirector = ids;
+                  movieDirector = data;
                 },
                 chipBuilder: (context, state, c) {
                   return InputChip(
@@ -1096,11 +1115,7 @@ class _AddCrewState extends State<AddCrew> {
                   return movieOptions;
                 },
                 onChanged: (data) {
-                  List<int> ids = [];
-                  for (var c in data) {
-                    ids.add(c.movieId);
-                  }
-                  movieWriter = ids;
+                  movieWriter = data;
                 },
                 chipBuilder: (context, state, c) {
                   return InputChip(
@@ -1569,9 +1584,7 @@ class _AddCrewState extends State<AddCrew> {
                           ? Container(
                               alignment: Alignment.topLeft,
                               child: Column(
-                                  children: movieDirector.map<Widget>((id) {
-                                var film = movieOptions
-                                    .firstWhere((item) => item.movieId == id);
+                                  children: movieDirector.map<Widget>((film) {
                                 return new Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -1610,9 +1623,7 @@ class _AddCrewState extends State<AddCrew> {
                           ? Container(
                               alignment: Alignment.topLeft,
                               child: Column(
-                                  children: movieWriter.map<Widget>((id) {
-                                var film = movieOptions
-                                    .firstWhere((item) => item.movieId == id);
+                                  children: movieWriter.map<Widget>((film) {
                                 return new Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [

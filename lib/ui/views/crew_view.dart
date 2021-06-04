@@ -599,7 +599,24 @@ class _CrewViewState extends State<CrewView>
                                                             .ellipsis,
                                                         softWrap: true,
                                                       ),
-                                                      onTap: () {},
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (context) =>
+                                                                    SeeAllView(
+                                                              movies: crew
+                                                                  .movies[0],
+                                                              type: 'movies',
+                                                              title:
+                                                                  "Mga Pelikula Bilang Direktor",
+                                                              photos:
+                                                                  crew.photos,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
                                                     ),
                                                   )
                                                 : Container(),
@@ -647,7 +664,24 @@ class _CrewViewState extends State<CrewView>
                                                             .ellipsis,
                                                         softWrap: true,
                                                       ),
-                                                      onTap: () {},
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (context) =>
+                                                                    SeeAllView(
+                                                              movies: crew
+                                                                  .movies[1],
+                                                              type: 'movies',
+                                                              title:
+                                                                  "Mga Pelikula Bilang Manunulat",
+                                                              photos:
+                                                                  crew.photos,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
                                                     ),
                                                   )
                                                 : Container(),
@@ -693,7 +727,24 @@ class _CrewViewState extends State<CrewView>
                                                             .ellipsis,
                                                         softWrap: true,
                                                       ),
-                                                      onTap: () {},
+                                                      onTap: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder:
+                                                                (context) =>
+                                                                    SeeAllView(
+                                                              movies: crew
+                                                                  .movies[2],
+                                                              type: 'movies',
+                                                              title:
+                                                                  "Mga Pelikula Bilang Aktor",
+                                                              photos:
+                                                                  crew.photos,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
                                                     ),
                                                   )
                                                 : Container(),

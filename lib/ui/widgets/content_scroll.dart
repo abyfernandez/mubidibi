@@ -59,13 +59,11 @@ class ContentScroll extends StatelessWidget {
                         ),
                       );
                     },
-                    // child: Icon(Icons.arrow_forward_ios_outlined),
                     child: Text(
-                      "Tingnan Lahat",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.blue,
-                      ),
+                      'Tingnan Lahat',
+                      style: TextStyle(fontSize: 14, color: Colors.blue),
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
                     ),
                   )
                 : Container(),

@@ -258,7 +258,7 @@ class AwardWidgetState extends State<AwardWidget> {
             margin: EdgeInsets.symmetric(vertical: 10),
             child: ListTile(
               contentPadding:
-                  EdgeInsets.only(left: 10, right: 10, bottom: 15, top: 20),
+                  EdgeInsets.only(left: 10, right: 10, bottom: 5, top: 5),
               tileColor: Color.fromRGBO(240, 240, 240, 1),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -293,7 +293,7 @@ class AwardWidgetState extends State<AwardWidget> {
                       ? widget.item.type == "nominated"
                           ? "Nominado"
                           : "Panalo"
-                      : '',
+                      : '[Walang ibang impormasyon]',
                   style: TextStyle(
                     fontSize: 14,
                     fontStyle: FontStyle.italic,

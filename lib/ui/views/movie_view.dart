@@ -388,8 +388,12 @@ class _MovieViewState extends State<MovieView>
                             key: ValueKey('poster'),
                             carouselController: _posterController,
                             options: CarouselOptions(
-                              // autoPlay: true,
-                              // autoPlayAnimationDuration: Duration(seconds: 1),
+                              enableInfiniteScroll: false,
+                              onPageChanged: (index, reason) {
+                                setState(() {
+                                  _posterSlider = index;
+                                });
+                              },
                               height: 400,
                               viewportFraction: 1.0,
                             ),
@@ -406,6 +410,7 @@ class _MovieViewState extends State<MovieView>
                                 child: Stack(
                                   alignment: Alignment.center,
                                   children: [
+                                    // blurred poster background
                                     new BackdropFilter(
                                       filter: new ImageFilter.blur(
                                           sigmaX: 7.0, sigmaY: 7.0),
@@ -415,30 +420,58 @@ class _MovieViewState extends State<MovieView>
                                                 Colors.black.withOpacity(0.3)),
                                       ),
                                     ),
+                                    // smaller poster in the center of the blurred poster background
                                     GestureDetector(
                                       child: Center(
                                         child: CachedNetworkImage(
                                           placeholder: (context, url) =>
                                               Container(
-                                            child: Container(
-                                              alignment: Alignment.center,
-                                              child: CircularProgressIndicator(
-                                                valueColor:
-                                                    AlwaysStoppedAnimation<
-                                                            Color>(
-                                                        Theme.of(context)
-                                                            .accentColor),
+                                            alignment: Alignment.center,
+                                            width: 250,
+                                            height: 350,
+                                            decoration: BoxDecoration(
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black54,
+                                                  offset: Offset(0.0, 0.0),
+                                                  blurRadius: 2.0,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Text(
+                                              movie.title,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                           ),
                                           errorWidget: (context, url, error) =>
                                               Material(
-                                            child: Image.network(
-                                              Config.imgNotFound,
-                                              height: 350,
-                                              width: 250,
-                                              fit: BoxFit.cover,
+                                            child: Container(
                                               alignment: Alignment.center,
+                                              width: 250,
+                                              height: 350,
+                                              decoration: BoxDecoration(
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black54,
+                                                    offset: Offset(0.0, 0.0),
+                                                    blurRadius: 2.0,
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Text(
+                                                movie.title,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                           imageUrl: p ?? Config.imgNotFound,
@@ -489,24 +522,74 @@ class _MovieViewState extends State<MovieView>
                                   child: Center(
                                     child: CachedNetworkImage(
                                       placeholder: (context, url) => Container(
-                                        child: Container(
-                                          alignment: Alignment.center,
-                                          child: CircularProgressIndicator(
-                                            valueColor: AlwaysStoppedAnimation<
-                                                    Color>(
-                                                Theme.of(context).accentColor),
+                                        alignment: Alignment.center,
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 8.0),
+                                        width: 250,
+                                        height: 350,
+                                        decoration: BoxDecoration(
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black54,
+                                              offset: Offset(0.0, 0.0),
+                                              blurRadius: 2.0,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          movie.title,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ),
+                                      //     Container(
+                                      //   child: Container(
+                                      //     alignment: Alignment.center,
+                                      //     child: CircularProgressIndicator(
+                                      //       valueColor:
+                                      //           AlwaysStoppedAnimation<
+                                      //                   Color>(
+                                      //               Theme.of(context)
+                                      //                   .accentColor),
+                                      //     ),
+                                      //   ),
+                                      // ),
                                       errorWidget: (context, url, error) =>
                                           Material(
-                                        child: Image.network(
-                                          Config.imgNotFound,
-                                          height: 350,
-                                          width: 250,
-                                          fit: BoxFit.cover,
+                                        child: Container(
                                           alignment: Alignment.center,
+                                          width: 250,
+                                          height: 350,
+                                          decoration: BoxDecoration(
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black54,
+                                                offset: Offset(0.0, 0.0),
+                                                blurRadius: 2.0,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Text(
+                                            movie.title,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                         ),
+                                        // Image.network(
+                                        //   Config.imgNotFound,
+                                        //   height: 350,
+                                        //   width: 250,
+                                        //   fit: BoxFit.cover,
+                                        //   alignment: Alignment.center,
+                                        // ),
                                       ),
                                       imageUrl: movie.poster != null &&
                                               movie.poster.length != 0
@@ -905,6 +988,12 @@ class _MovieViewState extends State<MovieView>
                             CarouselSlider(
                               key: ValueKey('screenshot'),
                               options: CarouselOptions(
+                                  enableInfiniteScroll: false,
+                                  onPageChanged: (index, reason) {
+                                    setState(() {
+                                      _screenshotSlider = index;
+                                    });
+                                  },
                                   enlargeCenterPage: false,
                                   height: 200,
                                   aspectRatio: 1,
