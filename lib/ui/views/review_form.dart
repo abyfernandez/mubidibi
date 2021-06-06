@@ -20,16 +20,14 @@ class ReviewForm extends StatefulWidget {
   final GlobalKey<ScaffoldState> sKey;
   final Movie movie;
   final User currentUser;
-  final Function() notifyParent;
 
-  const ReviewForm(
-      {Key key,
-      this.computeOverallRating,
-      this.sKey,
-      this.movie,
-      this.currentUser,
-      this.notifyParent})
-      : super(key: key);
+  const ReviewForm({
+    Key key,
+    this.computeOverallRating,
+    this.sKey,
+    this.movie,
+    this.currentUser,
+  }) : super(key: key);
 
   @override
   ReviewFormState createState() => ReviewFormState();

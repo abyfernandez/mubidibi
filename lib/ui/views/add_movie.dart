@@ -652,7 +652,7 @@ class _AddMovieState extends State<AddMovie> {
     }
   }
 
-  // Function: Display Trailers in the Review Step
+  // Function: Display Audios in the Review Step
   Widget displayAudios() {
     filteredAudioList = audioList.where((g) => g.item.saved == true).toList();
 
@@ -673,12 +673,13 @@ class _AddMovieState extends State<AddMovie> {
             ? Column(
                 children: filteredAudioList.map((g) {
                   return Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: EdgeInsets.all(10),
                         color: Colors.white,
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
                               child: Text(
@@ -695,16 +696,20 @@ class _AddMovieState extends State<AddMovie> {
                         margin: EdgeInsets.only(bottom: 10),
                         color: Colors.white,
                         padding: EdgeInsets.all(10),
-                        child: Expanded(
-                          child: Text(
-                              g.item.description ?? "Walang description",
-                              style: TextStyle(
-                                  color: g.item.description == null
-                                      ? Colors.black38
-                                      : Colors.black,
-                                  fontStyle: g.item.description == null
-                                      ? FontStyle.italic
-                                      : FontStyle.normal)),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                  g.item.description ?? "Walang description",
+                                  style: TextStyle(
+                                      color: g.item.description == null
+                                          ? Colors.black38
+                                          : Colors.black,
+                                      fontStyle: g.item.description == null
+                                          ? FontStyle.italic
+                                          : FontStyle.normal)),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -1224,34 +1229,53 @@ class _AddMovieState extends State<AddMovie> {
                                     }
 
                                     // Posters
-                                    List<MediaFile> postersToSave = [];
+                                    List<File> postersToSave = [];
+                                    List<String> posterDesc = [];
                                     if (filteredPosterList.isNotEmpty) {
                                       postersToSave = filteredPosterList
-                                          .map((a) => a.item)
+                                          .map((a) => a.item.file)
+                                          .toList();
+
+                                      posterDesc = filteredPosterList
+                                          .map((a) => a.item.description)
                                           .toList();
                                     }
 
                                     // Gallery
-                                    List<MediaFile> galleryToSave = [];
+                                    List<File> galleryToSave = [];
+                                    List<String> galleryDesc = [];
                                     if (filteredGalleryList.isNotEmpty) {
                                       galleryToSave = filteredGalleryList
-                                          .map((a) => a.item)
+                                          .map((a) => a.item.file)
+                                          .toList();
+                                      galleryDesc = filteredGalleryList
+                                          .map((a) => a.item.description)
                                           .toList();
                                     }
 
                                     // Trailers
-                                    List<MediaFile> trailersToSave = [];
+                                    List<File> trailersToSave = [];
+                                    List<String> trailerDesc = [];
+
                                     if (filteredTrailerList.isNotEmpty) {
                                       trailersToSave = filteredTrailerList
-                                          .map((a) => a.item)
+                                          .map((a) => a.item.file)
+                                          .toList();
+                                      trailerDesc = filteredTrailerList
+                                          .map((a) => a.item.description)
                                           .toList();
                                     }
 
                                     // Audio
-                                    List<MediaFile> audiosToSave = [];
+                                    List<File> audiosToSave = [];
+                                    List<String> audioDesc = [];
+
                                     if (filteredAudioList.isNotEmpty) {
                                       audiosToSave = filteredAudioList
-                                          .map((a) => a.item)
+                                          .map((a) => a.item.file)
+                                          .toList();
+                                      audioDesc = filteredAudioList
+                                          .map((a) => a.item.description)
                                           .toList();
                                     }
 
@@ -1270,10 +1294,14 @@ class _AddMovieState extends State<AddMovie> {
                                         actors: actorsToSave,
                                         awards: awardsToSave,
                                         posters: postersToSave,
+                                        posterDesc: posterDesc,
                                         gallery: galleryToSave,
+                                        galleryDesc: galleryDesc,
                                         trailers: trailersToSave,
+                                        trailerDesc: trailerDesc,
                                         lines: linesToSave,
                                         audios: audiosToSave,
+                                        audioDesc: audioDesc,
                                         addedBy: currentUser.userId,
                                         movieId: movieId);
 
@@ -2349,7 +2377,6 @@ class _AddMovieState extends State<AddMovie> {
                     ),
                   ),
                   SizedBox(height: 15),
-                  _date != null ? SizedBox(height: 10) : SizedBox(),
                   _date != null
                       ? Container(
                           alignment: Alignment.topLeft,
@@ -2373,7 +2400,7 @@ class _AddMovieState extends State<AddMovie> {
                           ),
                         )
                       : SizedBox(),
-                  _date != null ? SizedBox(height: 10) : SizedBox(),
+                  _date != null ? SizedBox(height: 15) : SizedBox(),
                   Container(
                     alignment: Alignment.topLeft,
                     child: Text("Buod: ",

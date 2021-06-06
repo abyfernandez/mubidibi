@@ -36,7 +36,7 @@ exports.award = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = `SELECT award.*, m.type, m.year from award left join movie_award as m on m.award_id = award.id where movie_id = ${req.body.movie_id}`;
+      var query = `SELECT award.id, award.name, to_json(award.category), award.created_at, award.description, award.added_by, award.is_deleted, m.type, m.year from award left join movie_award as m on m.award_id = award.id where movie_id = ${req.body.movie_id}`;
       if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
 
       client.query(

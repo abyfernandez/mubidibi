@@ -1,10 +1,11 @@
 // import 'dart:io';
+import 'dart:io';
+
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/line.dart';
-import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import '../locator.dart';
 import 'base_model.dart';
@@ -79,11 +80,15 @@ class MovieViewModel extends BaseModel {
     String synopsis,
     String releaseDate,
     String runtime,
-    List<MediaFile> posters,
+    List<File> posters,
+    List<String> posterDesc,
     // String imageURI, // poster edit ??
-    List<MediaFile> gallery,
-    List<MediaFile> trailers,
-    List<MediaFile> audios,
+    List<File> gallery,
+    List<String> galleryDesc,
+    List<File> trailers,
+    List<String> trailerDesc,
+    List<File> audios,
+    List<String> audioDesc,
     List<String> genre,
     List<int> directors,
     List<int> writers,
@@ -96,26 +101,51 @@ class MovieViewModel extends BaseModel {
     setBusy(true);
 
     var id;
-    var images = []; // list for both posters and screenshots
+    var media = []; // media
     Response response;
+    var mediaType = []; // track the type of the media upload
 
     // TO DO: EDIT MOVIE
-    if (posters.isNotEmpty) {
-      images.addAll(posters
-          .map((p) => MultipartFile.fromFileSync(p.file.path,
-              filename: p.file.path.split('/').last,
-              contentType: MediaType(lookupMimeType(p.file.path).split('/')[0],
-                  lookupMimeType(p.file.path).split('/')[1])))
-          .toList());
-    }
-    images.addAll(gallery
-        .map((g) => MultipartFile.fromFileSync(g.file.path,
-            filename: g.file.path.split('/').last,
-            contentType: MediaType(lookupMimeType(g.file.path).split('/')[0],
-                lookupMimeType(g.file.path).split('/')[1])))
+
+    // append posters
+    media.addAll(posters
+        .map((file) => MultipartFile.fromFileSync(file.path,
+            filename: file.path.split('/').last,
+            contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                lookupMimeType(file.path).split('/')[1])))
         .toList());
 
-    // prepare images for formdata
+    mediaType.addAll(posters.map((item) => "poster").toList());
+
+    // append gallery
+    media.addAll(gallery
+        .map((file) => MultipartFile.fromFileSync(file.path,
+            filename: file.path.split('/').last,
+            contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                lookupMimeType(file.path).split('/')[1])))
+        .toList());
+
+    mediaType.addAll(gallery.map((item) => "gallery").toList());
+
+    // append trailers
+    media.addAll(trailers
+        .map((file) => MultipartFile.fromFileSync(file.path,
+            filename: file.path.split('/').last,
+            contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                lookupMimeType(file.path).split('/')[1])))
+        .toList());
+
+    mediaType.addAll(trailers.map((item) => "trailer").toList());
+
+    // append audio
+    media.addAll(audios
+        .map((file) => MultipartFile.fromFileSync(file.path,
+            filename: file.path.split('/').last,
+            contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                lookupMimeType(file.path).split('/')[1])))
+        .toList());
+
+    mediaType.addAll(audios.map((item) => "audio").toList());
 
     // multi-part request
     Dio dio = new Dio();
@@ -132,13 +162,14 @@ class MovieViewModel extends BaseModel {
         'awards': awards,
         'lines': lines,
         'added_by': addedBy,
+        'poster_desc': posterDesc,
+        'gallery_desc': galleryDesc,
+        'trailer_desc': trailerDesc,
+        'audio_desc': audioDesc,
         // 'posterURI': imageURI,  // for poster edit ??
-        'poster_count': posters.length,
-        'gallery_count': gallery.length,
-        'trailer_count': trailers.length,
-        'audio_count': audios.length,
+        'media_type': mediaType,
       }),
-      "files": images,
+      "files": media,
     });
 
     if (movieId != 0) {

@@ -93,8 +93,11 @@ class AwardWidgetState extends State<AwardWidget> {
                           widget.item.awardId = data[0].awardId;
                           widget.item.name = data[0].name;
                           widget.item.description = data[0].description;
-                          showError =
-                              widget.item.awardId != null ? false : true;
+                          showError = widget.item.awardId != null &&
+                                  (widget.item.type != null &&
+                                      widget.item.type.trim() != "")
+                              ? false
+                              : true;
                           awardId = [data[0]];
                         });
                       } else {
@@ -102,9 +105,14 @@ class AwardWidgetState extends State<AwardWidget> {
                           widget.item.awardId = null;
                           widget.item.name = null;
                           widget.item.description = null;
-                          showError =
-                              widget.item.awardId != null ? false : true;
+                          showError = widget.item.awardId != null &&
+                                  (widget.item.type != null &&
+                                      widget.item.type.trim() != "")
+                              ? false
+                              : true;
                           widget.item.saved = widget.item.awardId != null &&
+                                  (widget.item.type != null &&
+                                      widget.item.type.trim() != "") &&
                                   widget.item.saved == true
                               ? true
                               : false;
@@ -201,7 +209,7 @@ class AwardWidgetState extends State<AwardWidget> {
                             DropdownMenuItem(
                                 child: Text("Nominado"), value: "nominated"),
                             DropdownMenuItem(
-                                child: Text("Panalo"), value: "won"),
+                                child: Text("Panalo"), value: "panalo"),
                           ],
                           hint: Text('Type'),
                           elevation: 0,
@@ -210,6 +218,11 @@ class AwardWidgetState extends State<AwardWidget> {
                           onChanged: (val) {
                             setState(() {
                               widget.item.type = val;
+                              showError = widget.item.awardId != null &&
+                                      (widget.item.type != null &&
+                                          widget.item.type.trim() != "")
+                                  ? false
+                                  : true;
                             });
                           },
                         ),
@@ -223,7 +236,7 @@ class AwardWidgetState extends State<AwardWidget> {
                 showError == true
                     ? Container(
                         alignment: Alignment.centerLeft,
-                        child: Text('Required ang field ng Award.',
+                        child: Text('Required ang field ng Award at Type.',
                             style: TextStyle(
                                 color: Colors.red,
                                 fontStyle: FontStyle.italic)))
@@ -235,7 +248,9 @@ class AwardWidgetState extends State<AwardWidget> {
                     color: Colors.white,
                     onPressed: () {
                       FocusScope.of(context).unfocus();
-                      if (widget.item.awardId != null) {
+                      if (widget.item.awardId != null &&
+                          (widget.item.type != null &&
+                              widget.item.type.trim() != '')) {
                         setState(() {
                           widget.open.value = false;
                           widget.item.saved = true;

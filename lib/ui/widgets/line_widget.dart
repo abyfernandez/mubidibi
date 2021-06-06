@@ -254,7 +254,7 @@ class LineWidgetState extends State<LineWidget> {
             child: Column(
               children: [
                 Container(
-                  padding: EdgeInsets.all(10),
+                  padding: EdgeInsets.only(top: 10, right: 10),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.end,

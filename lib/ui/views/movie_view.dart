@@ -50,7 +50,6 @@ class _MovieViewState extends State<MovieView>
   List<List<Crew>> crewEdit;
   List<Award> awards;
   Future<List<Review>> reviews;
-  // ScrollController _scrollController;
   Animation<double> _animation;
   AnimationController _animationController;
   final NavigationService _navigationService = locator<NavigationService>();
@@ -107,11 +106,6 @@ class _MovieViewState extends State<MovieView>
     } else {
       rating.value = 0.0;
     }
-  }
-
-  // TO DO: Deprecate - refresh page when over all rating is changed
-  refresh() {
-    setState(() {});
   }
 
   // function for calling movie viewmodel's getOneMovie method
@@ -1170,11 +1164,11 @@ class _MovieViewState extends State<MovieView>
                           children: [
                             SizedBox(height: 25),
                             ReviewForm(
-                                computeOverallRating: computeOverallRating,
-                                sKey: _scaffoldKey,
-                                movie: movie,
-                                currentUser: currentUser,
-                                notifyParent: refresh)
+                              computeOverallRating: computeOverallRating,
+                              sKey: _scaffoldKey,
+                              movie: movie,
+                              currentUser: currentUser,
+                            )
                           ],
                         ),
                       )
@@ -1190,7 +1184,7 @@ class _MovieViewState extends State<MovieView>
                             movie: movie,
                             currentUser: currentUser,
                             sKey: _scaffoldKey,
-                            notifyParent: refresh)
+                          )
                         : SizedBox()),
                 SizedBox(height: 25),
               ],

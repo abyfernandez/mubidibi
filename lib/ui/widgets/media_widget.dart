@@ -353,7 +353,8 @@ class MediaWidgetState extends State<MediaWidget> {
                             ),
                             onChanged: (val) {
                               setState(() {
-                                widget.item.description = val;
+                                widget.item.description =
+                                    val.trim() != "" ? val : null;
                               });
                             },
                           ),
@@ -547,44 +548,86 @@ class MediaWidgetState extends State<MediaWidget> {
                                                         } else if (widget
                                                                 .category ==
                                                             "movie") {
-                                                          List imagePaths =
-                                                              movieGallery
-                                                                      .isNotEmpty
-                                                                  ? movieGallery
-                                                                      .map((img) =>
-                                                                          img.path)
-                                                                      .toList()
-                                                                  : [];
+                                                          if (widget
+                                                                  .item.type ==
+                                                              "gallery") {
+                                                            List imagePaths = movieGallery
+                                                                    .isNotEmpty
+                                                                ? movieGallery
+                                                                    .map((img) =>
+                                                                        img.path)
+                                                                    .toList()
+                                                                : [];
 
-                                                          setState(() {
-                                                            if (imagePaths.contains(
-                                                                    widget
-                                                                        .item
-                                                                        .file
-                                                                        .path) ==
-                                                                true) {
-                                                              movieGallery
-                                                                  .removeWhere((f) =>
+                                                            setState(() {
+                                                              if (imagePaths.contains(
                                                                       widget
                                                                           .item
                                                                           .file
-                                                                          .path ==
-                                                                      f.path);
-                                                            }
-                                                            // imageURI = '';
-                                                            widget.item.file =
-                                                                null;
-                                                            widget.item
-                                                                .saved = widget
+                                                                          .path) ==
+                                                                  true) {
+                                                                movieGallery
+                                                                    .removeWhere((f) =>
+                                                                        widget
                                                                             .item
-                                                                            .file !=
-                                                                        null &&
-                                                                    widget.item
-                                                                            .saved ==
-                                                                        true
-                                                                ? true
-                                                                : false;
-                                                          });
+                                                                            .file
+                                                                            .path ==
+                                                                        f.path);
+                                                              }
+                                                              // imageURI = '';
+                                                              widget.item.file =
+                                                                  null;
+                                                              widget.item
+                                                                  .saved = widget
+                                                                              .item
+                                                                              .file !=
+                                                                          null &&
+                                                                      widget.item
+                                                                              .saved ==
+                                                                          true
+                                                                  ? true
+                                                                  : false;
+                                                            });
+                                                          } else if (widget
+                                                                  .item.type ==
+                                                              "poster") {
+                                                            List imagePaths = posters
+                                                                    .isNotEmpty
+                                                                ? posters
+                                                                    .map((img) =>
+                                                                        img.path)
+                                                                    .toList()
+                                                                : [];
+
+                                                            setState(() {
+                                                              if (imagePaths.contains(
+                                                                      widget
+                                                                          .item
+                                                                          .file
+                                                                          .path) ==
+                                                                  true) {
+                                                                posters.removeWhere((f) =>
+                                                                    widget
+                                                                        .item
+                                                                        .file
+                                                                        .path ==
+                                                                    f.path);
+                                                              }
+                                                              // imageURI = '';
+                                                              widget.item.file =
+                                                                  null;
+                                                              widget.item
+                                                                  .saved = widget
+                                                                              .item
+                                                                              .file !=
+                                                                          null &&
+                                                                      widget.item
+                                                                              .saved ==
+                                                                          true
+                                                                  ? true
+                                                                  : false;
+                                                            });
+                                                          }
                                                         }
                                                       },
                                                     ),
@@ -647,7 +690,8 @@ class MediaWidgetState extends State<MediaWidget> {
                                       ),
                                       onChanged: (val) {
                                         setState(() {
-                                          widget.item.description = val;
+                                          widget.item.description =
+                                              val.trim() != "" ? val : null;
                                         });
                                       },
                                     ),
@@ -656,16 +700,6 @@ class MediaWidgetState extends State<MediaWidget> {
                               ],
                             )
                           : SizedBox(),
-
-              // widget.item.file != null &&
-              //         (lookupMimeType(widget.item.file.path)
-              //                     .startsWith('video/') ==
-              //                 true ||
-              //             lookupMimeType(widget.item.file.path)
-              //                     .startsWith('audio/') ==
-              //                 true)
-              //     ? SizedBox(height: 10)
-              //     : SizedBox(),
 
               SizedBox(
                 height: 15,
