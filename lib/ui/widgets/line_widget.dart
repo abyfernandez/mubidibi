@@ -43,12 +43,6 @@ class LineWidgetState extends State<LineWidget> {
   @override
   void initState() {
     widget.item.saved = widget.item.saved == null ? false : widget.item.saved;
-    // if (widget.item.role != null) {
-    //   var chosen = widget.roles.singleWhere((a) => a == widget.item.role);
-
-    //   if (chosen != null) tempRole = [chosen];
-    // }
-
     // test --- using list of value notifiers
     if (widget.item.role != null) {
       var chosen =

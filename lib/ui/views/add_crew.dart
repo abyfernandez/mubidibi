@@ -10,15 +10,19 @@ import 'package:intl/intl.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/models/movie_actor.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
+import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/widgets/award_widget.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
+import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
+import 'package:mubidibi/ui/widgets/media_widget.dart';
 import 'package:mubidibi/viewmodels/award_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -26,10 +30,12 @@ import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
-// import 'package:mubidibi/globals.dart' as Config;
+import 'package:mubidibi/globals.dart' as Config;
 
 // Global Variables for dynamic Widgets
 List<int> movieActorsFilter = []; // movies
+// ValueNotifier<List> gallery = ValueNotifier<List>([]);
+List gallery = [];
 
 class AddCrew extends StatefulWidget {
   final Crew crew;
@@ -51,8 +57,7 @@ class _AddCrewState extends State<AddCrew> {
   bool _saving = false;
   int crewId;
   File imageFile; // for uploading display photo w/ image picker
-  var mimetype;
-  var photos = List(); // for uploading crew photos
+  var mimetype; // mimetype of DP
   var imageURI = ''; // for crew edit
 
   List<Movie> movieOptions;
@@ -63,6 +68,8 @@ class _AddCrewState extends State<AddCrew> {
   List<AwardWidget> filteredAwards = [];
   List<MovieActorWidget> movieActorList = [];
   List<MovieActorWidget> filteredMovieActorList = [];
+  List<MediaWidget> galleryList = [];
+  List<MediaWidget> filteredGalleryList = [];
 
   // CREW FIELD CONTROLLERS
   final firstNameController = TextEditingController();
@@ -76,6 +83,7 @@ class _AddCrewState extends State<AddCrew> {
   DateTime _deathdate;
   final deathdateController = TextEditingController();
   final descriptionController = TextEditingController();
+  final descriptionDPController = TextEditingController(); // DP
 
   // CREW FIELD NODES
   final firstNameNode = FocusNode();
@@ -87,6 +95,7 @@ class _AddCrewState extends State<AddCrew> {
   final isAliveNode = FocusNode();
   final deathdateNode = FocusNode();
   final descriptionNode = FocusNode();
+  final descriptionDPNode = FocusNode(); // DP
 
   // CREW FORMKEYS
   List<GlobalKey<FormState>> _formKeys = [
@@ -102,7 +111,7 @@ class _AddCrewState extends State<AddCrew> {
   List<String> stepperTitle = [
     "Mga Basic na Detalye",
     "Mga Pelikula",
-    "Mga Larawan",
+    "Gallery at Mga Audio",
     "Mga Award",
     "Review"
   ];
@@ -125,7 +134,7 @@ class _AddCrewState extends State<AddCrew> {
             ? Container(
                 alignment: Alignment.topLeft,
                 child: Text(
-                  "Bilang Aktor: ",
+                  "Mga Pelikula Bilang Aktor: ",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -234,9 +243,9 @@ class _AddCrewState extends State<AddCrew> {
   }
 
   // Function: get image using image picker for crew's display photo
-  Future getImage() async {
-    FilePickerResult result = await FilePicker.platform.pickFiles(
-        type: FileType.custom, allowedExtensions: ['jpg', 'jpeg', 'png']);
+  void getImage() async {
+    FilePickerResult result =
+        await FilePicker.platform.pickFiles(type: FileType.image);
 
     if (result != null) {
       imageFile = File(result.files.single.path);
@@ -248,91 +257,6 @@ class _AddCrewState extends State<AddCrew> {
       // User canceled the picker
       print("No image selected.");
     }
-  }
-
-  // Function: get images using image picker for movie screenshots
-  Future getPhotos() async {
-    FilePickerResult result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png']);
-
-    if (result != null) {
-      List imagePaths =
-          photos.isNotEmpty ? photos.map((img) => img.path).toList() : [];
-
-      List toUpload = result.paths.map((path) {
-        if (imagePaths.contains(path) == false) {
-          return File(path);
-        }
-      }).toList();
-
-      if (toUpload.isNotEmpty) {
-        setState(() {
-          for (var i = 0; i < toUpload.length; i++) {
-            if (toUpload[i] != null) {
-              photos.add(toUpload[i]);
-            }
-          }
-        });
-      }
-    } else {
-      // User canceled the picker
-      print('No image selected.');
-    }
-  }
-
-  // Function: display photos in a scrollable horizontal view
-  Widget displayPhotos(String mode) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: photos
-          .map(
-            (pic) => Stack(
-              children: [
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
-                  height: 70,
-                  width: 70,
-                  child: Image.file(
-                    pic,
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                mode == "edit"
-                    ? Container(
-                        margin: EdgeInsets.symmetric(horizontal: 5),
-                        alignment: Alignment.center,
-                        child: GestureDetector(
-                          child: Icon(Icons.close),
-                          onTap: () {
-                            setState(() {
-                              photos.remove(pic);
-                            });
-                          },
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white,
-                              offset: Offset(0.0, 0.0),
-                              blurRadius: 0.0,
-                            ),
-                          ],
-                        ),
-                      )
-                    : SizedBox(),
-              ],
-            ),
-          )
-          .toList(),
-    );
   }
 
   // Function: adds AwardWidget in the ListView builder
@@ -353,7 +277,6 @@ class _AddCrewState extends State<AddCrew> {
 
     return Column(
       children: [
-        filteredAwards.length != 0 ? SizedBox(height: 10) : SizedBox(),
         filteredAwards.length != 0
             ? Container(
                 alignment: Alignment.topLeft,
@@ -375,40 +298,168 @@ class _AddCrewState extends State<AddCrew> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: filteredAwards.map((award) {
                     if (award.item.saved == true) {
-                      return Row(
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          new Icon(Icons.fiber_manual_record, size: 16),
-                          SizedBox(
-                            width: 5,
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              new Icon(Icons.fiber_manual_record, size: 16),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              Expanded(
+                                child: Text(
+                                    award.item.name +
+                                        (award.item.year != null
+                                            ? " (" + award.item.year + ") "
+                                            : ""),
+                                    style: TextStyle(fontSize: 16),
+                                    softWrap: true,
+                                    overflow: TextOverflow.clip),
+                              ),
+                            ],
                           ),
-                          Flexible(
-                            child: Text(
-                                award.item.name +
-                                    (award.item.year != null
-                                        ? " (" + award.item.year + ") "
-                                        : ""),
-                                style: TextStyle(fontSize: 16),
-                                softWrap: true,
-                                overflow: TextOverflow.clip),
+                          Padding(
+                            padding: EdgeInsets.only(left: 10),
+                            child: award.item.type != null
+                                ? Text(
+                                    " - " +
+                                        (award.item.type == "nominated"
+                                            ? "Nominado"
+                                            : "Panalo"),
+                                    style: TextStyle(
+                                        fontStyle: FontStyle.italic,
+                                        fontSize: 16),
+                                    softWrap: true,
+                                    overflow: TextOverflow.clip)
+                                : SizedBox(),
                           ),
-                          award.item.type != null
-                              ? Text(
-                                  " - " +
-                                      (award.item.type == "nominated"
-                                          ? "Nominado"
-                                          : "Panalo"),
-                                  style: TextStyle(
-                                      fontStyle: FontStyle.italic,
-                                      fontSize: 16),
-                                  softWrap: true,
-                                  overflow: TextOverflow.clip)
-                              : SizedBox(),
+                          SizedBox(height: 10)
                         ],
                       );
                     }
                   }).toList(),
                 ),
+              )
+            : SizedBox(),
+      ],
+    );
+  }
+
+  // Function: adds MediaWidget in the ListView builder for Gallery
+  addtoGallery() async {
+    // get media, filter for duplicates, and iterate through them and add to list view builder for gallery
+
+    // (1) Get Photo/s and/or videos
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.media,
+    );
+
+    if (result != null) {
+      List imagePaths =
+          gallery.isNotEmpty ? gallery.map((img) => img.path).toList() : [];
+
+      // filter for duplicates
+      List filtered = result.paths.map((path) {
+        if (imagePaths.contains(path) == false) {
+          return File(path);
+        } else {
+          print('File already exists.'); // FlutterToast or Snackbar
+        }
+      }).toList();
+
+      // iterate and add to list view builder
+      if (filtered.isNotEmpty) {
+        setState(() {
+          for (var i = 0; i < filtered.length; i++) {
+            if (filtered[i] != null) {
+              gallery.add(filtered[i]);
+
+              // add photo widget to list
+              galleryList.add(MediaWidget(
+                  category: "crew",
+                  item: new MediaFile(
+                      file: filtered[i], category: "crew", type: "gallery"),
+                  open: ValueNotifier<bool>(true)));
+            }
+          }
+        });
+      }
+    } else {
+      // User canceled the picker
+      print('No media selected.');
+    }
+  }
+
+  // Function: Display DP in the Review Step
+  Widget displayGallery() {
+    filteredGalleryList =
+        galleryList.where((g) => g.item.saved == true).toList();
+
+    return Column(
+      children: [
+        filteredGalleryList.length != 0
+            ? Container(
+                margin: EdgeInsets.only(bottom: 15),
+                alignment: Alignment.topLeft,
+                child: Text("Gallery: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
+              )
+            : SizedBox(),
+        // filteredGalleryList.length != 0 ? SizedBox(height: 10) : SizedBox(),
+        filteredGalleryList.length != 0
+            ? Column(
+                children: filteredGalleryList.map((g) {
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 10),
+                    color: Colors.white,
+                    padding: EdgeInsets.all(10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                            child: Container(
+                              alignment: Alignment.centerLeft,
+                              height: 100,
+                              width: 80,
+                              child: Image.file(
+                                g.item.file,
+                                width: 80,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FullPhotoT(
+                                      type: 'path', file: g.item.file),
+                                ),
+                              );
+                            }),
+                        SizedBox(width: 15),
+                        Expanded(
+                          child: Text(
+                              g.item.description ?? "Walang description",
+                              style: TextStyle(
+                                  color: g.item.description == null
+                                      ? Colors.black38
+                                      : Colors.black,
+                                  fontStyle: g.item.description == null
+                                      ? FontStyle.italic
+                                      : FontStyle.normal)),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               )
             : SizedBox(),
       ],
@@ -426,6 +477,7 @@ class _AddCrewState extends State<AddCrew> {
       setState(() {
         movieActorsFilter =
             []; // clears list para pag binalikan sya empty na ulit
+        gallery = [];
       });
       await _navigationService.pop();
     }
@@ -452,6 +504,11 @@ class _AddCrewState extends State<AddCrew> {
     currentUser = _authenticationService.currentUser;
     fetchMovies();
     fetchAwards();
+
+    // clear lists
+    movieActorsFilter = [];
+    gallery = [];
+
     super.initState();
   }
 
@@ -478,6 +535,7 @@ class _AddCrewState extends State<AddCrew> {
         _deathdate =
             crew?.birthday != null ? DateTime.parse(crew?.birthday) : null;
         descriptionController.text = crew?.description ?? "";
+        descriptionDPController.text = crew?.displayPic?.description ?? "";
       },
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
@@ -496,6 +554,7 @@ class _AddCrewState extends State<AddCrew> {
               if (response.confirmed == true) {
                 setState(() {
                   movieActorsFilter = [];
+                  gallery = [];
                 });
                 _navigationService.pop();
               }
@@ -543,7 +602,7 @@ class _AddCrewState extends State<AddCrew> {
                               onStepTapped: (step) async {
                                 FocusScope.of(context).unfocus();
                                 if (currentStep == 0) {
-                                  // first step
+                                  // first step (First Name)
                                   setState(() {
                                     if (_formKeys[currentStep]
                                         .currentState
@@ -580,13 +639,14 @@ class _AddCrewState extends State<AddCrew> {
                                     case 1: // movies
                                       setState(() {
                                         FocusScope.of(context).unfocus();
-                                        currentStep++;
+                                        setState(() => ++currentStep);
                                       });
                                       break;
 
                                     case 2: // photos
                                       FocusScope.of(context).unfocus();
                                       setState(() => ++currentStep);
+
                                       break;
 
                                     case 3: // awards
@@ -655,8 +715,9 @@ class _AddCrewState extends State<AddCrew> {
                                             : '',
                                         description: descriptionController.text,
                                         displayPic: imageFile,
+                                        descDP: descriptionDPController.text,
                                         imageURI: imageURI,
-                                        photos: photos,
+                                        gallery: filteredGalleryList,
                                         mimetype: mimetype,
                                         addedBy: currentUser.userId,
                                         director: movieDirectorsToSave,
@@ -1013,6 +1074,29 @@ class _AddCrewState extends State<AddCrew> {
               SizedBox(
                 height: 15,
               ),
+              Container(
+                decoration:
+                    BoxDecoration(borderRadius: BorderRadius.circular(10)),
+                child: TextFormField(
+                  focusNode: descriptionNode,
+                  controller: descriptionController,
+                  textCapitalization: TextCapitalization.sentences,
+                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                  style: TextStyle(
+                    color: Colors.black,
+                  ),
+                  maxLines: null,
+                  decoration: InputDecoration(
+                    labelText: "Description",
+                    contentPadding: EdgeInsets.all(10),
+                    filled: true,
+                    fillColor: Color.fromRGBO(240, 240, 240, 1),
+                  ),
+                ),
+              ),
+              SizedBox(
+                height: 15,
+              ),
             ],
           ),
         );
@@ -1212,7 +1296,6 @@ class _AddCrewState extends State<AddCrew> {
             SizedBox(
               height: 10,
             ),
-            Divider(height: 1, thickness: 2),
           ]),
         );
       case 2: // Photos
@@ -1226,139 +1309,200 @@ class _AddCrewState extends State<AddCrew> {
               ),
               Text('Display Photo',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              SizedBox(
-                height: 10,
-              ),
-              Stack(
+              SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // SizedBox(height: 20),
-                  GestureDetector(
-                    onTap: getImage,
-                    child: Container(
-                      margin: EdgeInsets.only(left: 20),
-                      height: 200, // 200
-                      width: 150, // 150
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                      child: imageFile != null || imageURI.trim() != ''
-                          ?
-                          // Container(
-                          //     alignment: Alignment.center,
-                          //     height: 130,
-                          //     width: 130,
-                          //     decoration: BoxDecoration(
-                          //         color: Color.fromRGBO(240, 240, 240, 1),
-                          //         borderRadius: BorderRadius.circular(100)),
-                          //     child: GestureDetector(
-                          //         child: Icon(Icons.camera_alt_outlined,
-                          //             size: 30, color: Colors.black),
-                          //         onTap: () {
-                          //           print('add display pic');
-                          //         }),
-                          //   )
-                          Container(
-                              height: 200,
-                              width: 150,
-                              child: imageFile != null
-                                  ? Image.file(
+                  // image container
+                  Container(
+                    child: Stack(
+                      children: [
+                        // SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: getImage,
+                          child: Container(
+                            // margin: EdgeInsets.only(left: 20),
+                            height: 100, // 200
+                            width: 80, // 150
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: imageFile != null
+                                ? Container(
+                                    height: 100,
+                                    width: 80,
+                                    // child: imageFile != null
+                                    child: Image.file(
                                       imageFile,
-                                      width: 150,
-                                      height: 200,
+                                      width: 80,
+                                      height: 100,
                                       fit: BoxFit.cover,
                                     )
-                                  : Image.network(
-                                      imageURI,
-                                      width: 150,
-                                      height: 200,
-                                      fit: BoxFit.cover,
-                                    ))
-                          :
-                          // Container(
-                          //     alignment: Alignment.center,
-                          //     height: 130,
-                          //     width: 130,
-                          //     decoration: BoxDecoration(
-                          //         color: Color.fromRGBO(240, 240, 240, 1),
-                          //         borderRadius: BorderRadius.circular(100)),
-                          //     child: GestureDetector(
-                          //         child: Icon(Icons.camera_alt_outlined,
-                          //             size: 30, color: Colors.black),
-                          //         onTap: () {
-                          //           print('add display pic');
-                          //         }),
-                          //   ),
-                          Container(
-                              height: 200,
-                              width: 150,
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: Colors.grey[800],
-                              ),
-                              decoration: BoxDecoration(
-                                color: Color.fromRGBO(240, 240, 240, 1),
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                            ),
+                                    // : Image.network(
+                                    //     imageURI,
+                                    //     width: 80,
+                                    //     height: 90,
+                                    //     fit: BoxFit.cover,
+                                    //   )
+                                    )
+                                : Container(
+                                    height: 100,
+                                    width: 80,
+                                    child: Icon(
+                                      Icons.camera_alt,
+                                      color: Colors.grey[800],
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Color.fromRGBO(240, 240, 240, 1),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        imageFile != null
+                            // imageFile != null || imageURI.trim() != ''
+                            ? Container(
+                                // margin: EdgeInsets.only(left: 25, top: 5),
+                                width: 25,
+                                alignment: Alignment.center,
+                                child: GestureDetector(
+                                  child: Icon(Icons.close),
+                                  onTap: () {
+                                    setState(() {
+                                      imageFile = null;
+                                      // imageURI = '';
+                                    });
+                                  },
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(50),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white,
+                                      offset: Offset(0.0, 0.0),
+                                      blurRadius: 0.0,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : SizedBox(),
+                      ],
                     ),
                   ),
-                  imageFile != null || imageURI.trim() != ''
-                      ? Container(
-                          margin: EdgeInsets.only(left: 25, top: 5),
-                          width: 25,
-                          alignment: Alignment.center,
-                          child: GestureDetector(
-                            child: Icon(Icons.close),
-                            onTap: () {
-                              setState(() {
-                                imageFile = null;
-                                imageURI = '';
-                              });
-                            },
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white,
-                                offset: Offset(0.0, 0.0),
-                                blurRadius: 0.0,
-                              ),
-                            ],
-                          ),
-                        )
-                      : SizedBox(),
+                  SizedBox(width: 15),
+                  // textfield for description
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10)),
+                      child: TextFormField(
+                        enabled: imageFile != null ? true : false,
+                        focusNode: descriptionDPNode,
+                        controller: descriptionDPController,
+                        textCapitalization: TextCapitalization.sentences,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        style: TextStyle(
+                          color:
+                              imageFile != null ? Colors.black : Colors.black38,
+                        ),
+                        maxLines: null,
+                        decoration: InputDecoration(
+                          labelText: "Description",
+                          contentPadding: EdgeInsets.all(10),
+                          filled: true,
+                          fillColor: Color.fromRGBO(240, 240, 240, 1),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
               SizedBox(
                 height: 15,
               ),
-              Text('Mga Larawan',
+              Text('Gallery',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
-                height: 10,
+                height: 15,
               ),
-              Padding(
-                padding: EdgeInsets.only(left: 15),
-                child: Container(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+              ListView.builder(
+                  itemCount: galleryList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: galleryList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              galleryList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              // update gallery list by removing the image that is previously saved and recorded
+
+                                              if (galleryList[i].item.file !=
+                                                  null) {
+                                                List imagePaths = gallery
+                                                        .isNotEmpty
+                                                    ? gallery
+                                                        .map((img) => img.path)
+                                                        .toList()
+                                                    : [];
+
+                                                // loop through gallery's paths
+                                                if (imagePaths.contains(
+                                                    galleryList[i]
+                                                        .item
+                                                        .file
+                                                        .path)) {
+                                                  gallery.removeWhere((f) =>
+                                                      galleryList[i]
+                                                          .item
+                                                          .file
+                                                          .path ==
+                                                      f.path);
+                                                }
+                                              }
+
+                                              galleryList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+              galleryList.isNotEmpty
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : SizedBox(),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    // focusNode: addActorNode,
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addtoGallery,
                     child: Row(
-                      children: [
-                        Container(
-                            margin: EdgeInsets.symmetric(horizontal: 5),
-                            child: GestureDetector(
-                              child: Icon(Icons.image),
-                              onTap: getPhotos,
-                            ),
-                            width: 70,
-                            height: 70,
-                            color: Color.fromRGBO(240, 240, 240, 1)),
-                        photos.length != 0 ? displayPhotos("edit") : SizedBox(),
-                      ],
+                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
                     ),
-                  ),
-                ),
+                  )),
+              SizedBox(
+                height: 10,
               ),
             ],
           ),
@@ -1378,7 +1522,7 @@ class _AddCrewState extends State<AddCrew> {
                         onPressed: addAward,
                         child: Row(
                           children: [
-                            Icon(Icons.person_add_alt_1_outlined),
+                            Icon(Icons.emoji_events_outlined),
                             Text(" Dagdagan")
                           ],
                         ),
@@ -1431,7 +1575,7 @@ class _AddCrewState extends State<AddCrew> {
                         onPressed: addAward,
                         child: Row(
                           children: [
-                            Icon(Icons.person_add_alt_1_outlined),
+                            Icon(Icons.emoji_events_outlined),
                             Text(" Dagdagan")
                           ],
                         ),
@@ -1441,255 +1585,309 @@ class _AddCrewState extends State<AddCrew> {
               SizedBox(
                 height: 10,
               ),
-              Divider(height: 1, thickness: 2),
             ],
           ),
         );
       case 4: // review
         return Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-              color: Color.fromRGBO(240, 240, 240, 1),
-            ),
-            padding: EdgeInsets.all(10),
-            child: Scrollbar(
-              child: SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        alignment: Alignment.topLeft,
-                        child: Text(
-                          "Name: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(5),
+            color: Color.fromRGBO(240, 240, 240, 1),
+          ),
+          padding: EdgeInsets.all(10),
+          child: Scrollbar(
+            // isAlwaysShown: true,
+            // controller: _scrollController,
+            child: SingleChildScrollView(
+              physics: AlwaysScrollableScrollPhysics(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      "Name: ",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                      Container(
-                        alignment: Alignment.topLeft,
-                        child: Text(
-                          firstNameController.text +
-                              (middleNameController.text.trim() != ""
-                                  ? " " + middleNameController.text
-                                  : "") +
-                              " " +
-                              lastNameController.text +
-                              (suffixController.text.trim() != ""
-                                  ? " " + suffixController.text
-                                  : ""),
-                          style: TextStyle(
-                            fontSize: 16,
-                          ),
-                          overflow: TextOverflow.clip,
-                          softWrap: true,
-                        ),
+                    ),
+                  ),
+                  Container(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      firstNameController.text +
+                          (middleNameController.text.trim() != ""
+                              ? " " + middleNameController.text
+                              : "") +
+                          " " +
+                          lastNameController.text +
+                          (suffixController.text.trim() != ""
+                              ? " " + suffixController.text
+                              : ""),
+                      style: TextStyle(
+                        fontSize: 16,
                       ),
-                      _birthday != null ? SizedBox(height: 10) : SizedBox(),
-                      _birthday != null
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                "Birthday: ",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                      overflow: TextOverflow.clip,
+                      softWrap: true,
+                    ),
+                  ),
+                  _birthday != null ? SizedBox(height: 10) : SizedBox(),
+                  _birthday != null
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            "Birthday: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : SizedBox(),
+                  _birthday != null
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            _birthday == null
+                                ? ''
+                                : DateFormat("MMM. d, y").format(_birthday),
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                          ))
+                      : SizedBox(),
+                  birthplaceController.text.trim() != ""
+                      ? SizedBox(height: 10)
+                      : SizedBox(),
+                  birthplaceController.text.trim() != ""
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            "Birthplace: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : SizedBox(),
+                  birthplaceController.text.trim() != ""
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            birthplaceController.text,
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
+                          ))
+                      : SizedBox(),
+                  isAlive == false ? SizedBox(height: 10) : SizedBox(),
+                  isAlive == false
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Died: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  isAlive == false
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                              _deathdate == null
+                                  ? 'Walang record'
+                                  : DateFormat("MMM. d, y").format(_deathdate),
+                              style: TextStyle(
+                                fontStyle: _deathdate == null
+                                    ? FontStyle.italic
+                                    : FontStyle.normal,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  descriptionController.text.trim() != ""
+                      ? SizedBox(height: 15)
+                      : SizedBox(),
+                  descriptionController.text.trim() != ""
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            "Description: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        )
+                      : SizedBox(),
+                  descriptionController.text.trim() != ""
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text(
+                            descriptionController.text.trim() != ""
+                                ? descriptionController.text
+                                : "",
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
+                          ),
+                        )
+                      : SizedBox(),
+                  movieDirector.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  movieDirector.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Mga Pelikula Bilang Direktor: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  movieDirector.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Column(
+                              children: movieDirector.map<Widget>((film) {
+                            return new Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                new Icon(Icons.fiber_manual_record, size: 16),
+                                SizedBox(
+                                  width: 5,
                                 ),
-                              ),
-                            )
-                          : SizedBox(),
-                      _birthday != null
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                _birthday == null
-                                    ? ''
-                                    : DateFormat("MMM. d, y").format(_birthday),
-                                style: TextStyle(
-                                  fontSize: 16,
+                                new Expanded(
+                                  child: Text(
+                                    film.title,
+                                    style: TextStyle(fontSize: 16),
+                                    overflow: TextOverflow.clip,
+                                    softWrap: true,
+                                  ),
                                 ),
-                              ))
-                          : SizedBox(),
-                      birthplaceController.text.trim() != ""
-                          ? SizedBox(height: 10)
-                          : SizedBox(),
-                      birthplaceController.text.trim() != ""
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                "Birthplace: ",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                              ],
+                            );
+                          }).toList()),
+                        )
+                      : SizedBox(),
+                  movieWriter.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                  movieWriter.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Mga Pelikula Bilang Manunulat: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  movieWriter.isNotEmpty
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Column(
+                              children: movieWriter.map<Widget>((film) {
+                            return new Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                new Icon(Icons.fiber_manual_record, size: 16),
+                                SizedBox(
+                                  width: 5,
                                 ),
-                              ),
-                            )
-                          : SizedBox(),
-                      birthplaceController.text.trim() != ""
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                birthplaceController.text,
-                                style: TextStyle(
-                                  fontSize: 16,
+                                new Expanded(
+                                  child: Text(
+                                    film.title,
+                                    style: TextStyle(fontSize: 16),
+                                    overflow: TextOverflow.clip,
+                                    softWrap: true,
+                                  ),
                                 ),
-                                overflow: TextOverflow.clip,
-                                softWrap: true,
-                              ))
-                          : SizedBox(),
-                      isAlive == false ? SizedBox(height: 10) : SizedBox(),
-                      isAlive == false
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text("Died: ",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  )),
-                            )
-                          : SizedBox(),
-                      isAlive == false
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text(
-                                  _deathdate == null
-                                      ? 'Walang record'
-                                      : DateFormat("MMM. d, y")
-                                          .format(_deathdate),
-                                  style: TextStyle(
-                                    fontStyle: _deathdate == null
-                                        ? FontStyle.italic
-                                        : FontStyle.normal,
-                                    fontSize: 16,
-                                  )),
-                            )
-                          : SizedBox(),
-                      movieDirector.isNotEmpty
-                          ? SizedBox(height: 10)
-                          : SizedBox(),
-                      movieDirector.isNotEmpty
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text("Bilang Direktor: ",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  )),
-                            )
-                          : SizedBox(),
-                      movieDirector.isNotEmpty
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Column(
-                                  children: movieDirector.map<Widget>((film) {
-                                return new Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    new Icon(Icons.fiber_manual_record,
-                                        size: 16),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    new Expanded(
-                                      child: Text(
-                                        film.title,
-                                        style: TextStyle(fontSize: 16),
-                                        overflow: TextOverflow.clip,
-                                        softWrap: true,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList()),
-                            )
-                          : SizedBox(),
-                      movieWriter.isNotEmpty
-                          ? SizedBox(height: 10)
-                          : SizedBox(),
-                      movieWriter.isNotEmpty
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text("Bilang Manunulat: ",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  )),
-                            )
-                          : SizedBox(),
-                      movieWriter.isNotEmpty
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Column(
-                                  children: movieWriter.map<Widget>((film) {
-                                return new Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    new Icon(Icons.fiber_manual_record,
-                                        size: 16),
-                                    SizedBox(
-                                      width: 5,
-                                    ),
-                                    new Expanded(
-                                      child: Text(
-                                        film.title,
-                                        style: TextStyle(fontSize: 16),
-                                        overflow: TextOverflow.clip,
-                                        softWrap: true,
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList()),
-                            )
-                          : SizedBox(),
-                      displayMovieActors(),
-                      imageFile != null ? SizedBox(height: 10) : SizedBox(),
-                      imageFile != null
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text("Display Photo: ",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  )),
-                            )
-                          : SizedBox(),
-                      imageFile != null
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: imageFile != null
-                                  ? Image.file(
+                              ],
+                            );
+                          }).toList()),
+                        )
+                      : SizedBox(),
+                  displayMovieActors(),
+                  imageFile != null ? SizedBox(height: 10) : SizedBox(),
+                  imageFile != null
+                      ? Container(
+                          alignment: Alignment.topLeft,
+                          child: Text("Display Photo: ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              )),
+                        )
+                      : SizedBox(),
+                  imageFile != null ? SizedBox(height: 10) : SizedBox(),
+                  imageFile != null
+                      ? Container(
+                          margin: EdgeInsets.only(bottom: 10),
+                          color: Colors.white,
+                          padding: EdgeInsets.all(10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                  child: Container(
+                                    alignment: Alignment.centerLeft,
+                                    height: 100,
+                                    width: 80,
+                                    child: Image.file(
                                       imageFile,
-                                      width: 150,
-                                      height: 200,
+                                      width: 80,
+                                      height: 100,
                                       fit: BoxFit.cover,
-                                    )
-                                  : null,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(5),
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => FullPhotoT(
+                                            type: 'path', file: imageFile),
+                                      ),
+                                    );
+                                  }),
+                              SizedBox(width: 15),
+                              Expanded(
+                                child: Text(
+                                    descriptionDPController.text.trim() != ""
+                                        ? descriptionDPController.text
+                                        : "Walang description",
+                                    style: TextStyle(
+                                        color: descriptionDPController.text
+                                                    .trim() ==
+                                                ""
+                                            ? Colors.black38
+                                            : Colors.black,
+                                        fontStyle: descriptionDPController.text
+                                                    .trim() ==
+                                                ""
+                                            ? FontStyle.italic
+                                            : FontStyle.normal)),
                               ),
-                            )
-                          : SizedBox(),
-                      photos.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                      photos.isNotEmpty
-                          ? Container(
-                              alignment: Alignment.topLeft,
-                              child: Text("Mga Litrato: ",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  )),
-                            )
-                          : SizedBox(),
-                      photos.isNotEmpty ? displayPhotos("display") : SizedBox(),
-                      displayAwards(),
-                      SizedBox(height: 15),
-                    ],
-                  )),
-            ));
+                            ],
+                          ),
+                        )
+                      : SizedBox(),
+                  SizedBox(height: 15),
+                  displayGallery(),
+                  SizedBox(height: 15),
+                  displayAwards(),
+                  SizedBox(height: 25),
+                ],
+              ),
+            ),
+          ),
+        );
     }
     return null;
   }

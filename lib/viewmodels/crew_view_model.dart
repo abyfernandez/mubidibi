@@ -108,8 +108,9 @@ class CrewViewModel extends BaseModel {
       String deathdate,
       String mimetype,
       File displayPic,
+      String descDP,
       String imageURI,
-      List photos,
+      List gallery,
       String addedBy,
       int crewId, // for edit function,
       List<int> director,
@@ -137,7 +138,7 @@ class CrewViewModel extends BaseModel {
             contentType:
                 MediaType(mime[0], mime[1]))); // add displayPic in first index
       }
-      images.addAll(photos
+      images.addAll(gallery
           .map((file) => MultipartFile.fromFileSync(file.path,
               filename: file.path.split('/').last,
               contentType: MediaType(lookupMimeType(file.path).split('/')[0],

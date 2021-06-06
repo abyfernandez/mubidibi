@@ -18,6 +18,18 @@ exports.crew = app => {
         async function onResult(err, result) {
           var crew = result.rows;
 
+          // get display pics  
+          for (var i = 0; i < crew.length; i++) {
+            var { rows } = await client.query(`select * from crew_media where crew_id = ${crew[i].id} and type = 'display_pic'`);
+            crew[i]['display_pic'] = rows.length != 0 ? rows[0] : null;
+          }
+
+          // get photos  
+          for (var i = 0; i < crew.length; i++) {
+            var { rows } = await client.query(`select * from crew_media where crew_id = ${crew[i].id} and type = 'gallery'`);
+            crew[i]['photos'] = rows;
+          }
+
           for (var i = 0; i < crew.length; i++) {
             var type = [];
 
@@ -31,6 +43,8 @@ exports.crew = app => {
 
             crew[i]['type'] = type;
           }
+
+          console.log(crew);
           release()
           res.send(err || JSON.stringify(crew));
         }
@@ -48,19 +62,56 @@ exports.crew = app => {
       var crew = [];
 
       // DIRECTORS
-      var directorQuery = `SELECT * from crew where id in (SELECT director_id FROM movie_director where movie_id = ${req.body.movie_id})`;
+      var directorQuery = `SELECT *, concat_ws(' ', crew.first_name, crew.middle_name, crew.last_name, crew.suffix) as name from crew where id in (SELECT director_id FROM movie_director where movie_id = ${req.body.movie_id})`;
       if (req.body.user != "admin") directorQuery = directorQuery.concat(` and is_deleted = false`)
       var director = await client.query(directorQuery);
 
+      // get display pics  
+      for (var i = 0; i < director.rows.length; i++) {
+        var { rows } = await client.query(`select * from crew_media where crew_id = ${director.rows[i].id} and type = 'display_pic'`);
+        director.rows[i]['display_pic'] = rows.length != 0 ? rows[0] : null;
+      }
+
+      // get photos  
+      for (var i = 0; i < director.rows.length; i++) {
+        var { rows } = await client.query(`select * from crew_media where crew_id = ${director.rows[i].id} and type = 'gallery'`);
+        director.rows[i]['photos'] = rows;
+      }
+
       // WRITERS
-      var writerQuery = `SELECT * from crew where id in (SELECT writer_id FROM movie_writer where movie_id = ${req.body.movie_id})`;
+      var writerQuery = `SELECT *, concat_ws(' ', first_name, middle_name, last_name, suffix) as name from crew where id in (SELECT writer_id FROM movie_writer where movie_id = ${req.body.movie_id})`;
       if (req.body.user != "admin") writerQuery = writerQuery.concat(` and is_deleted = false`)
       var writer = await client.query(writerQuery);
 
+      // get display pics  
+      for (var i = 0; i < writer.rows.length; i++) {
+        var { rows } = await client.query(`select * from crew_media where crew_id = ${writer.rows[i].id} and type = 'display_pic'`);
+        writer.rows[i]['display_pic'] = rows.length != 0 ? rows[0] : null;
+      }
+
+      // get photos  
+      for (var i = 0; i < writer.rows.length; i++) {
+        var { rows } = await client.query(`select * from crew_media where crew_id = ${writer.rows[i].id} and type = 'gallery'`);
+        writer.rows[i]['photos'] = rows;
+      }
+
+
       // ACTORS
-      var actorQuery = `SELECT crew.*, movie_actor.role from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (SELECT actor_id FROM movie_actor where movie_id = ${req.body.movie_id}) and movie_actor.movie_id = ${req.body.movie_id}`;
+      var actorQuery = `SELECT crew.*, concat_ws(' ', crew.first_name, crew.middle_name, crew.last_name, crew.suffix) as name, movie_actor.role from crew left join movie_actor on crew.id = movie_actor.actor_id where id in (SELECT actor_id FROM movie_actor where movie_id = ${req.body.movie_id}) and movie_actor.movie_id = ${req.body.movie_id}`;
       if (req.body.user != "admin") actorQuery = actorQuery.concat(` and is_deleted = false`)
       var actor = await client.query(actorQuery);
+
+      // get display pics  
+      for (var i = 0; i < actor.rows.length; i++) {
+        var { rows } = await client.query(`select * from crew_media where crew_id = ${actor.rows[i].id} and type = 'display_pic'`);
+        actor.rows[i]['display_pic'] = rows.length != 0 ? rows[0] : null;
+      }
+
+      // get photos  
+      for (var i = 0; i < actor.rows.length; i++) {
+        var { rows } = await client.query(`select * from crew_media where crew_id = ${actor.rows[i].id} and type = 'gallery'`);
+        actor.rows[i]['photos'] = rows;
+      }
 
       crew.push(director.rows);
       crew.push(writer.rows);
@@ -82,6 +133,15 @@ exports.crew = app => {
         `SELECT *, concat_ws(' ', first_name, middle_name, last_name, suffix) as name FROM crew where id = $1`, [parseInt(req.params.id)],
         async function onResult(err, result) {
           var crew = result.rows[0];
+
+          // get display pic  
+          var { rows } = await client.query(`select * from crew_media where crew_id = ${crew.id} and type = 'display_pic'`);
+          crew['display_pic'] = rows.length != 0 ? rows[0] : null;
+
+          // get photos  
+          var { rows } = await client.query(`select * from crew_media where crew_id = ${crew.id} and type = 'gallery'`);
+          crew['photos'] = rows;
+
           var type = [];
           var movies = [];
 
@@ -97,8 +157,46 @@ exports.crew = app => {
 
           // get the movies associated to this crew according to crew type
           var movies_directed = await client.query(`select movie.* from movie left join movie_director as md on movie.id = md.movie_id where md.director_id = $1`, [parseInt(req.params.id)]);
+
+          // get posters  
+          for (var i = 0; i < movies_directed.rows.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies_directed.rows[i].id} and type = 'poster'`);
+            movies_directed.rows[i]['poster'] = rows;
+          }
+
+          // get screenshots  
+          for (var i = 0; i < movies_directed.rows.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies_directed.rows[i].id} and type = 'gallery'`);
+            movies_directed.rows[i]['screenshot'] = rows;
+          }
+
           var movies_written = await client.query(`select movie.* from movie left join movie_writer as mw on movie.id = mw.movie_id where mw.writer_id = $1`, [parseInt(req.params.id)]);
+
+          // get posters  
+          for (var i = 0; i < movies_written.rows.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies_written.rows[i].id} and type = 'poster'`);
+            movies_written.rows[i]['poster'] = rows;
+          }
+
+          // get screenshots  
+          for (var i = 0; i < movies_written.rows.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies_written.rows[i].id} and type = 'gallery'`);
+            movies_written.rows[i]['screenshot'] = rows;
+          }
+
           var movies_acted = await client.query(`select movie.* from movie left join movie_actor as ma on movie.id = ma.movie_id where ma.actor_id = $1`, [parseInt(req.params.id)]);
+
+          // get posters  
+          for (var i = 0; i < movies_acted.rows.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies_acted.rows[i].id} and type = 'poster'`);
+            movies_acted.rows[i]['poster'] = rows;
+          }
+
+          // get screenshots  
+          for (var i = 0; i < movies_acted.rows.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies_acted.rows[i].id} and type = 'gallery'`);
+            movies_acted.rows[i]['screenshot'] = rows;
+          }
 
           movies.push(movies_directed.rows);
           movies.push(movies_written.rows);

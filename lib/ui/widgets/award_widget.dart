@@ -73,7 +73,6 @@ class AwardWidgetState extends State<AwardWidget> {
                     findSuggestions: (String query) {
                       if (query.isNotEmpty) {
                         var lowercaseQuery = query.toLowerCase();
-
                         return widget.awardOptions.where((item) {
                           return item.name
                               .toLowerCase()

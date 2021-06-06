@@ -3,6 +3,8 @@ import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/models/line.dart';
+import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import '../locator.dart';
 import 'base_model.dart';
@@ -76,16 +78,18 @@ class MovieViewModel extends BaseModel {
     @required String title,
     String synopsis,
     String releaseDate,
-    String mimetype,
     String runtime,
-    List posters, // multiple files
+    List<MediaFile> posters,
     // String imageURI, // poster edit ??
-    List screenshots,
+    List<MediaFile> gallery,
+    List<MediaFile> trailers,
+    List<MediaFile> audios,
     List<String> genre,
     List<int> directors,
     List<int> writers,
     List<Crew> actors,
     List<Award> awards,
+    List<Line> lines,
     String addedBy,
     int movieId,
   }) async {
@@ -96,25 +100,22 @@ class MovieViewModel extends BaseModel {
     Response response;
 
     // TO DO: EDIT MOVIE
-    void setImages() {
-      if (posters.isNotEmpty) {
-        images.addAll(posters
-            .map((file) => MultipartFile.fromFileSync(file.path,
-                filename: file.path.split('/').last,
-                contentType: MediaType(lookupMimeType(file.path).split('/')[0],
-                    lookupMimeType(file.path).split('/')[1])))
-            .toList());
-      }
-      images.addAll(screenshots
-          .map((file) => MultipartFile.fromFileSync(file.path,
-              filename: file.path.split('/').last,
-              contentType: MediaType(lookupMimeType(file.path).split('/')[0],
-                  lookupMimeType(file.path).split('/')[1])))
+    if (posters.isNotEmpty) {
+      images.addAll(posters
+          .map((p) => MultipartFile.fromFileSync(p.file.path,
+              filename: p.file.path.split('/').last,
+              contentType: MediaType(lookupMimeType(p.file.path).split('/')[0],
+                  lookupMimeType(p.file.path).split('/')[1])))
           .toList());
     }
+    images.addAll(gallery
+        .map((g) => MultipartFile.fromFileSync(g.file.path,
+            filename: g.file.path.split('/').last,
+            contentType: MediaType(lookupMimeType(g.file.path).split('/')[0],
+                lookupMimeType(g.file.path).split('/')[1])))
+        .toList());
 
     // prepare images for formdata
-    setImages();
 
     // multi-part request
     Dio dio = new Dio();
@@ -127,12 +128,15 @@ class MovieViewModel extends BaseModel {
         'genre': genre,
         'directors': directors,
         'writers': writers,
-        'added_by': addedBy,
-        // 'posterURI': imageURI,  // for poster edit ??
-        'poster': posters.isEmpty ? false : true,
-        'poster_count': posters.length,
         'actors': actors,
         'awards': awards,
+        'lines': lines,
+        'added_by': addedBy,
+        // 'posterURI': imageURI,  // for poster edit ??
+        'poster_count': posters.length,
+        'gallery_count': gallery.length,
+        'trailer_count': trailers.length,
+        'audio_count': audios.length,
       }),
       "files": images,
     });

@@ -110,8 +110,6 @@ class ContentList extends StatelessWidget {
                                 ),
                               );
                             },
-                            // child: Icon(Icons.arrow_forward_ios_outlined),
-
                             child: Text(
                               seeAll,
                               style: const TextStyle(
@@ -186,7 +184,7 @@ class ContentList extends StatelessWidget {
                                   image: CachedNetworkImageProvider(
                                     content.poster != null &&
                                             content.poster.length != 0
-                                        ? content.poster[0]
+                                        ? content.poster[0].url
                                         : Config.imgNotFound,
                                   ),
                                   fit: BoxFit.cover,
@@ -240,16 +238,7 @@ class ContentList extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
-                                content.firstName +
-                                    (content.middleName != null
-                                        ? " " + content.middleName
-                                        : "") +
-                                    (content.lastName != null
-                                        ? " " + content.lastName
-                                        : "") +
-                                    (content.suffix != null
-                                        ? " " + content.suffix
-                                        : ""),
+                                content.name,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white,
@@ -269,7 +258,7 @@ class ContentList extends StatelessWidget {
                                   alignment: Alignment.topCenter,
                                   image: CachedNetworkImageProvider(
                                     content.displayPic != null
-                                        ? content.displayPic
+                                        ? content.displayPic.url
                                         : Config.userNotFound,
                                   ),
                                   fit: BoxFit.cover,
@@ -284,16 +273,7 @@ class ContentList extends StatelessWidget {
                                 padding: EdgeInsets.all(5),
                                 alignment: Alignment.bottomLeft,
                                 child: Text(
-                                  content.firstName +
-                                      (content.middleName != null
-                                          ? " " + content.middleName
-                                          : "") +
-                                      (content.lastName != null
-                                          ? " " + content.lastName
-                                          : "") +
-                                      (content.suffix != null
-                                          ? " " + content.suffix
-                                          : ""),
+                                  content.name,
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 14,

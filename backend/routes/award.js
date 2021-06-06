@@ -7,7 +7,7 @@ exports.award = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = "SELECT * from award where";
+      var query = "SELECT id, name, to_json(category), description, added_by, created_at, is_deleted from award where";
 
       if (req.body.user != 'admin' || req.body.mode == "form") {
         query = query.concat(" is_deleted = false");
@@ -23,7 +23,6 @@ exports.award = app => {
         query,
         async function onResult(err, result) {
           release()
-          console.log(result.rows);
           res.send(err || JSON.stringify(result.rows));
         }
       )

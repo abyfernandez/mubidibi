@@ -299,7 +299,7 @@ class _SearchViewState extends State<SearchView> {
                                                               movie.poster
                                                                       .length !=
                                                                   0
-                                                          ? movie.poster[0]
+                                                          ? movie.poster[0].url
                                                           : Config.imgNotFound,
                                                     ),
                                                     fit: BoxFit.cover,

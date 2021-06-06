@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mime/mime.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/line.dart';
+import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/ui/widgets/award_widget.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -15,8 +16,10 @@ import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:mubidibi/ui/widgets/line_widget.dart';
+import 'package:mubidibi/ui/widgets/media_widget.dart';
 import 'package:mubidibi/viewmodels/award_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -31,8 +34,12 @@ import 'dart:convert';
 
 // For Dynamic Widgets
 List<int> actorsFilter = []; // actors
+List movieGallery = [];
+List posters = [];
+List trailers = [];
+List audios = [];
 
-// test -- for line widget
+// for line widget
 ValueNotifier<List> rolesFilter = ValueNotifier<List>([]);
 
 class AddMovie extends StatefulWidget {
@@ -55,13 +62,10 @@ class _AddMovieState extends State<AddMovie> {
   // Local State Variable/s
   bool _saving = false;
   int movieId;
-  List<dynamic> genres = [];
-  List<DropdownMenuItem> genreItems = [];
-  var selectedValue;
+  // List<DropdownMenuItem> genreItems = [];
   String test;
-  List<ActorWidget> actorList = [];
-  List<AwardWidget> awardList = [];
-  List<LineWidget> lineList = []; // Iconic Lines
+  var imageURI = ''; // for movie edit
+  var currentUser;
 
   // MOVIE FIELD CONTROLLERS
   DateTime _date;
@@ -93,16 +97,6 @@ class _AddMovieState extends State<AddMovie> {
     GlobalKey<FormState>()
   ];
 
-  // OTHER VARIABLES
-  var imageFiles =
-      List(); // for uploading poster w/ image picker (multiple file)
-  final picker = ImagePicker();
-  String base64Image; // picked image in base64 format
-  var screenshots = List(); // for uploading movie screenshots
-  var imageURI = ''; // for movie edit
-  List<Award> awardOptions;
-  var currentUser;
-
   // SERVICES
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
@@ -118,6 +112,19 @@ class _AddMovieState extends State<AddMovie> {
   List<ActorWidget> filteredActors = []; // dynamic list with only saved values
   List<AwardWidget> filteredAwards = []; // dynamic list with only saved values
   List<LineWidget> filteredLines = []; // dynamic list with only saved values
+  List<ActorWidget> actorList = [];
+  List<AwardWidget> awardList = [];
+  List<LineWidget> lineList = []; // Iconic Lines
+  List<Award> awardOptions;
+  List<dynamic> genres = [];
+  List<MediaWidget> posterList = [];
+  List<MediaWidget> filteredPosterList = [];
+  List<MediaWidget> galleryList = [];
+  List<MediaWidget> filteredGalleryList = [];
+  List<MediaWidget> trailerList = [];
+  List<MediaWidget> filteredTrailerList = [];
+  List<MediaWidget> audioList = [];
+  List<MediaWidget> filteredAudioList = [];
 
   // STEPPER TITLES
   int currentStep = 0;
@@ -142,12 +149,6 @@ class _AddMovieState extends State<AddMovie> {
       // map json to Genre type
       genres = genreFromJson(response.body);
     }
-    genreItems = genres.map<DropdownMenuItem<String>>((dynamic value) {
-      return DropdownMenuItem<String>(
-        value: value,
-        child: Text(value),
-      );
-    }).toList();
   }
 
   Future<bool> onBackPress() async {
@@ -161,6 +162,10 @@ class _AddMovieState extends State<AddMovie> {
       setState(() {
         rolesFilter.value = [];
         actorsFilter = []; // clears list para pag binalikan sya empty na ulit
+        movieGallery = [];
+        posters = [];
+        trailers = [];
+        audios = [];
       });
       await _navigationService.pop();
     }
@@ -207,29 +212,41 @@ class _AddMovieState extends State<AddMovie> {
   }
 
   // Function: get image using image picker for movie poster
-  Future getImage() async {
-    // File Picker ver. 3 (multiple files)
+  getPosters() async {
+    // get posters, filter for duplicates, and iterate through them and add to list view builder for gallery
+
+    // (1) Get Photo/s and/or videos
     FilePickerResult result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png']);
+      allowMultiple: true,
+      type: FileType.image,
+    );
 
     if (result != null) {
-      List imagePaths = imageFiles.isNotEmpty
-          ? imageFiles.map((img) => img.path).toList()
-          : [];
+      List imagePaths =
+          posters.isNotEmpty ? posters.map((img) => img.path).toList() : [];
 
-      List toUpload = result.paths.map((path) {
+      // filter for duplicates
+      List filtered = result.paths.map((path) {
         if (imagePaths.contains(path) == false) {
           return File(path);
+        } else {
+          print('Image already exists'); // FlutterToast or Snackbar
         }
       }).toList();
 
-      if (toUpload.isNotEmpty) {
+      // iterate and add to list view builder
+      if (filtered.isNotEmpty) {
         setState(() {
-          for (var i = 0; i < toUpload.length; i++) {
-            if (toUpload[i] != null) {
-              imageFiles.add(toUpload[i]);
+          for (var i = 0; i < filtered.length; i++) {
+            if (filtered[i] != null) {
+              posters.add(filtered[i]);
+
+              // add photo widget to list
+              posterList.add(MediaWidget(
+                  category: "movie",
+                  item: new MediaFile(
+                      file: filtered[i], category: "movie", type: "poster"),
+                  open: ValueNotifier<bool>(true)));
             }
           }
         });
@@ -240,142 +257,463 @@ class _AddMovieState extends State<AddMovie> {
     }
   }
 
-  // Function: get images using image picker for movie screenshots
-  Future getScreenshot() async {
-    FilePickerResult result = await FilePicker.platform.pickFiles(
-        allowMultiple: true,
-        type: FileType.custom,
-        allowedExtensions: ['jpg', 'jpeg', 'png']);
+  // Function: Display Posters in the Review Step
+  Widget displayPosters() {
+    filteredPosterList = posterList.where((p) => p.item.saved == true).toList();
 
-    if (result != null) {
-      List imagePaths = screenshots.isNotEmpty
-          ? screenshots.map((img) => img.path).toList()
-          : [];
-
-      List toUpload = result.paths.map((path) {
-        if (imagePaths.contains(path) == false) {
-          return File(path);
-        }
-      }).toList();
-
-      if (toUpload.isNotEmpty) {
-        setState(() {
-          for (var i = 0; i < toUpload.length; i++) {
-            if (toUpload[i] != null) {
-              screenshots.add(toUpload[i]);
-            }
-          }
-        });
-      }
-    } else {
-      // User canceled the picker
-      print('No image selected.');
-    }
-  }
-
-  // Function: display screenshots in a scrollable horizontal view
-  Widget displayScreenshots(String mode) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: screenshots
-          .map(
-            (pic) => Stack(
-              children: [
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
-                  height: 70,
-                  width: 70,
-                  child: Image.file(
-                    pic,
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                mode == "edit"
-                    ? Container(
-                        margin: EdgeInsets.symmetric(horizontal: 5),
-                        alignment: Alignment.center,
-                        child: GestureDetector(
-                          child: Icon(Icons.close),
-                          onTap: () {
-                            setState(() {
-                              screenshots.remove(pic);
-                            });
-                          },
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50.0),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white,
-                              offset: Offset(0.0, 0.0),
-                              blurRadius: 0.0,
+    return Column(
+      children: [
+        filteredPosterList.length != 0
+            ? Container(
+                margin: EdgeInsets.only(bottom: 15),
+                alignment: Alignment.topLeft,
+                child: Text("Mga Poster: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
+              )
+            : SizedBox(),
+        filteredPosterList.length != 0
+            ? Column(
+                children: filteredPosterList.map((p) {
+                  return Container(
+                    margin: EdgeInsets.only(bottom: 10),
+                    color: Colors.white,
+                    padding: EdgeInsets.all(10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        GestureDetector(
+                            child: Container(
+                              alignment: Alignment.centerLeft,
+                              height: 100,
+                              width: 80,
+                              child: Image.file(
+                                p.item.file,
+                                width: 80,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
                             ),
-                          ],
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FullPhotoT(
+                                      type: 'path', file: p.item.file),
+                                ),
+                              );
+                            }),
+                        SizedBox(width: 15),
+                        Expanded(
+                          child: Text(
+                              p.item.description ?? "Walang description",
+                              style: TextStyle(
+                                  color: p.item.description == null
+                                      ? Colors.black38
+                                      : Colors.black,
+                                  fontStyle: p.item.description == null
+                                      ? FontStyle.italic
+                                      : FontStyle.normal)),
                         ),
-                      )
-                    : Container(),
-              ],
-            ),
-          )
-          .toList(),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              )
+            : SizedBox(),
+        filteredPosterList.length != 0 ? SizedBox(height: 15) : SizedBox(),
+      ],
     );
   }
 
-  // Function: display posters in a scrollable horizontal view
-  Widget displayPosters(String mode) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: imageFiles
-          .map(
-            (pic) => Stack(
-              children: [
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 5),
-                  height: 70,
-                  width: 70,
-                  child: Image.file(
-                    pic,
-                    width: 70,
-                    height: 70,
-                    fit: BoxFit.cover,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                ),
-                mode == "edit"
-                    ? Container(
-                        margin: EdgeInsets.symmetric(horizontal: 5),
-                        alignment: Alignment.center,
-                        child: GestureDetector(
-                          child: Icon(Icons.close),
-                          onTap: () {
-                            setState(() {
-                              imageFiles.remove(pic);
-                            });
-                          },
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(50.0),
-                          boxShadow: [
-                            BoxShadow(
+  // Function: adds MediaWidget in the ListView builder for Gallery
+  addtoGallery() async {
+    // get media, filter for duplicates, and iterate through them and add to list view builder for gallery
+
+    // (1) Get Photo/s and/or videos
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.media,
+    );
+
+    if (result != null) {
+      List imagePaths = movieGallery.isNotEmpty
+          ? movieGallery.map((img) => img.path).toList()
+          : [];
+
+      // filter for duplicates
+      List filtered = result.paths.map((path) {
+        if (imagePaths.contains(path) == false) {
+          return File(path);
+        } else {
+          print('File already exists.'); // FlutterToast or Snackbar
+        }
+      }).toList();
+
+      // iterate and add to list view builder
+      if (filtered.isNotEmpty) {
+        setState(() {
+          for (var i = 0; i < filtered.length; i++) {
+            if (filtered[i] != null) {
+              movieGallery.add(filtered[i]);
+
+              // add photo widget to list
+              galleryList.add(MediaWidget(
+                  category: "movie",
+                  item: new MediaFile(
+                      file: filtered[i], category: "movie", type: "gallery"),
+                  open: ValueNotifier<bool>(true)));
+            }
+          }
+        });
+      }
+    } else {
+      // User canceled the picker
+      print('No media selected.');
+    }
+  }
+
+  // Function: Display DP in the Review Step
+  Widget displayGallery() {
+    filteredGalleryList =
+        galleryList.where((g) => g.item.saved == true).toList();
+
+    return Column(
+      children: [
+        filteredGalleryList.length != 0
+            ? Container(
+                margin: EdgeInsets.only(bottom: 15),
+                alignment: Alignment.topLeft,
+                child: Text("Gallery: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
+              )
+            : SizedBox(),
+        filteredGalleryList.length != 0
+            ? Column(
+                children: filteredGalleryList.map((g) {
+                  return Column(
+                    children: [
+                      g.item.file != null &&
+                              lookupMimeType(g.item.file.path)
+                                      .startsWith('video/') ==
+                                  true
+                          ? Container(
+                              padding: EdgeInsets.all(10),
                               color: Colors.white,
-                              offset: Offset(0.0, 0.0),
-                              blurRadius: 0.0,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      g.item.file.path.split('/').last,
+                                      style: TextStyle(color: Colors.blue),
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: true,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : SizedBox(),
+                      Container(
+                        margin: EdgeInsets.only(bottom: 10),
+                        color: Colors.white,
+                        padding: EdgeInsets.all(10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            (g.item.file != null &&
+                                        lookupMimeType(g.item.file.path)
+                                                .startsWith('image/') ==
+                                            true) ||
+                                    g.item.file == null
+                                ? GestureDetector(
+                                    child: Container(
+                                      alignment: Alignment.centerLeft,
+                                      height: 100,
+                                      width: 80,
+                                      child: Image.file(
+                                        g.item.file,
+                                        width: 80,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => FullPhotoT(
+                                              type: 'path', file: g.item.file),
+                                        ),
+                                      );
+                                    })
+                                : SizedBox(),
+                            (g.item.file != null &&
+                                        lookupMimeType(g.item.file.path)
+                                                .startsWith('image/') ==
+                                            true) ||
+                                    g.item.file == null
+                                ? SizedBox(width: 15)
+                                : SizedBox(),
+                            Expanded(
+                              child: Text(
+                                  g.item.description ?? "Walang description",
+                                  style: TextStyle(
+                                      color: g.item.description == null
+                                          ? Colors.black38
+                                          : Colors.black,
+                                      fontStyle: g.item.description == null
+                                          ? FontStyle.italic
+                                          : FontStyle.normal)),
                             ),
                           ],
                         ),
-                      )
-                    : Container(),
-              ],
-            ),
-          )
-          .toList(),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              )
+            : SizedBox(),
+        filteredGalleryList.length != 0 ? SizedBox(height: 15) : SizedBox(),
+      ],
+    );
+  }
+
+  // Function: get videos for trailers
+  getTrailers() async {
+    // get file, filter for duplicates, and iterate through them and add to list view builder for trailer
+
+    // (1) Get Photo/s and/or videos
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.video,
+    );
+
+    if (result != null) {
+      List imagePaths =
+          trailers.isNotEmpty ? trailers.map((img) => img.path).toList() : [];
+
+      // filter for duplicates
+      List filtered = result.paths.map((path) {
+        if (imagePaths.contains(path) == false) {
+          return File(path);
+        } else {
+          print('get trailerss: exists');
+          print('File already exists'); // FlutterToast or Snackbar
+        }
+      }).toList();
+
+      // iterate and add to list view builder
+      if (filtered.isNotEmpty) {
+        setState(() {
+          for (var i = 0; i < filtered.length; i++) {
+            if (filtered[i] != null) {
+              trailers.add(filtered[i]);
+
+              // add photo widget to list
+              trailerList.add(MediaWidget(
+                  category: "movie",
+                  item: new MediaFile(
+                      file: filtered[i], category: "movie", type: "trailer"),
+                  open: ValueNotifier<bool>(true)));
+            }
+          }
+        });
+      }
+    } else {
+      // User canceled the picker
+      print('No file selected.');
+    }
+  }
+
+  // Function: Display Trailers in the Review Step
+  Widget displayTrailers() {
+    filteredTrailerList =
+        trailerList.where((g) => g.item.saved == true).toList();
+
+    return Column(
+      children: [
+        filteredTrailerList.length != 0
+            ? Container(
+                margin: EdgeInsets.only(bottom: 15),
+                alignment: Alignment.topLeft,
+                child: Text("Mga Trailer: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
+              )
+            : SizedBox(),
+        filteredTrailerList.length != 0
+            ? Column(
+                children: filteredTrailerList.map((g) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        color: Colors.white,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                g.item.file.path.split('/').last,
+                                style: TextStyle(color: Colors.blue),
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        margin: EdgeInsets.only(bottom: 10),
+                        color: Colors.white,
+                        padding: EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                  g.item.description ?? "Walang description",
+                                  style: TextStyle(
+                                      color: g.item.description == null
+                                          ? Colors.black38
+                                          : Colors.black,
+                                      fontStyle: g.item.description == null
+                                          ? FontStyle.italic
+                                          : FontStyle.normal)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              )
+            : SizedBox(),
+        filteredTrailerList.length != 0 ? SizedBox(height: 15) : SizedBox(),
+      ],
+    );
+  }
+
+  // Function: get audios
+  getAudios() async {
+    // get file, filter for duplicates, and iterate through them and add to list view builder for trailer
+
+    // (1) Get Photo/s and/or videos
+    FilePickerResult result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.audio,
+    );
+
+    if (result != null) {
+      List imagePaths =
+          audios.isNotEmpty ? audios.map((img) => img.path).toList() : [];
+
+      // filter for duplicates
+      List filtered = result.paths.map((path) {
+        if (imagePaths.contains(path) == false) {
+          return File(path);
+        } else {
+          print('File already exists'); // FlutterToast or Snackbar
+        }
+      }).toList();
+
+      // iterate and add to list view builder
+      if (filtered.isNotEmpty) {
+        setState(() {
+          for (var i = 0; i < filtered.length; i++) {
+            if (filtered[i] != null) {
+              audios.add(filtered[i]);
+
+              // add photo widget to list
+              audioList.add(MediaWidget(
+                  category: "movie",
+                  item: new MediaFile(
+                      file: filtered[i], category: "movie", type: "audio"),
+                  open: ValueNotifier<bool>(true)));
+            }
+          }
+        });
+      }
+    } else {
+      // User canceled the picker
+      print('No file selected.');
+    }
+  }
+
+  // Function: Display Trailers in the Review Step
+  Widget displayAudios() {
+    filteredAudioList = audioList.where((g) => g.item.saved == true).toList();
+
+    return Column(
+      children: [
+        filteredAudioList.length != 0
+            ? Container(
+                margin: EdgeInsets.only(bottom: 15),
+                alignment: Alignment.topLeft,
+                child: Text("Mga Audio: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
+              )
+            : SizedBox(),
+        filteredAudioList.length != 0
+            ? Column(
+                children: filteredAudioList.map((g) {
+                  return Column(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(10),
+                        color: Colors.white,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                g.item.file.path.split('/').last,
+                                style: TextStyle(color: Colors.blue),
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        margin: EdgeInsets.only(bottom: 10),
+                        color: Colors.white,
+                        padding: EdgeInsets.all(10),
+                        child: Expanded(
+                          child: Text(
+                              g.item.description ?? "Walang description",
+                              style: TextStyle(
+                                  color: g.item.description == null
+                                      ? Colors.black38
+                                      : Colors.black,
+                                  fontStyle: g.item.description == null
+                                      ? FontStyle.italic
+                                      : FontStyle.normal)),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              )
+            : SizedBox(),
+        filteredAudioList.length != 0 ? SizedBox(height: 15) : SizedBox(),
+      ],
     );
   }
 
@@ -628,6 +966,7 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               )
             : SizedBox(),
+        filteredLines.length != 0 ? SizedBox(height: 15) : SizedBox(),
       ],
     );
   }
@@ -655,9 +994,11 @@ class _AddMovieState extends State<AddMovie> {
 
   @override
   void initState() {
-    // TEST -- in case user just closes the app and not click the back buttons
+    // in case user just closes the app and not click the back buttons
     rolesFilter.value = [];
     actorsFilter = [];
+    movieGallery = [];
+    posters = [];
 
     currentUser = _authenticationService.currentUser;
     fetchCrew();
@@ -723,6 +1064,10 @@ class _AddMovieState extends State<AddMovie> {
                 setState(() {
                   actorsFilter = [];
                   rolesFilter.value = [];
+                  movieGallery = [];
+                  posters = [];
+                  trailers = [];
+                  audios = [];
                 });
                 await _navigationService.pop();
               }
@@ -837,25 +1182,24 @@ class _AddMovieState extends State<AddMovie> {
                                           confirmationTitle: "Yes",
                                           description:
                                               "Are you sure that you want to continue?");
+
                                   if (confirm.confirmed == true) {
                                     _saving =
                                         true; // set saving to true to trigger circular progress indicator
 
-                                    // directors
+                                    // Wirectors
                                     List<int> directorsToSave = [];
                                     if (directors.isNotEmpty) {
                                       directors.map((d) => d.crewId).toList();
                                     }
 
-                                    // writers
+                                    // Writers
                                     List<int> writersToSave = [];
                                     if (writers.isNotEmpty) {
                                       writers.map((w) => w.crewId).toList();
                                     }
 
-                                    // loop through the awards and actors widgets to
-
-                                    // actors
+                                    // Actors
                                     List<Crew> actorsToSave = [];
                                     if (filteredActors.isNotEmpty) {
                                       actorsToSave = filteredActors
@@ -863,7 +1207,7 @@ class _AddMovieState extends State<AddMovie> {
                                           .toList();
                                     }
 
-                                    // awards
+                                    // Awards
                                     List<Award> awardsToSave = [];
                                     if (filteredAwards.isNotEmpty) {
                                       awardsToSave = filteredAwards
@@ -871,8 +1215,45 @@ class _AddMovieState extends State<AddMovie> {
                                           .toList();
                                     }
 
-                                    // TO DO: famous lines
-                                    List<LineWidget> linesToSave = [];
+                                    // Famous Lines
+                                    List<Line> linesToSave = [];
+                                    if (filteredLines.isNotEmpty) {
+                                      linesToSave = filteredLines
+                                          .map((a) => a.item)
+                                          .toList();
+                                    }
+
+                                    // Posters
+                                    List<MediaFile> postersToSave = [];
+                                    if (filteredPosterList.isNotEmpty) {
+                                      postersToSave = filteredPosterList
+                                          .map((a) => a.item)
+                                          .toList();
+                                    }
+
+                                    // Gallery
+                                    List<MediaFile> galleryToSave = [];
+                                    if (filteredGalleryList.isNotEmpty) {
+                                      galleryToSave = filteredGalleryList
+                                          .map((a) => a.item)
+                                          .toList();
+                                    }
+
+                                    // Trailers
+                                    List<MediaFile> trailersToSave = [];
+                                    if (filteredTrailerList.isNotEmpty) {
+                                      trailersToSave = filteredTrailerList
+                                          .map((a) => a.item)
+                                          .toList();
+                                    }
+
+                                    // Audio
+                                    List<MediaFile> audiosToSave = [];
+                                    if (filteredAudioList.isNotEmpty) {
+                                      audiosToSave = filteredAudioList
+                                          .map((a) => a.item)
+                                          .toList();
+                                    }
 
                                     final response = await model.addMovie(
                                         title: titleController.text,
@@ -881,15 +1262,18 @@ class _AddMovieState extends State<AddMovie> {
                                             ? _date.toIso8601String()
                                             : '',
                                         runtime: runtimeController.text,
-                                        posters: imageFiles,
                                         // imageURI: imageURI, // poster edit???
-                                        screenshots: screenshots,
                                         genre: filmGenres,
                                         directors: directorsToSave,
                                         writers: writersToSave,
                                         // TO DO: famous lines and added media
                                         actors: actorsToSave,
                                         awards: awardsToSave,
+                                        posters: postersToSave,
+                                        gallery: galleryToSave,
+                                        trailers: trailersToSave,
+                                        lines: linesToSave,
+                                        audios: audiosToSave,
                                         addedBy: currentUser.userId,
                                         movieId: movieId);
 
@@ -1203,7 +1587,7 @@ class _AddMovieState extends State<AddMovie> {
             ],
           ),
         );
-      case 1: // Mga Poster, Screenshot, at iba pang Media
+      case 1: // Poster, Trailer, Gallery and Audio
         return Container(
           alignment: Alignment.topLeft,
           child: Column(
@@ -1215,66 +1599,326 @@ class _AddMovieState extends State<AddMovie> {
               Text('Mga Poster',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
-                height: 10,
+                height: 15,
               ),
-              Padding(
-                padding: EdgeInsets.only(left: 15),
-                child: Container(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+              ListView.builder(
+                  itemCount: posterList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: posterList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              posterList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              // update poster list by removing the image that is previously saved and recorded
+
+                                              if (posterList[i].item.file !=
+                                                  null) {
+                                                List imagePaths = posters
+                                                        .isNotEmpty
+                                                    ? posters
+                                                        .map((img) => img.path)
+                                                        .toList()
+                                                    : [];
+
+                                                // loop through posters' paths
+                                                if (imagePaths.contains(
+                                                    posterList[i]
+                                                        .item
+                                                        .file
+                                                        .path)) {
+                                                  posters.removeWhere((f) =>
+                                                      posterList[i]
+                                                          .item
+                                                          .file
+                                                          .path ==
+                                                      f.path);
+                                                }
+                                              }
+                                              posterList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+              posterList.isNotEmpty
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : SizedBox(),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: getPosters,
                     child: Row(
-                      children: [
-                        Container(
-                            margin: EdgeInsets.symmetric(horizontal: 5),
-                            child: GestureDetector(
-                              child: Icon(Icons.camera_alt),
-                              onTap: getImage,
-                            ),
-                            width: 70,
-                            height: 70,
-                            color: Color.fromRGBO(240, 240, 240, 1)),
-                        imageFiles.length != 0
-                            ? displayPosters("edit")
-                            : Container(),
-                      ],
+                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
                     ),
-                  ),
-                ),
-              ),
+                  )),
+              SizedBox(height: 15),
+              Text('Mga Trailer',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 15,
               ),
-              Text('Mga Screenshot',
+              ListView.builder(
+                  itemCount: trailerList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: trailerList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              trailerList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              // update poster list by removing the image that is previously saved and recorded
+
+                                              if (trailerList[i].item.file !=
+                                                  null) {
+                                                List imagePaths = trailers
+                                                        .isNotEmpty
+                                                    ? trailers
+                                                        .map((img) => img.path)
+                                                        .toList()
+                                                    : [];
+
+                                                // loop through trailers' paths
+                                                if (imagePaths.contains(
+                                                    trailerList[i]
+                                                        .item
+                                                        .file
+                                                        .path)) {
+                                                  trailers.removeWhere((f) =>
+                                                      trailerList[i]
+                                                          .item
+                                                          .file
+                                                          .path ==
+                                                      f.path);
+                                                }
+                                              }
+                                              trailerList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+              trailerList.isNotEmpty
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : SizedBox(),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: getTrailers,
+                    child: Row(
+                      children: [Icon(Icons.videocam), Text(" Dagdagan")],
+                    ),
+                  )),
+              SizedBox(
+                height: 15,
+              ),
+              Text('Gallery',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
-                height: 10,
+                height: 15,
               ),
-              Padding(
-                padding: EdgeInsets.only(left: 15),
-                child: Container(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+              ListView.builder(
+                  itemCount: galleryList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: galleryList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              galleryList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              // update gallery list by removing the image that is previously saved and recorded
+
+                                              if (galleryList[i].item.file !=
+                                                  null) {
+                                                List imagePaths = movieGallery
+                                                        .isNotEmpty
+                                                    ? movieGallery
+                                                        .map((img) => img.path)
+                                                        .toList()
+                                                    : [];
+
+                                                // loop through gallery's paths
+                                                if (imagePaths.contains(
+                                                    galleryList[i]
+                                                        .item
+                                                        .file
+                                                        .path)) {
+                                                  movieGallery.removeWhere(
+                                                      (f) =>
+                                                          galleryList[i]
+                                                              .item
+                                                              .file
+                                                              .path ==
+                                                          f.path);
+                                                }
+                                              }
+                                              galleryList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+              galleryList.isNotEmpty
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : SizedBox(),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    // focusNode: addActorNode,
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addtoGallery,
                     child: Row(
-                      children: [
-                        Container(
-                            margin: EdgeInsets.symmetric(horizontal: 5),
-                            child: GestureDetector(
-                              child: Icon(Icons.image),
-                              onTap: getScreenshot,
-                            ),
-                            width: 70,
-                            height: 70,
-                            color: Color.fromRGBO(240, 240, 240, 1)),
-                        screenshots.length != 0
-                            ? displayScreenshots("edit")
-                            : Container(),
-                      ],
+                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
                     ),
-                  ),
-                ),
-              ),
+                  )),
               SizedBox(
-                height: 10,
+                height: 15,
+              ),
+              Text('Mga Audio',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+              SizedBox(
+                height: 15,
+              ),
+              ListView.builder(
+                  itemCount: audioList.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int i) {
+                    return ValueListenableBuilder(
+                        valueListenable: audioList[i].open,
+                        builder: (context, value, widget) {
+                          return Stack(
+                            children: [
+                              audioList[i],
+                              value == true
+                                  ? Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        child: OutlineButton(
+                                          padding: EdgeInsets.all(0),
+                                          color: Colors.white,
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
+                                            setState(() {
+                                              // update poster list by removing the image that is previously saved and recorded
+
+                                              if (audioList[i].item.file !=
+                                                  null) {
+                                                List imagePaths = audios
+                                                        .isNotEmpty
+                                                    ? audios
+                                                        .map((img) => img.path)
+                                                        .toList()
+                                                    : [];
+
+                                                // loop through audios' paths
+                                                if (imagePaths.contains(
+                                                    audioList[i]
+                                                        .item
+                                                        .file
+                                                        .path)) {
+                                                  audios.removeWhere((f) =>
+                                                      audioList[i]
+                                                          .item
+                                                          .file
+                                                          .path ==
+                                                      f.path);
+                                                }
+                                              }
+                                              audioList.removeAt(i);
+                                            });
+                                          },
+                                          child: Text('Tanggalin'),
+                                        ),
+                                        alignment: Alignment.centerRight,
+                                      ),
+                                    )
+                                  : SizedBox(),
+                            ],
+                          );
+                        });
+                  }),
+              audioList.isNotEmpty
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : SizedBox(),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: getAudios,
+                    child: Row(
+                      children: [Icon(Icons.library_music), Text(" Dagdagan")],
+                    ),
+                  )),
+              SizedBox(
+                height: 15,
               ),
             ],
           ),
@@ -1319,9 +1963,8 @@ class _AddMovieState extends State<AddMovie> {
                         ..sort((a, b) => a.name
                             .toLowerCase()
                             .indexOf(lowercaseQuery)
-                            .compareTo(b.name
-                                .toLowerCase()
-                                .indexOf(lowercaseQuery)));
+                            .compareTo(
+                                b.name.toLowerCase().indexOf(lowercaseQuery)));
                     }
                     return crewList;
                   },
@@ -1514,7 +2157,7 @@ class _AddMovieState extends State<AddMovie> {
                         onPressed: addAward,
                         child: Row(
                           children: [
-                            Icon(Icons.person_add_alt_1_outlined),
+                            Icon(Icons.emoji_events_outlined),
                             Text(" Dagdagan")
                           ],
                         ),
@@ -1569,7 +2212,7 @@ class _AddMovieState extends State<AddMovie> {
                         onPressed: addAward,
                         child: Row(
                           children: [
-                            Icon(Icons.person_add_alt_1_outlined),
+                            Icon(Icons.emoji_events_outlined),
                             Text(" Dagdagan")
                           ],
                         ),
@@ -1596,12 +2239,11 @@ class _AddMovieState extends State<AddMovie> {
               width: lineList.isEmpty && filteredActors.isEmpty ? null : 140,
               child: lineList.isEmpty && filteredActors.isNotEmpty
                   ? FlatButton(
-                      // focusNode: addActorNode,
                       color: Color.fromRGBO(240, 240, 240, 1),
                       onPressed: addLine,
                       child: Row(
                         children: [
-                          Icon(Icons.person_add_alt_1_outlined),
+                          Icon(Icons.question_answer_outlined),
                           Text(" Dagdagan")
                         ],
                       ),
@@ -1662,7 +2304,7 @@ class _AddMovieState extends State<AddMovie> {
                       onPressed: addLine,
                       child: Row(
                         children: [
-                          Icon(Icons.person_add_alt_1_outlined),
+                          Icon(Icons.question_answer_outlined),
                           Text(" Dagdagan")
                         ],
                       ),
@@ -1706,6 +2348,7 @@ class _AddMovieState extends State<AddMovie> {
                       softWrap: true,
                     ),
                   ),
+                  SizedBox(height: 15),
                   _date != null ? SizedBox(height: 10) : SizedBox(),
                   _date != null
                       ? Container(
@@ -1730,7 +2373,7 @@ class _AddMovieState extends State<AddMovie> {
                           ),
                         )
                       : SizedBox(),
-                  SizedBox(height: 10),
+                  _date != null ? SizedBox(height: 10) : SizedBox(),
                   Container(
                     alignment: Alignment.topLeft,
                     child: Text("Buod: ",
@@ -1748,34 +2391,11 @@ class _AddMovieState extends State<AddMovie> {
                       ),
                     ),
                   ),
-                  imageFiles.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  imageFiles.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Mga Poster: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  imageFiles.isNotEmpty
-                      ? displayPosters("display")
-                      : SizedBox(),
-                  screenshots.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  screenshots.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Mga Screenshot: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  screenshots.isNotEmpty
-                      ? displayScreenshots("display")
-                      : SizedBox(),
+                  SizedBox(height: 15),
+                  displayPosters(),
+                  displayTrailers(),
+                  displayGallery(),
+                  displayAudios(),
                   directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
                   directors.isNotEmpty
                       ? Container(
@@ -1876,6 +2496,7 @@ class _AddMovieState extends State<AddMovie> {
                                   .toList()),
                         )
                       : SizedBox(),
+                  filmGenres.length != 0 ? SizedBox(height: 15) : SizedBox(),
                   displayAwards(),
                   displayLines(),
                 ],
@@ -2091,7 +2712,7 @@ class ActorWidgetState extends State<ActorWidget> {
                       setState(() {
                         if (rolesFilter.value.contains(c) == true) {
                           rolesFilter.value.remove(
-                              c); // test -- removes the deleted role from the role masterlist
+                              c); // removes the deleted role from the role masterlist
                         }
                       });
                       state.deleteChip(c);
@@ -2125,7 +2746,7 @@ class ActorWidgetState extends State<ActorWidget> {
                       widget.open.value = false;
                       widget.crew.saved = true;
 
-                      // test -- save roles in roles masterlist
+                      // save roles in roles masterlist
                       widget.crew.role.forEach((a) {
                         if (rolesFilter.value.contains(a) == false)
                           rolesFilter.value.add(a);

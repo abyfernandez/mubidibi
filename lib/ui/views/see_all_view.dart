@@ -1,11 +1,11 @@
 // See All Page
 
 import 'dart:convert';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/full_photo.dart';
@@ -19,8 +19,8 @@ import 'package:mubidibi/globals.dart' as Config;
 class SeeAllView extends StatefulWidget {
   final List<Movie> movies;
   final List<Crew> crew;
-  final List<String> photos;
-  final List<String> screenshots;
+  final List<MediaFile> photos;
+  final List<MediaFile> screenshots;
   final String type;
   final String filter;
   final bool showFilter;
@@ -46,8 +46,8 @@ class SeeAllView extends StatefulWidget {
 class _SeeAllViewState extends State<SeeAllView> {
   final List<Movie> movies;
   final List<Crew> crew;
-  final List<String> photos;
-  final List<String> screenshots;
+  final List<MediaFile> photos;
+  final List<MediaFile> screenshots;
   final String type;
   final String
       filter; // variable for when user came from the genre dropdown in the homepage. this will later be added to the list of filters
@@ -268,7 +268,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                           image: CachedNetworkImageProvider(
                                             movie.poster != null &&
                                                     movie.poster.length != 0
-                                                ? movie.poster[0]
+                                                ? movie.poster[0].url
                                                 : Config.imgNotFound,
                                           ),
                                           fit: BoxFit.cover,
@@ -409,7 +409,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                           image: CachedNetworkImageProvider(
                                             movie.poster != null &&
                                                     movie.poster.length != 0
-                                                ? movie.poster[0]
+                                                ? movie.poster[0].url
                                                 : Config.imgNotFound,
                                           ),
                                           fit: BoxFit.cover,
@@ -613,7 +613,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     borderRadius: BorderRadius.circular(5),
                                     image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        p != null ? p : Config.imgNotFound,
+                                        p.url != null
+                                            ? p.url
+                                            : Config.imgNotFound,
                                       ),
                                       fit: BoxFit.cover,
                                     ),
@@ -624,7 +626,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => FullPhoto(url: p),
+                                      builder: (_) => FullPhoto(url: p.url),
                                     ));
                               },
                             ),
@@ -661,7 +663,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     borderRadius: BorderRadius.circular(5),
                                     image: DecorationImage(
                                       image: CachedNetworkImageProvider(
-                                        p != null ? p : Config.imgNotFound,
+                                        p.url != null
+                                            ? p.url
+                                            : Config.imgNotFound,
                                       ),
                                       fit: BoxFit.cover,
                                     ),
@@ -672,7 +676,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => FullPhoto(url: p),
+                                      builder: (_) => FullPhoto(url: p.url),
                                     ));
                               },
                             ),

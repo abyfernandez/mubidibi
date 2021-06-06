@@ -40,7 +40,7 @@ class Award {
             ? []
             : List<String>.from(json["category"].map((x) => x)),
         year: json['year'].toString(),
-        type: json['type'],
+        type: json['award_type'],
         description: json['description'],
         addedBy: json['added_by'],
         isDeleted: json['is_deleted']);
@@ -52,7 +52,7 @@ class Award {
         "name": name,
         "category": category,
         "year": year,
-        "type": type,
+        "award_type": type,
         "description": description,
         "added_by": addedBy,
         "is_deleted": isDeleted,

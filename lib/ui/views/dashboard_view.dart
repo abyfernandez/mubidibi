@@ -73,29 +73,6 @@ class _DashboardViewState extends State<DashboardView>
     });
   }
 
-  Widget crewView(BuildContext context, AsyncSnapshot snapshot) {
-    if (snapshot.connectionState == ConnectionState.done) {
-      return CustomScrollView(
-        controller: _crewScrollController,
-        slivers: [
-          SliverToBoxAdapter(
-            child: ContentList(
-                key: PageStorageKey('crew'),
-                title: 'Mga Personalidad',
-                seeAll: 'Tingnan Lahat',
-                type: 'crew',
-                filter: filter,
-                showFilter: true),
-          ),
-        ],
-      );
-    } else {
-      return Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-  }
-
   @override
   void initState() {
     currentUser = _authenticationService.currentUser;

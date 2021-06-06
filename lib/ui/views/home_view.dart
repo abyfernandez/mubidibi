@@ -123,7 +123,7 @@ class _HomeViewState extends State<HomeView> {
                       fontWeight: FontWeight.bold)),
               backgroundColor: Colors.transparent,
               shadowColor: Colors
-                  .black, // can be changed to transparent but decreases visibility
+                  .transparent, // can be changed to transparent but decreases visibility
               iconTheme: IconThemeData(color: Colors.white),
               automaticallyImplyLeading: false,
               actions: [

@@ -4,23 +4,36 @@ exports.movie = app => {
   app.post('/mubidibi/movies/', async (req, res) => {
     app.pg.connect(onConnect)
 
-    function onConnect(err, client, release) {
+    async function onConnect(err, client, release) {
       if (err) return res.send(err)
-      var query = `SELECT * FROM movie `;
+      var query = `SELECT * FROM movie`;
 
       // if user is not admin, show only the movies that are not soft-deleted
       if (req.body.user != "admin" || req.body.mode == "form") {
         query = query.concat(` WHERE is_deleted = false `);
       }
 
-      client.query(
-        query,
-        function onResult(err, result) {
-          release()
-          if (result) res.send(JSON.stringify(result.rows));
-          else res.send(err);
-        }
-      )
+      var result = await client.query(
+        query).then(async (result) => {
+          var movies = result.rows;
+
+          // get posters  
+          for (var i = 0; i < movies.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies[i].id} and type = 'poster'`);
+            movies[i]['poster'] = rows;
+          }
+
+          // get screenshots  
+          for (var i = 0; i < movies.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies[i].id} and type = 'gallery'`);
+            movies[i]['screenshot'] = rows;
+          }
+          return movies;
+        });
+
+      release();
+      if (result) res.send(JSON.stringify(result));
+      else res.send(err);
     }
   });
 
@@ -28,24 +41,31 @@ exports.movie = app => {
   app.get('/mubidibi/movie/:id', (req, res) => {
     app.pg.connect(onConnect)
 
-    function onConnect(err, client, release) {
+    async function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      client.query(
-        'SELECT * FROM movie where id = $1', [parseInt(req.params.id)],
-        function onResult(err, result) {
-          release()
-          if (result) res.send(JSON.stringify(result.rows[0]));
-          else res.send(err);
-        }
-      )
+      var result = await client.query(
+        'SELECT * FROM movie where id = $1', [parseInt(req.params.id)]).then(async (result) => {
+          var movie = result.rows[0];
+
+          // get posters  
+          var { rows } = await client.query(`select * from movie_media where movie_id = ${movie.id} and type = 'poster'`);
+          movie['poster'] = rows;
+
+          // get screenshots  
+          var { rows } = await client.query(`select * from movie_media where movie_id = ${movie.id} and type = 'gallery'`);
+          movie['screenshot'] = rows;
+
+          return movie;
+        });
+      release();
+      if (result) res.send(JSON.stringify(result));
+      else res.send(err);
     }
   });
 
   // ADD MOVIE
   app.post('/mubidibi/add-movie/', async (req, res) => {
-
-    // call function add_movie with params: String title, Array genre, Date release_date, String synopsis, String poster, String added_by 
 
     // upload image to cloudinary 
     // TO DO: create centralized cloudinary (for both mobile and web use)
@@ -63,11 +83,14 @@ exports.movie = app => {
     var movieData = [];    // movie data sent from the frontend
     const pics = await req.parts();
 
+    // const media = []; // test -- container for all the media files to be uploaded
+
     if (pics != null) {
       for await (const pic of pics) {
 
         if (!pic.file && movieData.length == 0) {
           movieData = JSON.parse(pic.fields.movie.value); // movie data sent from the frontend
+
         } else {     // upload images to cloudinary
           var buffer = await pic.toBuffer();
           var image = await buffer.toString('base64');

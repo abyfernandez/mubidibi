@@ -403,7 +403,7 @@ class _MovieViewState extends State<MovieView>
                                 decoration: new BoxDecoration(
                                   image: new DecorationImage(
                                     image: CachedNetworkImageProvider(
-                                        p ?? Config.imgNotFound),
+                                        p?.url ?? Config.imgNotFound),
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -474,7 +474,8 @@ class _MovieViewState extends State<MovieView>
                                               ),
                                             ),
                                           ),
-                                          imageUrl: p ?? Config.imgNotFound,
+                                          imageUrl:
+                                              p?.url ?? Config.imgNotFound,
                                           width: 250,
                                           height: 350,
                                           fit: BoxFit.cover,
@@ -485,7 +486,8 @@ class _MovieViewState extends State<MovieView>
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) => FullPhoto(
-                                                url: p ?? Config.imgNotFound),
+                                                url: p?.url ??
+                                                    Config.imgNotFound),
                                           ),
                                         );
                                       },
@@ -502,7 +504,7 @@ class _MovieViewState extends State<MovieView>
                                 image: CachedNetworkImageProvider(
                                     movie.poster != null &&
                                             movie.poster.length != 0
-                                        ? movie.poster[0]
+                                        ? movie.poster[0].url
                                         : Config.imgNotFound),
                                 fit: BoxFit.cover,
                               ),
@@ -546,18 +548,6 @@ class _MovieViewState extends State<MovieView>
                                           ),
                                         ),
                                       ),
-                                      //     Container(
-                                      //   child: Container(
-                                      //     alignment: Alignment.center,
-                                      //     child: CircularProgressIndicator(
-                                      //       valueColor:
-                                      //           AlwaysStoppedAnimation<
-                                      //                   Color>(
-                                      //               Theme.of(context)
-                                      //                   .accentColor),
-                                      //     ),
-                                      //   ),
-                                      // ),
                                       errorWidget: (context, url, error) =>
                                           Material(
                                         child: Container(
@@ -583,17 +573,10 @@ class _MovieViewState extends State<MovieView>
                                             ),
                                           ),
                                         ),
-                                        // Image.network(
-                                        //   Config.imgNotFound,
-                                        //   height: 350,
-                                        //   width: 250,
-                                        //   fit: BoxFit.cover,
-                                        //   alignment: Alignment.center,
-                                        // ),
                                       ),
                                       imageUrl: movie.poster != null &&
                                               movie.poster.length != 0
-                                          ? movie.poster[0]
+                                          ? movie.poster[0].url
                                           : Config.imgNotFound,
                                       width: 250,
                                       height: 350,
@@ -607,7 +590,7 @@ class _MovieViewState extends State<MovieView>
                                         builder: (context) => FullPhoto(
                                             url: movie.poster != null &&
                                                     movie.poster.length != 0
-                                                ? movie.poster[0]
+                                                ? movie.poster[0].url
                                                 : Config.imgNotFound),
                                       ),
                                     );
@@ -623,8 +606,8 @@ class _MovieViewState extends State<MovieView>
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
-                              children: movie.poster.map((url) {
-                                int index = movie.poster.indexOf(url);
+                              children: movie.poster.map((p) {
+                                int index = movie.poster.indexOf(p);
                                 return GestureDetector(
                                   child: Container(
                                     width: 8.0,
@@ -1031,7 +1014,8 @@ class _MovieViewState extends State<MovieView>
                                                 alignment: Alignment.center,
                                               ),
                                             ),
-                                            imageUrl: p ?? Config.imgNotFound,
+                                            imageUrl:
+                                                p?.url ?? Config.imgNotFound,
                                             width: 300,
                                             height: 200,
                                             fit: BoxFit.cover,
@@ -1042,7 +1026,8 @@ class _MovieViewState extends State<MovieView>
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => FullPhoto(
-                                                  url: p ?? Config.imgNotFound),
+                                                  url: p?.url ??
+                                                      Config.imgNotFound),
                                             ),
                                           );
                                         },
@@ -1127,8 +1112,8 @@ class _MovieViewState extends State<MovieView>
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: movie.screenshot.map((url) {
-                                int index = movie.screenshot.indexOf(url);
+                              children: movie.screenshot.map((p) {
+                                int index = movie.screenshot.indexOf(p);
                                 return GestureDetector(
                                   child: Container(
                                     width: 8.0,

@@ -124,7 +124,7 @@ class ContentScroll extends StatelessWidget {
                                     alignment: Alignment.topCenter,
                                   ),
                                 ),
-                                imageUrl: crew[index].displayPic ??
+                                imageUrl: crew[index].displayPic?.url ??
                                     Config.userNotFound,
                                 width: imageWidth,
                                 height: imageHeight,

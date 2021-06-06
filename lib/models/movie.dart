@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:mubidibi/models/media_file.dart';
 
 List<Movie> movieFromJson(String str) =>
     List<Movie>.from(json.decode(str).map((x) => Movie.fromJson(x)));
@@ -11,9 +12,9 @@ class Movie {
   final String title;
   final String synopsis;
   final num runtime;
-  final List<String> poster;
+  final List<MediaFile> poster;
   final List<dynamic> genre;
-  final List<String> screenshot;
+  final List<MediaFile> screenshot;
   final String releaseDate;
   final String addedBy;
   final bool isDeleted;
@@ -38,11 +39,13 @@ class Movie {
         runtime: json['runtime'],
         poster: json['poster'] == null
             ? null
-            : List<String>.from(json["poster"].map((x) => x)),
+            : List<MediaFile>.from(
+                json["poster"].map((x) => MediaFile.fromJson(x))),
         genre: json['genre'],
         screenshot: json['screenshot'] == null
             ? null
-            : List<String>.from(json["screenshot"].map((x) => x)),
+            : List<MediaFile>.from(
+                json["screenshot"].map((x) => MediaFile.fromJson(x))),
         releaseDate: json['release_date'],
         addedBy: json['added_by'],
         isDeleted: json['is_deleted']);

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:mubidibi/models/media_file.dart';
 import './movie.dart';
 
 List<Crew> crewFromJson(String str) =>
@@ -18,8 +19,10 @@ class Crew {
   final String deathdate;
   final bool isAlive;
   final String birthplace;
-  final String displayPic;
-  final List<String> photos;
+  final MediaFile displayPic;
+  final List<MediaFile> photos;
+  // final String displayPic;
+  // final List<String> photos;
   final String description;
   List<String> role; // roles in movies
   List<String> type; // direktor/manunulat/aktor
@@ -59,10 +62,13 @@ class Crew {
       deathdate: json['deathdate'],
       isAlive: json['is_alive'],
       birthplace: json['birthplace'],
-      displayPic: json['display_pic'],
+      displayPic: json['display_pic'] == null
+          ? null
+          : MediaFile.fromJson(json['display_pic']),
       photos: json["photos"] == null
           ? []
-          : List<String>.from(json["photos"].map((x) => x)),
+          : List<MediaFile>.from(
+              json["photos"].map((x) => MediaFile.fromJson(x))),
       description: json['description'],
       role: json["role"] == null
           ? []

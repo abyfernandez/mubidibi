@@ -1,5 +1,6 @@
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
+import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/views/configure_admin_view.dart';
@@ -94,8 +95,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case SeeAllViewRoute:
       var movies = settings.arguments as List<Movie>;
       var crew = settings.arguments as List<Crew>;
-      var photos = settings.arguments as List<String>;
-      var screenshots = settings.arguments as List<String>;
+      var photos = settings.arguments as List<MediaFile>;
+      var screenshots = settings.arguments as List<MediaFile>;
       var type = settings.arguments as String;
       var filter = settings.arguments as String;
       var title = settings.arguments as String;

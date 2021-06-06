@@ -62,11 +62,13 @@ dependencies:
   sleek_circular_slider: ^1.2.0
   carousel_slider: ^3.0.0
   file_picker: ^2.1.7
+  chewie: ^0.12.2
+  video_thumbnail: ^0.2.5+1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
+    
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

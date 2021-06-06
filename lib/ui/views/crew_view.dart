@@ -161,7 +161,7 @@ class _CrewViewState extends State<CrewView>
                                 image: CachedNetworkImageProvider(
                                   movie.poster != null &&
                                           movie.poster.length != 0
-                                      ? movie.poster[0]
+                                      ? movie.poster[0].url
                                       : Config.imgNotFound,
                                 ),
                                 fit: BoxFit.cover,
@@ -206,7 +206,7 @@ class _CrewViewState extends State<CrewView>
                           );
                         },
                         child: Image.network(
-                          pic,
+                          pic.url,
                           height: 180, //250
                           width: 120, //230
                           alignment: Alignment.topCenter,
@@ -509,7 +509,7 @@ class _CrewViewState extends State<CrewView>
                               alignment: Alignment.center,
                             ),
                           ),
-                          imageUrl: crew.displayPic ?? Config.userNotFound,
+                          imageUrl: crew.displayPic?.url ?? Config.userNotFound,
                           width: 150,
                           height: 200,
                           alignment: Alignment.center,
@@ -521,7 +521,8 @@ class _CrewViewState extends State<CrewView>
                           context,
                           MaterialPageRoute(
                             builder: (context) => FullPhoto(
-                                url: crew.displayPic ?? Config.userNotFound),
+                                url: crew.displayPic?.url ??
+                                    Config.userNotFound),
                           ),
                         );
                       },
