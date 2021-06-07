@@ -5,7 +5,7 @@ import 'package:photo_view/photo_view.dart';
 
 class FullPhotoT extends StatelessWidget {
   final String url;
-  final String type;
+  final String type; // path or network
   final File file;
 
   FullPhotoT({Key key, this.url, this.type, this.file}) : super(key: key);

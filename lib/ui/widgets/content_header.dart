@@ -75,9 +75,9 @@ class _ContentHeaderMobile extends StatelessWidget {
           height: (queryData.size.height / 2) + 100,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(featuredContent.poster != null &&
-                      featuredContent.poster.length != 0
-                  ? featuredContent.poster[0].url
+              image: NetworkImage(featuredContent.posters != null &&
+                      featuredContent.posters.length != 0
+                  ? featuredContent.posters[0].url
                   : Config.imgNotFound),
               fit: BoxFit.cover,
               alignment: Alignment.topCenter,
@@ -99,9 +99,9 @@ class _ContentHeaderMobile extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) => FullPhoto(
-                    url: featuredContent.poster != null &&
-                            featuredContent.poster.length != 0
-                        ? featuredContent.poster[0].url
+                    url: featuredContent.posters != null &&
+                            featuredContent.posters.length != 0
+                        ? featuredContent.posters[0].url
                         : Config.imgNotFound),
               ),
             );

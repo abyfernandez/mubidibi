@@ -21,14 +21,13 @@ class Crew {
   final String birthplace;
   final MediaFile displayPic;
   final List<MediaFile> photos;
-  // final String displayPic;
-  // final List<String> photos;
   final String description;
   List<String> role; // roles in movies
   List<String> type; // direktor/manunulat/aktor
   List<List<Movie>> movies;
   final bool isDeleted;
   bool saved;
+  bool edit;
 
   Crew(
       {this.crewId,
@@ -48,7 +47,8 @@ class Crew {
       this.type,
       this.movies,
       this.isDeleted,
-      this.saved});
+      this.saved,
+      this.edit});
 
   factory Crew.fromJson(Map<String, dynamic> json) {
     return Crew(
@@ -101,6 +101,7 @@ class Crew {
         "role": role,
         "type": type,
         "movies": movies,
-        "is_deleted": isDeleted
+        "is_deleted": isDeleted,
+        "edit": edit,
       };
 }

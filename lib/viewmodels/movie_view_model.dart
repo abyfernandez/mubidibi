@@ -82,7 +82,6 @@ class MovieViewModel extends BaseModel {
     String runtime,
     List<File> posters,
     List<String> posterDesc,
-    // String imageURI, // poster edit ??
     List<File> gallery,
     List<String> galleryDesc,
     List<File> trailers,
@@ -97,6 +96,21 @@ class MovieViewModel extends BaseModel {
     List<Line> lines,
     String addedBy,
     int movieId,
+    // for movie edit purposes:
+    List<int> directorsToDelete,
+    List<int> writersToDelete,
+    List<int> actorsToDelete,
+    List<int> awardsToDelete,
+    List<int> linesToDelete,
+    List<String> genresToDelete,
+    List<int> postersToDelete,
+    List<int> galleryToDelete,
+    List<int> trailersToDelete,
+    List<int> audiosToDelete,
+    // original lists for comparison in movie edit
+    List<int> ogAct,
+    List<int> ogLines,
+    List<int> ogAwards,
   }) async {
     setBusy(true);
 
@@ -104,8 +118,6 @@ class MovieViewModel extends BaseModel {
     var media = []; // media
     Response response;
     var mediaType = []; // track the type of the media upload
-
-    // TO DO: EDIT MOVIE
 
     // append posters
     media.addAll(posters
@@ -166,8 +178,24 @@ class MovieViewModel extends BaseModel {
         'gallery_desc': galleryDesc,
         'trailer_desc': trailerDesc,
         'audio_desc': audioDesc,
-        // 'posterURI': imageURI,  // for poster edit ??
         'media_type': mediaType,
+
+        // For movie edit purposes:
+        'directors_to_delete': directorsToDelete,
+        'writers_to_delete': writersToDelete,
+        'actors_to_delete': actorsToDelete,
+        'lines_to_delete': linesToDelete,
+        'awards_to_delete': awardsToDelete,
+        'genres_to_delete': genresToDelete,
+        'posters_to_delete': postersToDelete,
+        'gallery_to_delete': galleryToDelete,
+        'trailers_to_delete': trailersToDelete,
+        'audios_to_delete': audiosToDelete,
+
+        // original lists for comparison in movie update
+        'og_act': ogAct,
+        'og_lines': ogLines,
+        'og_awards': ogAwards,
       }),
       "files": media,
     });

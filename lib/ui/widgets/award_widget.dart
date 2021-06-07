@@ -23,7 +23,7 @@ class AwardWidget extends StatefulWidget {
 }
 
 class AwardWidgetState extends State<AwardWidget> {
-  bool showError = true;
+  bool showError;
   // FocusNodes
   final typeNode = FocusNode();
   final yearNode = FocusNode();
@@ -33,12 +33,21 @@ class AwardWidgetState extends State<AwardWidget> {
 
   @override
   void initState() {
-    widget.item.saved = widget.item.saved == null ? false : widget.item.saved;
-    if (widget.item.awardId != null) {
-      var award = widget.awardOptions
-          .singleWhere((a) => a.awardId == widget.item.awardId);
+    showError = widget.item.awardId != null &&
+            widget.item.type != null &&
+            widget.item.type.trim() != ""
+        ? false
+        : true;
+    widget.item.saved = widget.item.saved == null && widget.item.awardId == null
+        ? false
+        : widget.item.saved;
 
-      if (award != null) awardId = [award];
+    if (widget.item.awardId != null) {
+      // var award = widget.awardOptions
+      //     .singleWhere((a) => a.awardId == widget.item.awardId);
+
+      // if (award != null) awardId = [award];
+      awardId = [widget.item];
     }
     super.initState();
   }
@@ -173,7 +182,7 @@ class AwardWidgetState extends State<AwardWidget> {
                             // TO DO: accept only when it matches the range : e.g. 1900 - current year
                             var date = DateFormat("y").format(DateTime.now());
                             if ((value.length < 4 && value.length > 0) ||
-                                (value.length > 4 &&
+                                (value.length > 4 ||
                                     int.parse(value) > int.parse(date))) {
                               return 'Mag-enter ng tamang taon.';
                             }

@@ -60,9 +60,15 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case AddMovieRoute:
       var movie = settings.arguments as Movie;
+      var crewEdit = settings.arguments as List<List<Crew>>;
+      var movieCrewList = settings.arguments as List<Crew>;
       return _getPageRoute(
         routeName: settings.name,
-        viewToShow: AddMovie(movie: movie),
+        viewToShow: AddMovie(
+          movie: movie,
+          crewEdit: crewEdit,
+          movieCrewList: movieCrewList,
+        ),
       );
     case AddAwardRoute:
       var award = settings.arguments as Award;

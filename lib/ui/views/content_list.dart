@@ -182,9 +182,9 @@ class ContentList extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(5),
                                 image: DecorationImage(
                                   image: CachedNetworkImageProvider(
-                                    content.poster != null &&
-                                            content.poster.length != 0
-                                        ? content.poster[0].url
+                                    content.posters != null &&
+                                            content.posters.length != 0
+                                        ? content.posters[0].url
                                         : Config.imgNotFound,
                                   ),
                                   fit: BoxFit.cover,

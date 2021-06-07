@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -45,26 +46,39 @@ ValueNotifier<List> rolesFilter = ValueNotifier<List>([]);
 class AddMovie extends StatefulWidget {
   final Movie movie;
   final List<List<Crew>> crewEdit;
+  final List<Crew> movieCrewList;
+  final List<Award> movieAwards;
+  final List<Award> awardOpts;
 
-  AddMovie({Key key, this.movie, this.crewEdit}) : super(key: key);
+  AddMovie({
+    Key key,
+    this.movie,
+    this.crewEdit,
+    this.movieCrewList,
+    this.movieAwards,
+    this.awardOpts,
+  }) : super(key: key);
 
   @override
-  _AddMovieState createState() => _AddMovieState(movie, crewEdit);
+  _AddMovieState createState() =>
+      _AddMovieState(movie, crewEdit, movieCrewList, movieAwards, awardOpts);
 }
 
 // ADD MOVIE FIRST PAGE
 class _AddMovieState extends State<AddMovie> {
   final Movie movie;
   final List<List<Crew>> crewEdit;
+  final List<Crew> movieCrewList;
+  final List<Award> movieAwards;
+  final List<Award> awardOpts;
 
-  _AddMovieState(this.movie, this.crewEdit);
+  _AddMovieState(this.movie, this.crewEdit, this.movieCrewList,
+      this.movieAwards, this.awardOpts);
 
   // Local State Variable/s
   bool _saving = false;
   int movieId;
-  // List<DropdownMenuItem> genreItems = [];
   String test;
-  var imageURI = ''; // for movie edit
   var currentUser;
 
   // MOVIE FIELD CONTROLLERS
@@ -103,28 +117,43 @@ class _AddMovieState extends State<AddMovie> {
   final NavigationService _navigationService = locator<NavigationService>();
   final DialogService _dialogService = locator<DialogService>();
 
-  // LISTS
+  // LISTS FOR ADD MOVIE
   List<String> filmGenres = []; // Genre(s) -- saved as strings
   List<Crew> directors = []; // Director(s)
   List<Crew> writers = []; // Writer(s)
-  List<DropdownMenuItem> crewItems = [];
+  List<dynamic> genres = [];
   List<Crew> crewList = [];
+
+  // Dynamic Widget Lists
+  List<MediaWidget> posterList = [];
+  List<MediaWidget> galleryList = [];
+  List<MediaWidget> trailerList = [];
+  List<MediaWidget> audioList = [];
+  List<LineWidget> lineList = []; // Iconic Lines
+  List<ActorWidget> actorList = [];
+  List<AwardWidget> awardList = [];
+
+  // Filtered Lists for Display in Review Step
+  List<MediaWidget> filteredPosterList = [];
+  List<MediaWidget> filteredGalleryList = [];
+  List<MediaWidget> filteredTrailerList = [];
+  List<MediaWidget> filteredAudioList = [];
   List<ActorWidget> filteredActors = []; // dynamic list with only saved values
   List<AwardWidget> filteredAwards = []; // dynamic list with only saved values
   List<LineWidget> filteredLines = []; // dynamic list with only saved values
-  List<ActorWidget> actorList = [];
-  List<AwardWidget> awardList = [];
-  List<LineWidget> lineList = []; // Iconic Lines
+
+  // EDIT MOVIE LISTS
+  List<int> postersToDelete = []; // for poster edit
+  List<int> galleryToDelete = []; // for gallery edit
+  List<int> trailersToDelete = []; // for trailer edit
+  List<int> audiosToDelete = []; // for poster edit
+  List<int> directorsToDelete = [];
+  List<int> writersToDelete = [];
+  List<int> actorsToDelete = [];
+  List<int> linesToDelete = [];
+  List<String> genresToDelete = [];
+  List<int> awardsToDelete = [];
   List<Award> awardOptions;
-  List<dynamic> genres = [];
-  List<MediaWidget> posterList = [];
-  List<MediaWidget> filteredPosterList = [];
-  List<MediaWidget> galleryList = [];
-  List<MediaWidget> filteredGalleryList = [];
-  List<MediaWidget> trailerList = [];
-  List<MediaWidget> filteredTrailerList = [];
-  List<MediaWidget> audioList = [];
-  List<MediaWidget> filteredAudioList = [];
 
   // STEPPER TITLES
   int currentStep = 0;
@@ -133,7 +162,7 @@ class _AddMovieState extends State<AddMovie> {
     "Mga Poster, Screenshot, at Ibang Media",
     "Mga Personalidad",
     "Mga Award",
-    "Mga Sikat na Linya",
+    "Mga Sumikat na Linya",
     "Review"
   ];
 
@@ -175,20 +204,7 @@ class _AddMovieState extends State<AddMovie> {
   // Function: calls viewmodel's getAllCrew method
   void fetchCrew() async {
     var model = CrewViewModel();
-
     crewList = await model.getAllCrew(mode: "form");
-    // converts from List<Crew> to List<DropdownMenuItem>
-    crewItems = crewList.map<DropdownMenuItem<dynamic>>((Crew value) {
-      String name = value.firstName +
-          (value.middleName != null ? " " + value.middleName : "") +
-          (value.lastName != null ? " " + value.lastName : "") +
-          (value.suffix != null ? " " + value.suffix : "");
-      return DropdownMenuItem<dynamic>(
-        key: ValueKey(value.crewId),
-        value: name,
-        child: Text(name),
-      );
-    }).toList();
   }
 
   // Function: Shows datepicker and update value of Date
@@ -259,7 +275,9 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: Display Posters in the Review Step
   Widget displayPosters() {
-    filteredPosterList = posterList.where((p) => p.item.saved == true).toList();
+    filteredPosterList = posterList
+        .where((p) => p.item.saved == true || p.item.url != null)
+        .toList();
 
     return Column(
       children: [
@@ -290,19 +308,52 @@ class _AddMovieState extends State<AddMovie> {
                               alignment: Alignment.centerLeft,
                               height: 100,
                               width: 80,
-                              child: Image.file(
-                                p.item.file,
-                                width: 80,
-                                height: 100,
-                                fit: BoxFit.cover,
-                              ),
+                              child: p.item.file != null
+                                  ? Image.file(
+                                      p.item.file,
+                                      width: 80,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : CachedNetworkImage(
+                                      placeholder: (context, url) => Container(
+                                        alignment: Alignment.center,
+                                        width: 80,
+                                        height: 100,
+                                        child: Image.network(p.item.url,
+                                            fit: BoxFit.cover,
+                                            height: 100,
+                                            width: 80),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          Material(
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          width: 80,
+                                          height: 100,
+                                          child: Image.network(
+                                              Config.imgNotFound,
+                                              width: 80,
+                                              height: 100,
+                                              fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      imageUrl:
+                                          p.item.url ?? Config.imgNotFound,
+                                      width: 80,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
                             ),
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => FullPhotoT(
-                                      type: 'path', file: p.item.file),
+                                  builder: (context) => p.item.file != null
+                                      ? FullPhotoT(
+                                          type: 'path', file: p.item.file)
+                                      : FullPhotoT(
+                                          type: 'network', url: p.item.url),
                                 ),
                               );
                             }),
@@ -378,8 +429,9 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: Display DP in the Review Step
   Widget displayGallery() {
-    filteredGalleryList =
-        galleryList.where((g) => g.item.saved == true).toList();
+    filteredGalleryList = galleryList
+        .where((g) => g.item.saved == true || g.item.url != null)
+        .toList();
 
     return Column(
       children: [
@@ -399,10 +451,12 @@ class _AddMovieState extends State<AddMovie> {
                 children: filteredGalleryList.map((g) {
                   return Column(
                     children: [
-                      g.item.file != null &&
-                              lookupMimeType(g.item.file.path)
-                                      .startsWith('video/') ==
-                                  true
+                      (g.item.file != null &&
+                                  lookupMimeType(g.item.file.path)
+                                          .startsWith('video/') ==
+                                      true) ||
+                              (g.item.url != null &&
+                                  !g.item.url.contains('/image/upload'))
                           ? Container(
                               padding: EdgeInsets.all(10),
                               color: Colors.white,
@@ -412,7 +466,9 @@ class _AddMovieState extends State<AddMovie> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      g.item.file.path.split('/').last,
+                                      g.item.file != null
+                                          ? g.item.file.path.split('/').last
+                                          : g.item.url,
                                       style: TextStyle(color: Colors.blue),
                                       overflow: TextOverflow.ellipsis,
                                       softWrap: true,
@@ -434,25 +490,64 @@ class _AddMovieState extends State<AddMovie> {
                                         lookupMimeType(g.item.file.path)
                                                 .startsWith('image/') ==
                                             true) ||
-                                    g.item.file == null
+                                    (g.item.url != null &&
+                                        g.item.url.contains('/image/upload'))
                                 ? GestureDetector(
                                     child: Container(
                                       alignment: Alignment.centerLeft,
                                       height: 100,
                                       width: 80,
-                                      child: Image.file(
-                                        g.item.file,
-                                        width: 80,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                      ),
+                                      child: g.item.file != null
+                                          ? Image.file(
+                                              g.item.file,
+                                              width: 80,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : CachedNetworkImage(
+                                              placeholder: (context, url) =>
+                                                  Container(
+                                                alignment: Alignment.center,
+                                                width: 80,
+                                                height: 100,
+                                                child: Image.network(g.item.url,
+                                                    fit: BoxFit.cover,
+                                                    height: 100,
+                                                    width: 80),
+                                              ),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      Material(
+                                                child: Container(
+                                                  alignment: Alignment.center,
+                                                  width: 80,
+                                                  height: 100,
+                                                  child: Image.network(
+                                                      Config.imgNotFound,
+                                                      width: 80,
+                                                      height: 100,
+                                                      fit: BoxFit.cover),
+                                                ),
+                                              ),
+                                              imageUrl: g.item.url ??
+                                                  Config.imgNotFound,
+                                              width: 80,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            ),
                                     ),
                                     onTap: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => FullPhotoT(
-                                              type: 'path', file: g.item.file),
+                                          builder: (context) =>
+                                              g.item.file != null
+                                                  ? FullPhotoT(
+                                                      type: 'path',
+                                                      file: g.item.file)
+                                                  : FullPhotoT(
+                                                      type: "network",
+                                                      url: g.item.url),
                                         ),
                                       );
                                     })
@@ -461,7 +556,8 @@ class _AddMovieState extends State<AddMovie> {
                                         lookupMimeType(g.item.file.path)
                                                 .startsWith('image/') ==
                                             true) ||
-                                    g.item.file == null
+                                    (g.item.url != null &&
+                                        g.item.url.contains('/image/upload'))
                                 ? SizedBox(width: 15)
                                 : SizedBox(),
                             Expanded(
@@ -537,8 +633,9 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: Display Trailers in the Review Step
   Widget displayTrailers() {
-    filteredTrailerList =
-        trailerList.where((g) => g.item.saved == true).toList();
+    filteredTrailerList = trailerList
+        .where((g) => g.item.saved == true || g.item.url != null)
+        .toList();
 
     return Column(
       children: [
@@ -567,7 +664,9 @@ class _AddMovieState extends State<AddMovie> {
                           children: [
                             Expanded(
                               child: Text(
-                                g.item.file.path.split('/').last,
+                                g.item.file != null
+                                    ? g.item.file.path.split('/').last
+                                    : g.item.url,
                                 style: TextStyle(color: Colors.blue),
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,
@@ -654,7 +753,9 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: Display Audios in the Review Step
   Widget displayAudios() {
-    filteredAudioList = audioList.where((g) => g.item.saved == true).toList();
+    filteredAudioList = audioList
+        .where((g) => g.item.saved == true || g.item.url != null)
+        .toList();
 
     return Column(
       children: [
@@ -683,7 +784,9 @@ class _AddMovieState extends State<AddMovie> {
                           children: [
                             Expanded(
                               child: Text(
-                                g.item.file.path.split('/').last,
+                                g.item.file != null
+                                    ? g.item.file.path.split('/').last
+                                    : g.item.url,
                                 style: TextStyle(color: Colors.blue),
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,
@@ -750,9 +853,7 @@ class _AddMovieState extends State<AddMovie> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: filteredActors.map((actor) {
-                    if (actor.crew.saved == true) {
-                      var item = crewList
-                          .firstWhere((p) => p.crewId == actor.crew.crewId);
+                    if (actor.crew.saved == true && actor.crew.crewId != null) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -764,7 +865,7 @@ class _AddMovieState extends State<AddMovie> {
                                 width: 5,
                               ),
                               new Expanded(
-                                child: Text(item.name,
+                                child: Text(actor.crew.name,
                                     style: TextStyle(fontSize: 16),
                                     softWrap: true,
                                     overflow: TextOverflow.clip),
@@ -917,7 +1018,7 @@ class _AddMovieState extends State<AddMovie> {
             ? Container(
                 alignment: Alignment.topLeft,
                 child: Text(
-                  "Mga Sikat na Linya: ",
+                  "Mga Sumikat na Linya: ",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -990,7 +1091,6 @@ class _AddMovieState extends State<AddMovie> {
       });
 
       lineList.add(LineWidget(
-        // roles: rolesOptions,
         item: new Line(),
         open: ValueNotifier<bool>(true),
       ));
@@ -1026,28 +1126,108 @@ class _AddMovieState extends State<AddMovie> {
         movieId = movie?.movieId ?? 0;
 
         // update controller's text field
+
+        // Basic Details
         titleController.text = movie?.title ?? '';
+
         _date = movie?.releaseDate != null
             ? DateTime.parse(movie?.releaseDate)
             : null;
+
+        dateController.text = movie?.releaseDate != null
+            ? DateFormat("MMM. d, y").format(DateTime.parse(movie?.releaseDate))
+            : '';
         synopsisController.text = movie?.synopsis ?? '';
         runtimeController.text = movie?.runtime?.toString() ?? '';
 
-        // TO DO: IMAGE EDIT
-        imageURI = movie?.poster ?? '';
+        filmGenres = List<String>.from(movie?.genre ?? []);
 
-        // CREW
-        directors = crewEdit != null
-            ? crewEdit.isNotEmpty
-                ? crewEdit[0].map((d) => d.crewId).toList()
-                : []
-            : [];
-        writers = crewEdit != null
-            ? crewEdit.isNotEmpty
-                ? crewEdit[1].map((e) => e.crewId).toList()
-                : []
-            : [];
-        // TO DO: ACTORS FIELD
+        // Mga Personalidad
+        directors = crewEdit != null ? crewEdit[0] : [];
+        writers = crewEdit != null ? crewEdit[1] : [];
+
+        var aktors = crewEdit != null ? crewEdit[2] : [];
+
+        for (var i = 0; i < aktors.length; i++) {
+          actorList.add(ActorWidget(
+            crew: aktors[i],
+            crewList: movieCrewList,
+            open: ValueNotifier<bool>(false),
+          ));
+        }
+
+        // Mga Award
+        var temp = movieAwards != null ? movieAwards : [];
+
+        for (var i = 0; i < temp.length; i++) {
+          awardList.add(AwardWidget(
+            awardOptions: awardOpts,
+            item: temp[i],
+            open: ValueNotifier<bool>(false),
+          ));
+        }
+
+        // Mga Sumikat Na Linya
+        var quotations = movie?.quotes != null ? movie?.quotes : [];
+
+        filteredActors = actorList
+            .where((actor) =>
+                actor.crew.saved == true ||
+                (actor.crew.crewId != null &&
+                    actor.crew.role.isNotEmpty &&
+                    actor.crew.saved ==
+                        null)) // actor.crew.saved == null is for the items that came from edit
+            .toList();
+
+        var rolesOptions =
+            filteredActors.map((a) => a.crew.role).expand((i) => i).toList();
+
+        // update the values in rolesFilter
+        rolesFilter = ValueNotifier<List>([]);
+        rolesOptions.forEach((r) {
+          if (rolesFilter.value.contains(r) == false) rolesFilter.value.add(r);
+        });
+
+        for (var i = 0; i < quotations.length; i++) {
+          lineList.add(LineWidget(
+            item: quotations[i],
+            open: ValueNotifier<bool>(false),
+          ));
+        }
+
+        // MEDIA
+
+        // Posters
+        List<MediaFile> p = movie?.posters != null ? movie?.posters : [];
+        for (var i = 0; i < p.length; i++) {
+          p[i].category = "movie";
+          posterList.add(MediaWidget(
+              category: "movie", item: p[i], open: ValueNotifier<bool>(false)));
+        }
+
+        // Gallery
+        List<MediaFile> g = movie?.gallery != null ? movie?.gallery : [];
+        for (var i = 0; i < g.length; i++) {
+          g[i].category = "movie";
+          galleryList.add(MediaWidget(
+              category: "movie", item: g[i], open: ValueNotifier<bool>(false)));
+        }
+
+        // Trailers
+        List<MediaFile> t = movie?.trailers != null ? movie?.trailers : [];
+        for (var i = 0; i < t.length; i++) {
+          t[i].category = "movie";
+          trailerList.add(MediaWidget(
+              category: "movie", item: t[i], open: ValueNotifier<bool>(false)));
+        }
+
+        // Audios
+        List<MediaFile> a = movie?.audios != null ? movie?.audios : [];
+        for (var i = 0; i < a.length; i++) {
+          a[i].category = "movie";
+          audioList.add(MediaWidget(
+              category: "movie", item: a[i], open: ValueNotifier<bool>(false)));
+        }
       },
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
@@ -1080,7 +1260,7 @@ class _AddMovieState extends State<AddMovie> {
           ),
           backgroundColor: Colors.white,
           title: Text(
-            "Magdagdag ng Pelikula",
+            movie == null ? "Magdagdag ng Pelikula" : "Mag-edit ng Pelikula",
             style: TextStyle(color: Colors.black),
           ),
         ),
@@ -1112,7 +1292,7 @@ class _AddMovieState extends State<AddMovie> {
                                 Icons.recent_actors, // Mga Personalidad
                                 Icons.emoji_events_outlined, // Mga Award
                                 Icons
-                                    .format_quote_outlined, // Mga Sikat na Linya
+                                    .format_quote_outlined, // Mga Sumikat na Linya
                                 Icons.grading // Review
                               ],
                               type: MyStepperType.vertical,
@@ -1172,7 +1352,7 @@ class _AddMovieState extends State<AddMovie> {
                                       // TO DO: unfocus keyboard when a genre textfield is currently active
                                       setState(() => currentStep++);
                                       break;
-                                    case 4: // Mga Sikat na Linya
+                                    case 4: // Mga Sumikat na Linya
                                       // TO DO: unfocus keyboard when a genre textfield is currently active
                                       setState(() => currentStep++);
                                       break;
@@ -1192,16 +1372,43 @@ class _AddMovieState extends State<AddMovie> {
                                     _saving =
                                         true; // set saving to true to trigger circular progress indicator
 
-                                    // Wirectors
+                                    // Directors
                                     List<int> directorsToSave = [];
                                     if (directors.isNotEmpty) {
-                                      directors.map((d) => d.crewId).toList();
+                                      directorsToSave = directors
+                                          .map((d) => d.crewId)
+                                          .toList();
+
+                                      // remove those to be deleted
+                                      directorsToSave.removeWhere(
+                                          (a) => directorsToDelete.contains(a));
+
+                                      // remove those that are from the old list
+                                      if (crewEdit != null) {
+                                        var temp = crewEdit[0]
+                                            .map((a) => a.crewId)
+                                            .toList();
+                                        directorsToSave.removeWhere(
+                                            (a) => temp.contains(a));
+                                      }
                                     }
 
                                     // Writers
                                     List<int> writersToSave = [];
                                     if (writers.isNotEmpty) {
-                                      writers.map((w) => w.crewId).toList();
+                                      writersToSave =
+                                          writers.map((w) => w.crewId).toList();
+                                      writersToSave.removeWhere(
+                                          (a) => writersToDelete.contains(a));
+
+                                      // remove those that are from the old list
+                                      if (crewEdit != null) {
+                                        var temp = crewEdit[1]
+                                            .map((a) => a.crewId)
+                                            .toList();
+                                        writersToSave.removeWhere(
+                                            (a) => temp.contains(a));
+                                      }
                                     }
 
                                     // Actors
@@ -1210,6 +1417,9 @@ class _AddMovieState extends State<AddMovie> {
                                       actorsToSave = filteredActors
                                           .map((a) => a.crew)
                                           .toList();
+
+                                      actorsToSave.removeWhere((a) =>
+                                          actorsToDelete.contains(a.crewId));
                                     }
 
                                     // Awards
@@ -1218,6 +1428,9 @@ class _AddMovieState extends State<AddMovie> {
                                       awardsToSave = filteredAwards
                                           .map((a) => a.item)
                                           .toList();
+
+                                      awardsToSave.removeWhere(
+                                          (a) => awardsToDelete.contains(a.id));
                                     }
 
                                     // Famous Lines
@@ -1226,17 +1439,32 @@ class _AddMovieState extends State<AddMovie> {
                                       linesToSave = filteredLines
                                           .map((a) => a.item)
                                           .toList();
+
+                                      linesToSave.removeWhere(
+                                          (a) => linesToDelete.contains(a.id));
+                                    }
+
+                                    // Genres
+                                    List<String> genresToSave = [];
+                                    if (filmGenres.isNotEmpty) {
+                                      genresToSave = filmGenres;
+
+                                      genresToSave.removeWhere(
+                                          (a) => genresToDelete.contains(a));
                                     }
 
                                     // Posters
                                     List<File> postersToSave = [];
                                     List<String> posterDesc = [];
                                     if (filteredPosterList.isNotEmpty) {
-                                      postersToSave = filteredPosterList
-                                          .map((a) => a.item.file)
-                                          .toList();
+                                      var temp = filteredPosterList;
 
-                                      posterDesc = filteredPosterList
+                                      temp.removeWhere(
+                                          (a) => a.item.file == null);
+                                      postersToSave =
+                                          temp.map((a) => a.item.file).toList();
+
+                                      posterDesc = temp
                                           .map((a) => a.item.description)
                                           .toList();
                                     }
@@ -1245,10 +1473,14 @@ class _AddMovieState extends State<AddMovie> {
                                     List<File> galleryToSave = [];
                                     List<String> galleryDesc = [];
                                     if (filteredGalleryList.isNotEmpty) {
-                                      galleryToSave = filteredGalleryList
-                                          .map((a) => a.item.file)
-                                          .toList();
-                                      galleryDesc = filteredGalleryList
+                                      var temp = filteredGalleryList;
+
+                                      temp.removeWhere(
+                                          (a) => a.item.file == null);
+                                      galleryToSave =
+                                          temp.map((a) => a.item.file).toList();
+
+                                      galleryDesc = temp
                                           .map((a) => a.item.description)
                                           .toList();
                                     }
@@ -1258,10 +1490,14 @@ class _AddMovieState extends State<AddMovie> {
                                     List<String> trailerDesc = [];
 
                                     if (filteredTrailerList.isNotEmpty) {
-                                      trailersToSave = filteredTrailerList
-                                          .map((a) => a.item.file)
-                                          .toList();
-                                      trailerDesc = filteredTrailerList
+                                      var temp = filteredTrailerList;
+
+                                      temp.removeWhere(
+                                          (a) => a.item.file == null);
+                                      trailersToSave =
+                                          temp.map((a) => a.item.file).toList();
+
+                                      trailerDesc = temp
                                           .map((a) => a.item.description)
                                           .toList();
                                     }
@@ -1271,39 +1507,72 @@ class _AddMovieState extends State<AddMovie> {
                                     List<String> audioDesc = [];
 
                                     if (filteredAudioList.isNotEmpty) {
-                                      audiosToSave = filteredAudioList
-                                          .map((a) => a.item.file)
-                                          .toList();
-                                      audioDesc = filteredAudioList
+                                      var temp = filteredAudioList;
+
+                                      temp.removeWhere(
+                                          (a) => a.item.file == null);
+                                      audiosToSave =
+                                          temp.map((a) => a.item.file).toList();
+
+                                      audioDesc = temp
                                           .map((a) => a.item.description)
                                           .toList();
                                     }
 
                                     final response = await model.addMovie(
-                                        title: titleController.text,
-                                        synopsis: synopsisController.text,
-                                        releaseDate: _date != null
-                                            ? _date.toIso8601String()
-                                            : '',
-                                        runtime: runtimeController.text,
-                                        // imageURI: imageURI, // poster edit???
-                                        genre: filmGenres,
-                                        directors: directorsToSave,
-                                        writers: writersToSave,
-                                        // TO DO: famous lines and added media
-                                        actors: actorsToSave,
-                                        awards: awardsToSave,
-                                        posters: postersToSave,
-                                        posterDesc: posterDesc,
-                                        gallery: galleryToSave,
-                                        galleryDesc: galleryDesc,
-                                        trailers: trailersToSave,
-                                        trailerDesc: trailerDesc,
-                                        lines: linesToSave,
-                                        audios: audiosToSave,
-                                        audioDesc: audioDesc,
-                                        addedBy: currentUser.userId,
-                                        movieId: movieId);
+                                      title: titleController.text,
+                                      synopsis: synopsisController.text,
+                                      releaseDate: _date != null
+                                          ? _date.toIso8601String()
+                                          : '',
+                                      runtime: runtimeController.text,
+                                      genre: genresToSave,
+                                      directors: directorsToSave,
+                                      writers: writersToSave,
+                                      actors: actorsToSave,
+                                      awards: awardsToSave,
+                                      posters: postersToSave,
+                                      posterDesc: posterDesc,
+                                      gallery: galleryToSave,
+                                      galleryDesc: galleryDesc,
+                                      trailers: trailersToSave,
+                                      trailerDesc: trailerDesc,
+                                      lines: linesToSave,
+                                      audios: audiosToSave,
+                                      audioDesc: audioDesc,
+                                      addedBy: currentUser.userId,
+                                      movieId: movieId,
+                                      // for edit purposes:
+                                      postersToDelete: postersToDelete,
+                                      galleryToDelete: galleryToDelete,
+                                      trailersToDelete: trailersToDelete,
+                                      audiosToDelete: audiosToDelete,
+                                      directorsToDelete: directorsToDelete,
+                                      writersToDelete: writersToDelete,
+                                      actorsToDelete: actorsToDelete,
+                                      linesToDelete: linesToDelete,
+                                      genresToDelete: genresToDelete,
+
+                                      // original lists for comparison in edit movie
+                                      ogAct: crewEdit != null &&
+                                              crewEdit[2].isNotEmpty
+                                          ? crewEdit[2]
+                                              .map((a) => a.crewId)
+                                              .toList()
+                                          : [],
+                                      ogLines: movie != null &&
+                                              movie.quotes.isNotEmpty
+                                          ? movie.quotes
+                                              .map((a) => a.id)
+                                              .toList()
+                                          : [],
+                                      ogAwards: movieAwards != null &&
+                                              movieAwards.isNotEmpty
+                                          ? movieAwards
+                                              .map((a) => a.id)
+                                              .toList()
+                                          : [],
+                                    );
 
                                     // when response is returned, stop showing circular progress indicator
                                     if (response != 0) {
@@ -1542,6 +1811,7 @@ class _AddMovieState extends State<AddMovie> {
                               borderRadius: BorderRadius.circular(5),
                             ),
                             child: TestChipsInput(
+                              initialValue: filmGenres,
                               textCapitalization: TextCapitalization.words,
                               enabled: true,
                               textStyle: const TextStyle(
@@ -1587,7 +1857,16 @@ class _AddMovieState extends State<AddMovie> {
                                 return InputChip(
                                   key: ObjectKey(c),
                                   label: Text(c),
-                                  onDeleted: () => state.deleteChip(c),
+                                  onDeleted: () {
+                                    if (movie != null &&
+                                        movie.genre.contains(c)) {
+                                      // for edit: delete item from DB
+                                      if (genresToDelete.contains(c) == false) {
+                                        genresToDelete.add(c);
+                                      }
+                                    }
+                                    return state.deleteChip(c);
+                                  },
                                   materialTapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                 );
@@ -1651,7 +1930,6 @@ class _AddMovieState extends State<AddMovie> {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
                                               // update poster list by removing the image that is previously saved and recorded
-
                                               if (posterList[i].item.file !=
                                                   null) {
                                                 List imagePaths = posters
@@ -1674,6 +1952,15 @@ class _AddMovieState extends State<AddMovie> {
                                                           .path ==
                                                       f.path);
                                                 }
+                                              } else if (posterList[i]
+                                                          .item
+                                                          .url !=
+                                                      null &&
+                                                  posterList[i].item.id !=
+                                                      null) {
+                                                // delete previously uploaded file
+                                                postersToDelete
+                                                    .add(posterList[i].item.id);
                                               }
                                               posterList.removeAt(i);
                                             });
@@ -1753,6 +2040,15 @@ class _AddMovieState extends State<AddMovie> {
                                                           .path ==
                                                       f.path);
                                                 }
+                                              } else if (trailerList[i]
+                                                          .item
+                                                          .url !=
+                                                      null &&
+                                                  trailerList[i].item.id !=
+                                                      null) {
+                                                // delete previously uploaded file
+                                                trailersToDelete.add(
+                                                    trailerList[i].item.id);
                                               }
                                               trailerList.removeAt(i);
                                             });
@@ -1835,6 +2131,15 @@ class _AddMovieState extends State<AddMovie> {
                                                               .path ==
                                                           f.path);
                                                 }
+                                              } else if (galleryList[i]
+                                                          .item
+                                                          .url !=
+                                                      null &&
+                                                  galleryList[i].item.id !=
+                                                      null) {
+                                                // delete previously uploaded file
+                                                galleryToDelete.add(
+                                                    galleryList[i].item.id);
                                               }
                                               galleryList.removeAt(i);
                                             });
@@ -1917,6 +2222,15 @@ class _AddMovieState extends State<AddMovie> {
                                                           .path ==
                                                       f.path);
                                                 }
+                                              } else if (audioList[i]
+                                                          .item
+                                                          .url !=
+                                                      null &&
+                                                  audioList[i].item.id !=
+                                                      null) {
+                                                // delete previously uploaded file
+                                                audiosToDelete
+                                                    .add(audioList[i].item.id);
                                               }
                                               audioList.removeAt(i);
                                             });
@@ -2003,7 +2317,19 @@ class _AddMovieState extends State<AddMovie> {
                     return InputChip(
                       key: ObjectKey(c),
                       label: Text(c.name),
-                      onDeleted: () => state.deleteChip(c),
+                      onDeleted: () {
+                        if (crewEdit != null &&
+                            crewEdit[0]
+                                .map((direk) => direk.crewId)
+                                .toList()
+                                .contains(c.crewId)) {
+                          // for edit: delete item from DB
+                          if (directorsToDelete.contains(c.crewId) == false) {
+                            directorsToDelete.add(c.crewId);
+                          }
+                        }
+                        return state.deleteChip(c);
+                      },
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     );
                   },
@@ -2063,7 +2389,19 @@ class _AddMovieState extends State<AddMovie> {
                     return InputChip(
                       key: ObjectKey(c),
                       label: Text(c.name),
-                      onDeleted: () => state.deleteChip(c),
+                      onDeleted: () {
+                        if (crewEdit != null &&
+                            crewEdit[1]
+                                .map((w) => w.crewId)
+                                .toList()
+                                .contains(c.crewId)) {
+                          // for edit: delete item from DB
+                          if (writersToDelete.contains(c.crewId) == false) {
+                            writersToDelete.add(c.crewId);
+                          }
+                        }
+                        return state.deleteChip(c);
+                      },
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     );
                   },
@@ -2129,6 +2467,25 @@ class _AddMovieState extends State<AddMovie> {
                                                     actorList[i].crew.role);
                                                 actorsFilter.remove(
                                                     actorList[i].crew.crewId);
+                                                if (crewEdit != null &&
+                                                    crewEdit[2]
+                                                        .map((c) => c.crewId)
+                                                        .toList()
+                                                        .contains(actorList[i]
+                                                            .crew
+                                                            .crewId)) {
+                                                  // for edit: delete item from DB
+                                                  if (actorsToDelete.contains(
+                                                          actorList[i]
+                                                              .crew
+                                                              .crewId) ==
+                                                      false) {
+                                                    actorsToDelete.add(
+                                                        actorList[i]
+                                                            .crew
+                                                            .crewId);
+                                                  }
+                                                }
                                               }
                                               actorList.removeAt(i);
                                             });
@@ -2213,6 +2570,20 @@ class _AddMovieState extends State<AddMovie> {
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
+                                              if (movieAwards != null &&
+                                                  movieAwards
+                                                      .map((a) => a.id)
+                                                      .contains(awardList[i]
+                                                          .item
+                                                          .id)) {
+                                                // for edit: delete item from DB
+                                                if (awardsToDelete.contains(
+                                                        awardList[i].item.id) ==
+                                                    false) {
+                                                  awardsToDelete.add(
+                                                      awardList[i].item.id);
+                                                }
+                                              }
                                               awardList.removeAt(i);
                                             });
                                           },
@@ -2253,7 +2624,7 @@ class _AddMovieState extends State<AddMovie> {
             ],
           ),
         );
-      case 4: // Mga Sikat na Linya
+      case 4: // Mga Sumikat na Linya
         // TO DO: dynamic widget
 
         // updates filteredactors list
@@ -2307,6 +2678,21 @@ class _AddMovieState extends State<AddMovie> {
                                         onPressed: () {
                                           FocusScope.of(context).unfocus();
                                           setState(() {
+                                            if (lineList[i].item.id != null &&
+                                                movie != null &&
+                                                movie.quotes
+                                                    .map((q) => q.id)
+                                                    .toList()
+                                                    .contains(
+                                                        lineList[i].item.id)) {
+                                              // for edit: delete item from DB
+                                              if (linesToDelete.contains(
+                                                      lineList[i].item.id) ==
+                                                  false) {
+                                                linesToDelete
+                                                    .add(lineList[i].item.id);
+                                              }
+                                            }
                                             lineList.removeAt(i);
                                           });
                                         },
@@ -2558,17 +2944,25 @@ class ActorWidgetState extends State<ActorWidget> {
   var temp;
   Crew tempActor;
   List<String> tempRoles;
-  bool showError = true;
+  bool showError;
   List<Crew> actorId = [];
 
   @override
   void initState() {
-    widget.crew.saved = widget.crew.saved == null ? false : widget.crew.saved;
+    showError = widget.crew.crewId != null &&
+            widget.crew.role != null &&
+            widget.crew.role.isNotEmpty
+        ? false
+        : true;
+    widget.crew.saved = widget.crew.saved == null && widget.crew.crewId == null
+        ? false
+        : widget.crew.saved;
     if (widget.crew.crewId != null) {
-      var actor =
-          widget.crewList.singleWhere((a) => a.crewId == widget.crew.crewId);
+      // var actor =
+      //     widget.crewList.singleWhere((a) => a.crewId == widget.crew.crewId);
 
-      if (actor != null) actorId = [actor];
+      // if (actor != null) actorId = [actor];
+      actorId = [widget.crew];
     }
     super.initState();
   }
@@ -2618,7 +3012,6 @@ class ActorWidgetState extends State<ActorWidget> {
                               b.name.toLowerCase().indexOf(lowercaseQuery)));
                   }
                   return filteredList;
-                  // return widget.crewList;
                 },
                 onChanged: (data) {
                   if (data.length != 0) {
@@ -2628,6 +3021,7 @@ class ActorWidgetState extends State<ActorWidget> {
                       widget.crew.middleName = data[0].middleName;
                       widget.crew.lastName = data[0].lastName;
                       widget.crew.suffix = data[0].suffix;
+                      widget.crew.name = data[0].name;
                       showError = widget.crew.crewId != null &&
                               widget.crew.role != null &&
                               widget.crew.role.length != 0
@@ -2645,6 +3039,7 @@ class ActorWidgetState extends State<ActorWidget> {
                       widget.crew.middleName = null;
                       widget.crew.lastName = null;
                       widget.crew.suffix = null;
+                      widget.crew.name = null;
                       showError = widget.crew.crewId != null &&
                               widget.crew.role != null &&
                               widget.crew.role.length != 0
@@ -2767,7 +3162,9 @@ class ActorWidgetState extends State<ActorWidget> {
                 color: Colors.white,
                 onPressed: () {
                   FocusScope.of(context).unfocus();
-                  if (widget.crew.crewId != null && widget.crew.role != null) {
+                  if (widget.crew.crewId != null &&
+                      widget.crew.role != null &&
+                      widget.crew.role.isNotEmpty) {
                     setState(() {
                       // save to actors and roles list
                       widget.open.value = false;
@@ -2814,7 +3211,9 @@ class ActorWidgetState extends State<ActorWidget> {
                   softWrap: true,
                   overflow: TextOverflow.clip),
               subtitle: Text(
-                widget.crew.role != null ? widget.crew.role.join(", ") : "",
+                widget.crew.role != null && widget.crew.role.isNotEmpty
+                    ? widget.crew.role.join(", ")
+                    : "",
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black54,

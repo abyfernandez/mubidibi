@@ -48,7 +48,9 @@ class _MovieViewState extends State<MovieView>
   Movie movie;
   Future<List<List<Crew>>> crew;
   List<List<Crew>> crewEdit;
+  List<Crew> movieCrewList; // edit movie
   List<Award> awards;
+  List<Award> awardOpts; // edit movie
   Future<List<Review>> reviews;
   Animation<double> _animation;
   AnimationController _animationController;
@@ -76,9 +78,12 @@ class _MovieViewState extends State<MovieView>
   Future<List<List<Crew>>> fetchCrew() async {
     var model = CrewViewModel();
     var crew = await model.getCrewForDetails(movieId: movieId);
+    var temp = await model.getAllCrew(
+        mode: "form"); // to be passed as parameter when edit movie is called
 
     setState(() {
       crewEdit = crew;
+      movieCrewList = temp;
     });
     return crew;
   }
@@ -127,8 +132,16 @@ class _MovieViewState extends State<MovieView>
             ? "admin"
             : "non-admin");
 
+    var tempAwards = await model.getAllAwards(
+        user: currentUser != null && currentUser.isAdmin == true
+            ? "admin"
+            : "non-admin",
+        mode: 'form',
+        category: 'movie');
+
     setState(() {
       awards = temp;
+      awardOpts = tempAwards;
     });
   }
 
@@ -216,7 +229,13 @@ class _MovieViewState extends State<MovieView>
                   await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AddMovie(movie: movie),
+                      builder: (context) => AddMovie(
+                        movie: movie,
+                        crewEdit: crewEdit,
+                        movieCrewList: movieCrewList,
+                        movieAwards: awards,
+                        awardOpts: awardOpts,
+                      ),
                     ),
                   );
                   _animationController.reverse();
@@ -377,7 +396,7 @@ class _MovieViewState extends State<MovieView>
               children: <Widget>[
                 Stack(
                   children: <Widget>[
-                    movie.poster.length > 1
+                    movie.posters.length > 1
                         ? CarouselSlider(
                             key: ValueKey('poster'),
                             carouselController: _posterController,
@@ -391,7 +410,7 @@ class _MovieViewState extends State<MovieView>
                               height: 400,
                               viewportFraction: 1.0,
                             ),
-                            items: movie.poster.map((p) {
+                            items: movie.posters.map((p) {
                               return Container(
                                 height: 400,
                                 decoration: new BoxDecoration(
@@ -496,9 +515,9 @@ class _MovieViewState extends State<MovieView>
                             decoration: new BoxDecoration(
                               image: new DecorationImage(
                                 image: CachedNetworkImageProvider(
-                                    movie.poster != null &&
-                                            movie.poster.length != 0
-                                        ? movie.poster[0].url
+                                    movie.posters != null &&
+                                            movie.posters.length != 0
+                                        ? movie.posters[0].url
                                         : Config.imgNotFound),
                                 fit: BoxFit.cover,
                               ),
@@ -568,9 +587,9 @@ class _MovieViewState extends State<MovieView>
                                           ),
                                         ),
                                       ),
-                                      imageUrl: movie.poster != null &&
-                                              movie.poster.length != 0
-                                          ? movie.poster[0].url
+                                      imageUrl: movie.posters != null &&
+                                              movie.posters.length != 0
+                                          ? movie.posters[0].url
                                           : Config.imgNotFound,
                                       width: 250,
                                       height: 350,
@@ -582,9 +601,9 @@ class _MovieViewState extends State<MovieView>
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => FullPhoto(
-                                            url: movie.poster != null &&
-                                                    movie.poster.length != 0
-                                                ? movie.poster[0].url
+                                            url: movie.posters != null &&
+                                                    movie.posters.length != 0
+                                                ? movie.posters[0].url
                                                 : Config.imgNotFound),
                                       ),
                                     );
@@ -593,15 +612,15 @@ class _MovieViewState extends State<MovieView>
                               ],
                             ),
                           ),
-                    movie.poster.length > 1
+                    movie.posters.length > 1
                         ? Positioned(
                             left: MediaQuery.of(context).size.width / 2,
                             bottom: 0,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
-                              children: movie.poster.map((p) {
-                                int index = movie.poster.indexOf(p);
+                              children: movie.posters.map((p) {
+                                int index = movie.posters.indexOf(p);
                                 return GestureDetector(
                                   child: Container(
                                     width: 8.0,
@@ -945,25 +964,25 @@ class _MovieViewState extends State<MovieView>
                     ? SizedBox(height: 25)
                     : SizedBox(),
                 // Screenshots
-                movie.screenshot != null && movie.screenshot.length != 0
+                movie.gallery != null && movie.gallery.length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text("Mga Screenshot",
+                        child: Text("Gallery",
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             )),
                       )
                     : SizedBox(),
-                movie.screenshot != null && movie.screenshot.length != 0
+                movie.gallery != null && movie.gallery.length != 0
                     ? SizedBox(height: 25)
                     : SizedBox(),
-                movie.screenshot != null && movie.screenshot.length != 0
+                movie.gallery != null && movie.gallery.length != 0
                     ? SingleChildScrollView(
                         child: Column(
                           children: [
                             CarouselSlider(
-                              key: ValueKey('screenshot'),
+                              key: ValueKey('gallery'),
                               options: CarouselOptions(
                                   enableInfiniteScroll: false,
                                   onPageChanged: (index, reason) {
@@ -976,7 +995,7 @@ class _MovieViewState extends State<MovieView>
                                   aspectRatio: 1,
                                   viewportFraction: 1),
                               carouselController: _controller,
-                              items: movie.screenshot.map((p) {
+                              items: movie.gallery.map((p) {
                                 return Stack(
                                   children: [
                                     Container(
@@ -1068,7 +1087,7 @@ class _MovieViewState extends State<MovieView>
                                                 )
                                               : Container(),
                                           _screenshotSlider !=
-                                                  movie.screenshot.length - 1
+                                                  movie.gallery.length - 1
                                               ? Stack(
                                                   children: [
                                                     Container(
@@ -1106,8 +1125,8 @@ class _MovieViewState extends State<MovieView>
                             ),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: movie.screenshot.map((p) {
-                                int index = movie.screenshot.indexOf(p);
+                              children: movie.gallery.map((p) {
+                                int index = movie.gallery.indexOf(p);
                                 return GestureDetector(
                                   child: Container(
                                     width: 8.0,

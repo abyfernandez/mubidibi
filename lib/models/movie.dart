@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:mubidibi/models/line.dart';
 import 'package:mubidibi/models/media_file.dart';
 
 List<Movie> movieFromJson(String str) =>
@@ -12,9 +13,12 @@ class Movie {
   final String title;
   final String synopsis;
   final num runtime;
-  final List<MediaFile> poster;
   final List<dynamic> genre;
-  final List<MediaFile> screenshot;
+  final List<MediaFile> posters;
+  final List<MediaFile> gallery;
+  final List<MediaFile> trailers;
+  final List<MediaFile> audios;
+  final List<Line> quotes;
   final String releaseDate;
   final String addedBy;
   final bool isDeleted;
@@ -24,9 +28,12 @@ class Movie {
       this.title,
       this.synopsis,
       this.runtime,
-      this.poster,
+      this.posters,
       this.genre,
-      this.screenshot,
+      this.gallery,
+      this.trailers,
+      this.audios,
+      this.quotes,
       this.releaseDate,
       this.addedBy,
       this.isDeleted});
@@ -37,15 +44,26 @@ class Movie {
         title: json['title'],
         synopsis: json['synopsis'],
         runtime: json['runtime'],
-        poster: json['poster'] == null
+        posters: json['posters'] == null
             ? null
             : List<MediaFile>.from(
-                json["poster"].map((x) => MediaFile.fromJson(x))),
+                json["posters"].map((x) => MediaFile.fromJson(x))),
+        gallery: json['gallery'] == null
+            ? null
+            : List<MediaFile>.from(
+                json["gallery"].map((x) => MediaFile.fromJson(x))),
+        trailers: json['trailers'] == null
+            ? null
+            : List<MediaFile>.from(
+                json["trailers"].map((x) => MediaFile.fromJson(x))),
+        audios: json['audios'] == null
+            ? null
+            : List<MediaFile>.from(
+                json["audios"].map((x) => MediaFile.fromJson(x))),
+        quotes: json['quotes'] == null
+            ? null
+            : List<Line>.from(json["quotes"].map((x) => Line.fromJson(x))),
         genre: json['genre'],
-        screenshot: json['screenshot'] == null
-            ? null
-            : List<MediaFile>.from(
-                json["screenshot"].map((x) => MediaFile.fromJson(x))),
         releaseDate: json['release_date'],
         addedBy: json['added_by'],
         isDeleted: json['is_deleted']);
@@ -56,9 +74,11 @@ class Movie {
         "title": title,
         "synopsis": synopsis,
         "runtime": runtime,
-        "poster": poster,
+        "posters": posters,
         "genre": genre,
-        "screenshot": screenshot,
+        "gallery": gallery,
+        "trailers": trailers,
+        "audios": audios,
         "release_date": releaseDate,
         "added_by": addedBy,
         "is_deleted": isDeleted,

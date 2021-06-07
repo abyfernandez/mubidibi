@@ -7,6 +7,7 @@ String awardToJson(List<Award> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class Award {
+  int id; // movie_award / crew_award id
   int awardId;
   final int movieId;
   String name;
@@ -17,8 +18,10 @@ class Award {
   final String addedBy;
   bool isDeleted;
   bool saved;
+  bool edit;
 
   Award({
+    this.id,
     this.awardId,
     this.movieId,
     this.name,
@@ -29,11 +32,13 @@ class Award {
     this.addedBy,
     this.isDeleted,
     this.saved,
+    this.edit,
   });
 
   factory Award.fromJson(Map<String, dynamic> json) {
     return Award(
-        awardId: json['id'],
+        id: json['id'],
+        awardId: json['award_id'],
         movieId: json['movie_id'],
         name: json['name'],
         category: json["category"] == null
@@ -47,7 +52,8 @@ class Award {
   }
 
   Map<String, dynamic> toJson() => {
-        "id": awardId,
+        "id": id,
+        "award_id": awardId,
         "movie_id": movieId,
         "name": name,
         "category": category,
@@ -56,5 +62,6 @@ class Award {
         "description": description,
         "added_by": addedBy,
         "is_deleted": isDeleted,
+        "edit": edit,
       };
 }

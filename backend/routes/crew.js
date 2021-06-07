@@ -44,7 +44,6 @@ exports.crew = app => {
             crew[i]['type'] = type;
           }
 
-          console.log(crew);
           release()
           res.send(err || JSON.stringify(crew));
         }
@@ -354,8 +353,6 @@ exports.crew = app => {
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      console.log(query);
-
       var result = await client.query(query).then((result) => {
         const id = result.rows[0].add_crew
 
@@ -400,7 +397,6 @@ exports.crew = app => {
               actorQuery = actorQuery.concat(`null)`);
             }
 
-            console.log("ACTORS => ", index, ": ", actorQuery);
             client.query(actorQuery);
           });
         }
@@ -410,7 +406,6 @@ exports.crew = app => {
           crewData.awards.forEach((award, index) => {
             var awardQuery = `insert into crew_award (crew_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
 
-            console.log("AWARDS => ", index, ": ", awardQuery);
             client.query(awardQuery);
           });
         }
@@ -432,7 +427,6 @@ exports.crew = app => {
       // soft-delete only, sets the is_deleted field to true
       client.query('UPDATE crew SET is_deleted = true where id = $1 RETURNING id', [parseInt(req.params.id)],
         function onResult(err, result) {
-          console.log(result, result.rows[0].id);
           release();
           res.send(err || JSON.stringify(result.rows[0].id));
         }

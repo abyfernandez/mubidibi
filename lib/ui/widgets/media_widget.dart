@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +13,7 @@ import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/views/add_movie.dart';
 // import 'package:chewie/chewie.dart';
 // import 'package:video_thumbnail/video_thumbnail.dart';
-// import 'package:mubidibi/globals.dart' as Config;
+import 'package:mubidibi/globals.dart' as Config;
 
 class MediaWidget extends StatefulWidget {
   final MediaFile item;
@@ -27,7 +28,6 @@ class MediaWidget extends StatefulWidget {
 }
 
 class MediaWidgetState extends State<MediaWidget> {
-  bool showError = true;
   // FocusNodes
   final descriptionNode = FocusNode();
   final descriptionController = TextEditingController();
@@ -39,7 +39,7 @@ class MediaWidgetState extends State<MediaWidget> {
   }
 
   bool fileIsNull() {
-    return widget.item.file == null ? true : false;
+    return widget.item.file == null || widget.item.url != null ? true : false;
   }
 
   // Function: get image using image picker for movie poster
@@ -215,7 +215,6 @@ class MediaWidgetState extends State<MediaWidget> {
               SizedBox(
                 height: 15,
               ),
-
               // Clickable field for trailers and audios
               (widget.item.type == "trailer" || widget.item.type == "audio")
                   ?
@@ -224,7 +223,7 @@ class MediaWidgetState extends State<MediaWidget> {
                       children: [
                         Stack(
                           children: [
-                            widget.item.file == null
+                            widget.item.url == null
                                 ? GestureDetector(
                                     child: Container(
                                       padding: EdgeInsets.all(10),
@@ -245,7 +244,11 @@ class MediaWidgetState extends State<MediaWidget> {
                                     onTap: widget.item.type == "trailer"
                                         ? getMovieTrailers
                                         : getMovieAudios)
-                                : Container(
+                                : SizedBox(),
+
+                            // Container for the file/ url -- only show when either exists
+                            widget.item.file != null || widget.item.url != null
+                                ? Container(
                                     padding: EdgeInsets.all(10),
                                     color: Color.fromRGBO(240, 240, 240, 1),
                                     child: Row(
@@ -254,81 +257,104 @@ class MediaWidgetState extends State<MediaWidget> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            widget.item.file.path
-                                                .split('/')
-                                                .last,
+                                            widget.item.file != null
+                                                ? widget.item.file.path
+                                                    .split('/')
+                                                    .last
+                                                : widget.item
+                                                    .url, // TO DO: change to filename
                                             style:
                                                 TextStyle(color: Colors.blue),
                                             overflow: TextOverflow.ellipsis,
                                             softWrap: true,
                                           ),
                                         ),
-                                        GestureDetector(
-                                          child: Icon(Icons.close,
-                                              color: Colors.black),
-                                          onTap: () {
-                                            if (widget.item.type == "audio") {
-                                              List imagePaths = audios
-                                                      .isNotEmpty
-                                                  ? audios
-                                                      .map((img) => img.path)
-                                                      .toList()
-                                                  : [];
 
-                                              setState(() {
-                                                if (imagePaths.contains(widget
-                                                        .item.file.path) ==
-                                                    true) {
-                                                  audios.removeWhere((f) =>
-                                                      widget.item.file.path ==
-                                                      f.path);
-                                                }
-                                                // imageURI = '';
-                                                widget.item.file = null;
-                                                widget.item.saved =
-                                                    widget.item.file != null &&
-                                                            widget.item.saved ==
-                                                                true
-                                                        ? true
-                                                        : false;
-                                              });
-                                            } else if (widget.item.type ==
-                                                "trailer") {
-                                              List imagePaths = trailers
-                                                      .isNotEmpty
-                                                  ? trailers
-                                                      .map((img) => img.path)
-                                                      .toList()
-                                                  : [];
+                                        // remove chosen file
+                                        widget.item.file != null
+                                            ? GestureDetector(
+                                                child: Icon(Icons.close,
+                                                    color: Colors.black),
+                                                onTap: () {
+                                                  if (widget.item.type ==
+                                                      "audio") {
+                                                    List imagePaths =
+                                                        audios.isNotEmpty
+                                                            ? audios
+                                                                .map((img) =>
+                                                                    img.path)
+                                                                .toList()
+                                                            : [];
 
-                                              setState(() {
-                                                if (imagePaths.contains(widget
-                                                        .item.file.path) ==
-                                                    true) {
-                                                  trailers.removeWhere((f) =>
-                                                      widget.item.file.path ==
-                                                      f.path);
-                                                }
+                                                    setState(() {
+                                                      if (imagePaths.contains(
+                                                              widget.item.file
+                                                                  .path) ==
+                                                          true) {
+                                                        audios.removeWhere(
+                                                            (f) =>
+                                                                widget.item.file
+                                                                    .path ==
+                                                                f.path);
+                                                      }
+                                                      widget.item.file = null;
+                                                      widget.item.saved = widget
+                                                                      .item
+                                                                      .file !=
+                                                                  null &&
+                                                              widget.item
+                                                                      .saved ==
+                                                                  true
+                                                          ? true
+                                                          : false;
+                                                    });
+                                                  } else if (widget.item.type ==
+                                                      "trailer") {
+                                                    List imagePaths =
+                                                        trailers.isNotEmpty
+                                                            ? trailers
+                                                                .map((img) =>
+                                                                    img.path)
+                                                                .toList()
+                                                            : [];
 
-                                                // imageURI = '';
-                                                widget.item.file = null;
-                                                widget.item.saved =
-                                                    widget.item.file != null &&
-                                                            widget.item.saved ==
-                                                                true
-                                                        ? true
-                                                        : false;
-                                              });
-                                            }
-                                          },
-                                        ),
+                                                    setState(() {
+                                                      if (imagePaths.contains(
+                                                              widget.item.file
+                                                                  .path) ==
+                                                          true) {
+                                                        trailers.removeWhere(
+                                                            (f) =>
+                                                                widget.item.file
+                                                                    .path ==
+                                                                f.path);
+                                                      }
+
+                                                      widget.item.file = null;
+                                                      widget.item.saved = widget
+                                                                      .item
+                                                                      .file !=
+                                                                  null &&
+                                                              widget.item
+                                                                      .saved ==
+                                                                  true
+                                                          ? true
+                                                          : false;
+                                                    });
+                                                  }
+                                                },
+                                              )
+                                            : SizedBox(), // when the url is not null, dont add a close button
                                       ],
                                     ),
                                   )
+                                : SizedBox()
                           ],
                         ),
+
                         SizedBox(height: 10),
-                        // textfield for description
+
+                        // Trailer / Audio -- textfield for description
                         Container(
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10)),
@@ -358,83 +384,159 @@ class MediaWidgetState extends State<MediaWidget> {
                               });
                             },
                           ),
-                        ),
+                        )
                       ],
                     )
                   :
                   // For Gallery type -- display of videos
                   widget.item.type == "gallery" &&
-                          widget.item.file != null &&
-                          (lookupMimeType(widget.item.file.path)
-                                  .startsWith('video/') ==
-                              true)
+                          ((widget.item.file != null &&
+                                  lookupMimeType(widget.item.file.path)
+                                          .startsWith('video/') ==
+                                      true) ||
+                              (widget.item.url != null &&
+                                  !widget.item.url.contains('/image/upload/')))
                       // For Gallery type with Video Formats
-                      ? Container(
-                          padding: EdgeInsets.all(10),
-                          color: Color.fromRGBO(240, 240, 240, 1),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  widget.item.file.path.split('/').last,
-                                  style: TextStyle(color: Colors.blue),
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: true,
-                                ),
+                      ? Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(10),
+                              color: Color.fromRGBO(240, 240, 240, 1),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      widget.item.file != null
+                                          ? widget.item.file.path
+                                              .split('/')
+                                              .last
+                                          : widget.item.url,
+                                      style: TextStyle(color: Colors.blue),
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: true,
+                                    ),
+                                  ),
+                                  widget.item.file != null &&
+                                          widget.item.url == null
+                                      ? GestureDetector(
+                                          child: Icon(Icons.close,
+                                              color: Colors.black),
+                                          onTap: () {
+                                            if (widget.category == "crew") {
+                                              List imagePaths = gallery
+                                                      .isNotEmpty
+                                                  ? gallery
+                                                      .map((img) => img.path)
+                                                      .toList()
+                                                  : [];
+
+                                              setState(() {
+                                                if (imagePaths.contains(widget
+                                                        .item.file.path) ==
+                                                    true) {
+                                                  gallery.removeWhere((f) =>
+                                                      widget.item.file.path ==
+                                                      f.path);
+                                                }
+                                                widget.item.file = null;
+                                                widget.item.saved =
+                                                    widget.item.file != null &&
+                                                            widget.item.saved ==
+                                                                true
+                                                        ? true
+                                                        : false;
+                                              });
+                                            } else if (widget.category ==
+                                                "movie") {
+                                              List imagePaths =
+                                                  movieGallery.isNotEmpty
+                                                      ? movieGallery.map((img) {
+                                                          return img.path;
+                                                        }).toList()
+                                                      : [];
+
+                                              setState(() {
+                                                if (imagePaths.contains(widget
+                                                        .item.file.path) ==
+                                                    true) {
+                                                  movieGallery.removeWhere(
+                                                      (f) =>
+                                                          widget
+                                                              .item.file.path ==
+                                                          f.path);
+                                                }
+                                                widget.item.file = null;
+                                                widget.item.saved =
+                                                    widget.item.file != null &&
+                                                            widget.item.saved ==
+                                                                true
+                                                        ? true
+                                                        : false;
+                                              });
+                                            }
+                                          },
+                                        )
+                                      : SizedBox(),
+                                ],
                               ),
-                              GestureDetector(
-                                child: Icon(Icons.close, color: Colors.black),
-                                onTap: () {
-                                  if (widget.category == "crew") {
-                                    List imagePaths = gallery.isNotEmpty
-                                        ? gallery
-                                            .map((img) => img.path)
-                                            .toList()
-                                        : [];
-
-                                    setState(() {
-                                      if (imagePaths.contains(
-                                              widget.item.file.path) ==
-                                          true) {
-                                        gallery.removeWhere((f) =>
-                                            widget.item.file.path == f.path);
-                                      }
-                                      // imageURI = '';
-                                      widget.item.file = null;
-                                      widget.item.saved =
-                                          widget.item.file != null &&
-                                                  widget.item.saved == true
-                                              ? true
-                                              : false;
-                                    });
-                                  } else if (widget.category == "movie") {
-                                    List imagePaths = movieGallery.isNotEmpty
-                                        ? movieGallery.map((img) {
-                                            return img.path;
-                                          }).toList()
-                                        : [];
-
-                                    setState(() {
-                                      if (imagePaths.contains(
-                                              widget.item.file.path) ==
-                                          true) {
-                                        movieGallery.removeWhere((f) =>
-                                            widget.item.file.path == f.path);
-                                      }
-                                      // imageURI = '';
-                                      widget.item.file = null;
-                                      widget.item.saved =
-                                          widget.item.file != null &&
-                                                  widget.item.saved == true
-                                              ? true
-                                              : false;
-                                    });
-                                  }
+                            ),
+                            // widget.item.type == "gallery" &&
+                            //         ((widget.item.file != null &&
+                            //                 lookupMimeType(
+                            //                             widget.item.file.path)
+                            //                         .startsWith('video/') ==
+                            //                     true) ||
+                            //             (widget.item.url != null &&
+                            //                 !widget.item.url
+                            //                     .contains('/image/upload/')))
+                            //     ? SizedBox(height: 10)
+                            //     : SizedBox(),
+                            SizedBox(height: 10),
+                            // widget.item.type == "gallery" &&
+                            //         ((widget.item.file != null &&
+                            //                 lookupMimeType(
+                            //                             widget.item.file.path)
+                            //                         .startsWith('video/') ==
+                            //                     true) ||
+                            //             (widget.item.url != null &&
+                            //                 !widget.item.url
+                            //                     .contains('/image/upload/')))
+                            //     ?
+                            Container(
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: TextFormField(
+                                enabled: !fileIsNull(),
+                                focusNode: descriptionNode,
+                                initialValue: widget.item.description,
+                                textCapitalization:
+                                    TextCapitalization.sentences,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                style: TextStyle(
+                                  color: fileIsNull() == false
+                                      ? Colors.black
+                                      : Colors.black38,
+                                ),
+                                maxLines: null,
+                                decoration: InputDecoration(
+                                  labelText: "Description",
+                                  contentPadding: EdgeInsets.all(10),
+                                  filled: true,
+                                  fillColor: Color.fromRGBO(240, 240, 240, 1),
+                                ),
+                                onChanged: (val) {
+                                  setState(() {
+                                    widget.item.description =
+                                        val.trim() != "" ? val : null;
+                                  });
                                 },
                               ),
-                            ],
-                          ),
+                            ),
+                            // : SizedBox()
+                          ],
                         )
 
                       // For Gallery Type of image formats // posters
@@ -450,57 +552,203 @@ class MediaWidgetState extends State<MediaWidget> {
                                                         widget.item.file.path)
                                                     .startsWith('image/') ==
                                                 true) ||
-                                        widget.item.file == null
+                                        (widget.item.file == null &&
+                                            widget.item.url == null) ||
+                                        (widget.item.file == null &&
+                                            widget.item.url != null &&
+                                            widget.item.url
+                                                .contains('/image/upload/'))
                                     ? Container(
                                         padding: EdgeInsets.only(left: 10),
                                         child: Stack(
                                           children: [
-                                            GestureDetector(
-                                              onTap: widget.category == "crew"
-                                                  ? getCrewMedia
-                                                  : getMovieMedia,
-                                              child: Container(
-                                                // margin: EdgeInsets.only(left: 20),
-                                                height: 100, // 200
-                                                width: 80, // 150
-                                                decoration: BoxDecoration(
-                                                  borderRadius:
-                                                      BorderRadius.circular(5),
-                                                ),
-                                                child: widget.item.file != null
+                                            widget.item.url == null &&
+                                                    widget.item.file == null
+                                                ? GestureDetector(
+                                                    onTap: widget.category ==
+                                                            "crew"
+                                                        ? getCrewMedia
+                                                        : getMovieMedia,
+                                                    child: Container(
+                                                      // margin: EdgeInsets.only(left: 20),
+                                                      height: 100, // 200
+                                                      width: 80, // 150
+                                                      decoration: BoxDecoration(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5),
+                                                      ),
+                                                      child: widget.item.file !=
+                                                              null
+                                                          ? Container(
+                                                              height: 100,
+                                                              width: 80,
+                                                              child: Image.file(
+                                                                widget
+                                                                    .item.file,
+                                                                width: 80,
+                                                                height: 100,
+                                                                fit: BoxFit
+                                                                    .cover,
+                                                              ),
+                                                            )
+                                                          : Container(
+                                                              height: 100,
+                                                              width: 80,
+                                                              child: Icon(
+                                                                Icons
+                                                                    .camera_alt,
+                                                                color: Colors
+                                                                    .grey[800],
+                                                              ),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color: Color
+                                                                    .fromRGBO(
+                                                                        240,
+                                                                        240,
+                                                                        240,
+                                                                        1),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            5),
+                                                              ),
+                                                            ),
+                                                    ),
+                                                  )
+                                                : SizedBox(),
+                                            // url is present
+                                            widget.item.file != null ||
+                                                    widget.item.url != null
+                                                ? widget.item.url != null
                                                     ? Container(
-                                                        height: 100,
-                                                        width: 80,
-                                                        child: Image.file(
-                                                          widget.item.file,
-                                                          width: 80,
-                                                          height: 100,
-                                                          fit: BoxFit.cover,
-                                                        ),
-                                                      )
-                                                    : Container(
-                                                        height: 100,
-                                                        width: 80,
-                                                        child: Icon(
-                                                          Icons.camera_alt,
-                                                          color:
-                                                              Colors.grey[800],
-                                                        ),
+                                                        // show image from url
+                                                        height: 100, // 200
+                                                        width: 80, // 150
                                                         decoration:
                                                             BoxDecoration(
-                                                          color: Color.fromRGBO(
-                                                              240, 240, 240, 1),
                                                           borderRadius:
                                                               BorderRadius
                                                                   .circular(5),
                                                         ),
-                                                      ),
-                                              ),
-                                            ),
-                                            widget.item.file != null
-                                                // widget.item.file != null || imageURI.trim() != ''
+                                                        child: Container(
+                                                          height: 100,
+                                                          width: 80,
+                                                          child:
+                                                              CachedNetworkImage(
+                                                            placeholder:
+                                                                (context,
+                                                                        url) =>
+                                                                    Container(
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
+                                                              width: 80,
+                                                              height: 100,
+                                                              child:
+                                                                  Image.network(
+                                                                      widget
+                                                                          .item
+                                                                          .url,
+                                                                      fit: BoxFit
+                                                                          .cover,
+                                                                      height:
+                                                                          100,
+                                                                      width:
+                                                                          80),
+                                                            ),
+                                                            errorWidget:
+                                                                (context, url,
+                                                                        error) =>
+                                                                    Material(
+                                                              child: Container(
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
+                                                                width: 80,
+                                                                height: 100,
+                                                                child: Image.network(
+                                                                    Config
+                                                                        .imgNotFound,
+                                                                    width: 80,
+                                                                    height: 100,
+                                                                    fit: BoxFit
+                                                                        .cover),
+                                                              ),
+                                                            ),
+                                                            imageUrl: widget
+                                                                    .item.url ??
+                                                                Config
+                                                                    .imgNotFound,
+                                                            width: 80,
+                                                            height: 100,
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                        ),
+                                                      )
+                                                    // show image file
+                                                    : widget.item.file != null
+                                                        ? Image.file(
+                                                            widget.item.file,
+                                                            width: 80,
+                                                            height: 100,
+                                                            fit: BoxFit.cover,
+                                                          )
+                                                        : CachedNetworkImage(
+                                                            placeholder:
+                                                                (context,
+                                                                        url) =>
+                                                                    Container(
+                                                              alignment:
+                                                                  Alignment
+                                                                      .center,
+                                                              width: 80,
+                                                              height: 100,
+                                                              child:
+                                                                  Image.network(
+                                                                      widget
+                                                                          .item
+                                                                          .url,
+                                                                      fit: BoxFit
+                                                                          .cover,
+                                                                      height:
+                                                                          100,
+                                                                      width:
+                                                                          80),
+                                                            ),
+                                                            errorWidget:
+                                                                (context, url,
+                                                                        error) =>
+                                                                    Material(
+                                                              child: Container(
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
+                                                                width: 80,
+                                                                height: 100,
+                                                                child: Image.network(
+                                                                    Config
+                                                                        .imgNotFound,
+                                                                    width: 80,
+                                                                    height: 100,
+                                                                    fit: BoxFit
+                                                                        .cover),
+                                                              ),
+                                                            ),
+                                                            imageUrl: widget
+                                                                    .item.url ??
+                                                                Config
+                                                                    .imgNotFound,
+                                                            width: 80,
+                                                            height: 100,
+                                                            fit: BoxFit.cover,
+                                                          )
+                                                : SizedBox(),
+
+                                            widget.item.file != null &&
+                                                    widget.item.url == null
                                                 ? Container(
-                                                    // margin: EdgeInsets.only(left: 25, top: 5),
                                                     width: 25,
                                                     alignment: Alignment.center,
                                                     child: GestureDetector(
@@ -650,17 +898,9 @@ class MediaWidgetState extends State<MediaWidget> {
                                         ),
                                       )
                                     : SizedBox(),
-                                // (widget.item.file != null &&
-                                //             lookupMimeType(
-                                //                         widget.item.file.path)
-                                //                     .startsWith('image/') ==
-                                //                 true) ||
-                                //         (widget.item.file == null &&
-                                //             (widget.item.type == "poster" ||
-                                //                 widget.item.type == "gallery"))
-                                //     ? SizedBox(width: 15)
-                                //     : SizedBox(),
+
                                 SizedBox(width: 15),
+
                                 // textfield for description
                                 Expanded(
                                   child: Container(
@@ -710,7 +950,7 @@ class MediaWidgetState extends State<MediaWidget> {
                   color: Colors.white,
                   onPressed: () {
                     FocusScope.of(context).unfocus();
-                    if (widget.item.file != null) {
+                    if (widget.item.file != null || widget.item.url != null) {
                       setState(() {
                         widget.open.value = false;
                         widget.item.saved = true;
@@ -718,7 +958,6 @@ class MediaWidgetState extends State<MediaWidget> {
                     } else {
                       setState(() {
                         widget.item.saved = false;
-                        showError = true;
                       });
                     }
                   },
@@ -730,25 +969,43 @@ class MediaWidgetState extends State<MediaWidget> {
           )
         : Container(
             color: Color.fromRGBO(240, 240, 240, 1),
-            padding: widget.item.file != null &&
-                    (lookupMimeType(widget.item.file.path)
-                                .startsWith('video/') ==
-                            true ||
-                        lookupMimeType(widget.item.file.path)
-                                .startsWith('audio/') ==
-                            true)
-                ? EdgeInsets.zero
-                : EdgeInsets.all(10),
-            margin: EdgeInsets.only(bottom: 10),
+            padding:
+                //(widget.item.file != null &&
+                //             (lookupMimeType(widget.item.file.path)
+                //                         .startsWith('video/') ==
+                //                     true ||
+                //                 lookupMimeType(widget.item.file.path)
+                //                         .startsWith('audio/') ==
+                //                     true)) ||
+                //         (widget.item.url != null &&
+                //             !widget.item.url.contains('/image/upload/'))
+                //     ? EdgeInsets.zero
+                // :
+                EdgeInsets.all(10),
+            margin:
+                //(widget.item.file != null &&
+                //             (lookupMimeType(widget.item.file.path)
+                //                         .startsWith('video/') ==
+                //                     true ||
+                //                 lookupMimeType(widget.item.file.path)
+                //                         .startsWith('audio/') ==
+                //                     true)) ||
+                //         (widget.item.url != null &&
+                //             !widget.item.url.contains('/image/upload/'))
+                // ?
+                EdgeInsets.only(bottom: 10, top: 10),
+            // : EdgeInsets.only(bottom: 10),
             child: Column(
               children: [
-                widget.item.file != null &&
-                        (lookupMimeType(widget.item.file.path)
-                                    .startsWith('video/') ==
-                                true ||
-                            lookupMimeType(widget.item.file.path)
-                                    .startsWith('audio/') ==
-                                true)
+                (widget.item.file != null &&
+                            (lookupMimeType(widget.item.file.path)
+                                        .startsWith('video/') ==
+                                    true ||
+                                lookupMimeType(widget.item.file.path)
+                                        .startsWith('audio/') ==
+                                    true)) ||
+                        (widget.item.url != null &&
+                            !widget.item.url.contains('/image/upload/'))
                     ? Container(
                         margin: EdgeInsets.all(10),
                         child: Row(
@@ -756,7 +1013,9 @@ class MediaWidgetState extends State<MediaWidget> {
                           children: [
                             Expanded(
                               child: Text(
-                                widget.item.file.path.split('/').last,
+                                widget.item.file != null
+                                    ? widget.item.file.path.split('/').last
+                                    : widget.item.url,
                                 style: TextStyle(color: Colors.blue),
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,
@@ -785,24 +1044,55 @@ class MediaWidgetState extends State<MediaWidget> {
                                 lookupMimeType(widget.item.file.path)
                                         .startsWith('image/') ==
                                     true) ||
-                            widget.item.file == null
+                            (widget.item.url != null &&
+                                widget.item.url.contains('/image/upload/'))
                         ? Container(
                             alignment: Alignment.centerLeft,
                             height: 100,
                             width: 80,
-                            child: Image.file(
-                              widget.item.file,
-                              width: 80,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
+                            child: widget.item.file != null
+                                ? Image.file(
+                                    widget.item.file,
+                                    width: 80,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  )
+                                : CachedNetworkImage(
+                                    placeholder: (context, url) => Container(
+                                      alignment: Alignment.center,
+                                      width: 80,
+                                      height: 100,
+                                      child: Image.network(widget.item.url,
+                                          fit: BoxFit.cover,
+                                          height: 100,
+                                          width: 80),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Material(
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        width: 80,
+                                        height: 100,
+                                        child: Image.network(Config.imgNotFound,
+                                            width: 80,
+                                            height: 100,
+                                            fit: BoxFit.cover),
+                                      ),
+                                    ),
+                                    imageUrl:
+                                        widget.item.url ?? Config.imgNotFound,
+                                    width: 80,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
                           )
                         : SizedBox(),
                     (widget.item.file != null &&
                                 lookupMimeType(widget.item.file.path)
                                         .startsWith('image/') ==
                                     true) ||
-                            widget.item.file == null
+                            (widget.item.url != null &&
+                                widget.item.url.contains('/image/upload/'))
                         ? SizedBox(width: 15)
                         : SizedBox(),
                     Expanded(
@@ -810,7 +1100,8 @@ class MediaWidgetState extends State<MediaWidget> {
                                   lookupMimeType(widget.item.file.path)
                                           .startsWith('image/') ==
                                       true) ||
-                              widget.item.file == null
+                              (widget.item.url != null &&
+                                  widget.item.url.contains('/image/upload/'))
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.start,

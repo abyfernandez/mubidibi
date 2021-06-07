@@ -10,13 +10,11 @@ import 'package:mubidibi/ui/views/add_movie.dart';
 class LineWidget extends StatefulWidget {
   final Line item;
   final open;
-  // final List<String> roles;
 
   const LineWidget({
     Key key,
     this.item,
     this.open,
-    // this.roles,
   }) : super(key: key);
 
   @override
@@ -24,12 +22,13 @@ class LineWidget extends StatefulWidget {
 }
 
 class LineWidgetState extends State<LineWidget> {
-  bool showError = true;
-  bool showRoleError = false;
+  bool showError;
+  bool showRoleError;
   List<String> tempRole = [];
 
   bool showRoleErrorT() {
     return widget.item.role != null &&
+            widget.item.role.isNotEmpty &&
             rolesFilter.value.contains(widget.item.role) == false
         ? true
         : false;
@@ -42,13 +41,16 @@ class LineWidgetState extends State<LineWidget> {
 
   @override
   void initState() {
+    showError =
+        widget.item.role != null && widget.item.line != null ? false : true;
+    showRoleError = showRoleErrorT();
     widget.item.saved = widget.item.saved == null ? false : widget.item.saved;
-    // test --- using list of value notifiers
-    if (widget.item.role != null) {
-      var chosen =
-          rolesFilter.value.singleWhere((a) => a.value == widget.item.role);
 
-      if (chosen != null) tempRole = [chosen.value];
+    if (widget.item.role != null) {
+      // var chosen = rolesFilter.value.singleWhere((a) => a == widget.item.role);
+
+      // if (chosen != null) tempRole = [chosen];
+      tempRole = [widget.item.role];
     }
     super.initState();
   }
@@ -186,11 +188,12 @@ class LineWidgetState extends State<LineWidget> {
                     },
                     onChanged: (val) {
                       setState(() {
-                        widget.item.line = val;
-                        showError =
-                            widget.item.role != null && widget.item.line != null
-                                ? false
-                                : true;
+                        widget.item.line = val.trim();
+                        showError = widget.item.role != null &&
+                                widget.item.line != null &&
+                                widget.item.line.trim() != ""
+                            ? false
+                            : true;
                         showRoleError = showRoleErrorT();
                       });
                     },
@@ -225,7 +228,9 @@ class LineWidgetState extends State<LineWidget> {
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       if (widget.item.role != null &&
+                          widget.item.role.isNotEmpty &&
                           widget.item.line != null &&
+                          widget.item.line.trim() != "" &&
                           rolesFilter.value.contains(widget.item.role) ==
                               true) {
                         setState(() {
@@ -260,16 +265,18 @@ class LineWidgetState extends State<LineWidget> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       widget.item.role != null &&
+                              widget.item.role.isNotEmpty &&
                               rolesFilter.value.contains(widget.item.role) ==
                                   false
                           ? MyTooltip(
                               child: Icon(Icons.report_problem_outlined,
                                   color: Colors.red),
                               message:
-                                  "Pumili ng bagong role o i-update ang mga aktor sa Step 3",
+                                  "Pumili ng bagong role o i-update ang mga aktor sa Step 3.",
                             )
                           : SizedBox(),
                       widget.item.role != null &&
+                              widget.item.role.isNotEmpty &&
                               rolesFilter.value.contains(widget.item.role) ==
                                   false
                           ? SizedBox(width: 5)

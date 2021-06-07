@@ -295,11 +295,11 @@ class _SearchViewState extends State<SearchView> {
                                                   image: DecorationImage(
                                                     image:
                                                         CachedNetworkImageProvider(
-                                                      movie.poster != null &&
-                                                              movie.poster
+                                                      movie.posters != null &&
+                                                              movie.posters
                                                                       .length !=
                                                                   0
-                                                          ? movie.poster[0].url
+                                                          ? movie.posters[0].url
                                                           : Config.imgNotFound,
                                                     ),
                                                     fit: BoxFit.cover,

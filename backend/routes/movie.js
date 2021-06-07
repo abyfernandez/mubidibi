@@ -1,6 +1,6 @@
 exports.movie = app => {
 
-  // GET MOVIES
+  // GET ALL MOVIES
   app.post('/mubidibi/movies/', async (req, res) => {
     app.pg.connect(onConnect)
 
@@ -20,14 +20,27 @@ exports.movie = app => {
           // get posters  
           for (var i = 0; i < movies.length; i++) {
             var { rows } = await client.query(`select * from movie_media where movie_id = ${movies[i].id} and type = 'poster'`);
-            movies[i]['poster'] = rows;
+            movies[i]['posters'] = rows;
           }
 
           // get screenshots  
           for (var i = 0; i < movies.length; i++) {
             var { rows } = await client.query(`select * from movie_media where movie_id = ${movies[i].id} and type = 'gallery'`);
-            movies[i]['screenshot'] = rows;
+            movies[i]['gallery'] = rows;
           }
+
+          // get trailers  
+          for (var i = 0; i < movies.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies[i].id} and type = 'trailer'`);
+            movies[i]['trailers'] = rows;
+          }
+
+          // get audios  
+          for (var i = 0; i < movies.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies[i].id} and type = 'audio'`);
+            movies[i]['audios'] = rows;
+          }
+
           return movies;
         });
 
@@ -37,7 +50,7 @@ exports.movie = app => {
     }
   });
 
-  // GET ONE MOVIE
+  // GET ONE MOVIE (MOVIE DETAIL VIEW)
   app.get('/mubidibi/movie/:id', (req, res) => {
     app.pg.connect(onConnect)
 
@@ -50,11 +63,23 @@ exports.movie = app => {
 
           // get posters  
           var { rows } = await client.query(`select * from movie_media where movie_id = ${movie.id} and type = 'poster'`);
-          movie['poster'] = rows;
+          movie['posters'] = rows;
 
           // get screenshots  
           var { rows } = await client.query(`select * from movie_media where movie_id = ${movie.id} and type = 'gallery'`);
-          movie['screenshot'] = rows;
+          movie['gallery'] = rows;
+
+          // get trailers 
+          var { rows } = await client.query(`select * from movie_media where movie_id = ${movie.id} and type = 'trailer'`);
+          movie['trailers'] = rows;
+
+          // get audios  
+          var { rows } = await client.query(`select * from movie_media where movie_id = ${movie.id} and type = 'audio'`);
+          movie['audios'] = rows;
+
+          // famous lines
+          var { rows } = await client.query(`select * from quote where movie_id = ${movie.id}`);
+          movie['quotes'] = rows;
 
           return movie;
         });
@@ -113,7 +138,8 @@ exports.movie = app => {
       var upload = await cloudinary.v2.uploader.upload(fileURI,
         {
           folder: "folder-name",
-          resource_type: mediaMimeType[i].split('/')[0] == "audio" ? "raw" : mediaMimeType[i].split('/')[0],
+          // resource_type: mediaMimeType[i].split('/')[0] == "audio" ? "raw" : mediaMimeType[i].split('/')[0],
+          resource_type: "auto",
         },
         async function (err, result) {
           if (err) return err;
@@ -327,44 +353,70 @@ exports.movie = app => {
 
     // MOVIE SCREENSHOTS AND POSTER UPLOAD   -- poster first element in the array
 
-    var images = [];
     var movieData = [];    // movie data sent from the frontend
     const pics = await req.parts();
+    var mediaBuffer = []; // container for all the media files buffer to be uploaded
+    var mediaMimeType = [];
+    var posters = []; // poster urls 
+    var gallery = []; // gallery urls 
+    var trailers = []; // trailers urls 
+    var audios = []; // audios urls 
 
+    // separate media from other data
     if (pics != null) {
       for await (const pic of pics) {
 
         if (!pic.file && movieData.length == 0) {
           movieData = JSON.parse(pic.fields.movie.value); // movie data sent from the frontend
+
         } else {
           var buffer = await pic.toBuffer();
-          var image = await buffer.toString('base64');
-          image = image.replace(/(\r\n|\n|\r)/gm, "");
-
-          // convert base64 to data uri
-          var imageURI = `data:${pic.mimetype};base64,${image}`;
-
-          var upload = await cloudinary.v2.uploader.upload(imageURI,
-            {
-              folder: "folder-name",
-            },
-            async function (err, result) {
-              if (err) return err;
-              else {
-                images.push(result.url);
-              }
-            }
-          );
+          mediaBuffer.push(buffer);
+          mediaMimeType.push(pic.mimetype);
         }
       }
     }
 
-    // update movie 
+    // Upload files to Cloudinary
+    for (var i = 0; i < mediaBuffer.length; i++) {
+
+      var file = await mediaBuffer[i].toString('base64');
+      file = file.replace(/(\r\n|\n|\r)/gm, "");
+
+      // convert base64 to data uri
+      var fileURI = `data:${mediaMimeType[i]};base64,${file}`;
+
+      var upload = await cloudinary.v2.uploader.upload(fileURI,
+        {
+          folder: "folder-name",
+          resource_type: "auto",
+        },
+        async function (err, result) {
+          if (err) return err;
+          else {
+            if (movieData.media_type[i] == "poster") posters.push(result.url);
+            else if (movieData.media_type[i] == "gallery") gallery.push(result.url);
+            else if (movieData.media_type[i] == "trailer") trailers.push(result.url);
+            else if (movieData.media_type[i] == "audio") audios.push(result.url);
+          }
+        }
+      );
+    }
+
+    // UPDATE MOVIE IN DB
     app.pg.connect(onConnect);
 
     // catch apostrophes to avoid errors when inserting
     var title = movieData.title.replace(/'/g, "''");
     var synopsis = movieData.synopsis.replace(/'/g, "''");
+
+    movieData.actors.forEach((a, i) => {
+      a.role.forEach((r, ind) => {
+        r = r.replace(/'/g, "''");
+      });
+    });
+
+    console.log('movieData: ', movieData);
 
     // construct query 
     var query = `UPDATE movie 
@@ -390,19 +442,6 @@ exports.movie = app => {
       `);
     }
 
-    query = query.concat(`poster = `);
-
-    if (movieData.poster == true && images.length != 0) { // user changed poster on update
-      query = query.concat(`'${images[0]}', 
-      `)
-    } else if (movieData.posterURI != "" || movieData.posterURI != null) {  // poster exists in DB and hasn't been changed on update
-      query = query.concat(`'${movieData.posterURI}', 
-      `);
-    } else {
-      query = query.concat(`null, 
-      `);
-    }
-
     query = query.concat(`genre = `);
 
     // check first if genre array is empty or not
@@ -414,63 +453,213 @@ exports.movie = app => {
           query = query.concat(',')
         }
       });
-      query = query.concat(`], 
+      query = query.concat(`]
       `)
 
     } else {
-      query = query.concat(`null, 
+      query = query.concat(`null
       `);
-    }
-
-    query = query.concat(`screenshot = `);
-
-    // TO DO: provide condition for when screenshots already exist before edit
-
-    if (images.length > 1 && movieData.poster == true) {  // both poster and screenshots exist
-      query = query.concat(`array [`)
-      images.forEach(pic => {
-        if (pic != images[0]) {
-          query = query.concat(`'`, pic, `'`)
-        }
-        if (pic != images[images.length - 1] && pic != images[0]) {
-          query = query.concat(',')
-        }
-      });
-      query = query.concat(`]
-      `)
-
-    } else if (images.length > 0 && movieData.poster == false) {  // only screenshots were provided
-      query = query.concat(`array [`)
-      images.forEach(pic => {
-        query = query.concat(`'`, pic, `'`)
-        if (pic != images[images.length - 1]) {
-          query = query.concat(',')
-        }
-      });
-      query = query.concat(`]
-      `)
-
-    } else {
-      query = query.concat(`null 
-      `);  // no screenshots were provided
     }
 
     // WHERE CONDITION
     query = query.concat(` WHERE id = $1 RETURNING id`)
 
-    console.log(query)
-
-    function onConnect(err, client, release) {
+    async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      client.query(query, [parseInt(req.params.id)],
-        function onResult(err, result) {
-          console.log(result);
+      var result = await client.query(query, [parseInt(req.params.id)]
+      ).then((result) => {
+        const id = result.rows[0].id
 
-          release()
-          res.send(err || JSON.stringify(result.rows[0].id));
+        // posters
+        if (posters.length != 0) {
+          for (var i = 0; i < posters.length; i++) {
+            var desc = movieData.poster_desc[i] != null ? movieData.poster_desc[i].replace(/'/g, "''") : null;
+            var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${posters[i]}', `;
+            if (desc != null) query = query.concat(`'${desc}', 'poster')`);
+            else query = query.concat(`null, 'poster')`);
+
+            client.query(query);
+          }
         }
-      );
+
+        // gallery
+        if (gallery.length != 0) {
+          for (var i = 0; i < gallery.length; i++) {
+            var desc = movieData.gallery_desc[i] != null ? movieData.gallery_desc[i].replace(/'/g, "''") : null;
+            var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${gallery[i]}', `;
+            if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
+            else query = query.concat(`null, 'gallery')`);
+
+            client.query(query);
+          }
+        }
+
+        // trailers
+        if (trailers.length != 0) {
+          for (var i = 0; i < trailers.length; i++) {
+            var desc = movieData.trailer_desc[i] != null ? movieData.trailer_desc[i].replace(/'/g, "''") : null;
+            var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${trailers[i]}', `;
+            if (desc != null) query = query.concat(`'${desc}', 'trailer')`);
+            else query = query.concat(`null, 'trailer')`);
+
+            client.query(query);
+          }
+        }
+        // audio
+        if (audios.length != 0) {
+          for (var i = 0; i < audios.length; i++) {
+            var desc = movieData.audio_desc[i] != null ? movieData.audio_desc[i].replace(/'/g, "''") : null;
+            var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${audios[i]}', `;
+            if (desc != null) query = query.concat(`'${desc}', 'audio')`);
+            else query = query.concat(`null, 'audio')`);
+
+            client.query(query);
+          }
+        }
+
+        // DELETE MEDIA FROM DB
+
+        // posters
+        if (movieData.posters_to_delete.length != 0) {
+          for (var i = 0; i < movieData.posters_to_delete.length; i++)
+            client.query(`delete from movie_media where id = $1`, [movieData.posters_to_delete[i]]);
+        }
+
+        // gallery
+        if (movieData.gallery_to_delete.length != 0) {
+          for (var i = 0; i < movieData.gallery_to_delete.length; i++)
+            client.query(`delete from movie_media where id = $1`, [movieData.gallery_to_delete[i]]);
+        }
+
+        // trailers
+        if (movieData.trailers_to_delete.length != 0) {
+          for (var i = 0; i < movieData.trailers_to_delete.length; i++)
+            client.query(`delete from movie_media where id = $1`, [movieData.trailers_to_delete[i]]);
+        }
+
+        // audios
+        if (movieData.audios_to_delete.length != 0) {
+          for (var i = 0; i < movieData.audios_to_delete.length; i++)
+            client.query(`delete from movie_media where id = $1`, [movieData.audios_to_delete[i]]);
+        }
+
+        // UPDATE PERSONALITIES
+
+        // add directors
+        if (movieData.directors.length != 0) {
+          movieData.directors.forEach(director => {
+            client.query(
+              `call add_movie_director (
+              ${id},
+              ${director}
+            )`
+            )
+          });
+        }
+
+        // delete directors
+        if (movieData.directors_to_delete.length != 0) {
+          movieData.directors_to_delete.forEach((d, index) => {
+            client.query(`delete from movie_director where director_id = ${d} and movie_id=${id}`);
+          });
+        }
+
+        // add writers
+        if (movieData.writers.length != 0) {
+          movieData.writers.forEach(writer => {
+            client.query(
+              `call add_movie_writer (
+              ${id},
+              ${writer}
+            )`
+            )
+          });
+        }
+
+        // delete writers
+        if (movieData.writers_to_delete.length != 0) {
+          movieData.writers_to_delete.forEach((d, index) => {
+            client.query(`delete from movie_writer where writer_id = ${d} and movie_id=${id}`);
+          });
+        }
+
+        // add/update/delete actors
+        if (movieData.actors.length != 0) {
+          movieData.actors.forEach((actor, index) => {
+            if (movieData.actors_to_delete.includes(actor.id)) {
+              // delete
+              client.query(`delete from movie_actor where movie_id = ${id} and actor_id= ${actor.id}`);
+            } else if (movieData.og_act.includes(actor.id) && !movieData.actors_to_delete.includes(actor.id)) {
+              // update
+              client.query(`update movie_actor set role = '${actor.role}' where actor_id = ${actor.id} and movie_id = ${id}`)
+            } else if (!movieData.og_act.includes(actor.id)) {
+              // add
+              var actorQuery = `call add_movie_actor (
+                ${id},
+                ${actor.id},
+                `;
+
+              if (actor.role.length) {
+                actorQuery = actorQuery.concat(`array [`);
+                actor.role.forEach(role => {
+                  actorQuery = actorQuery.concat(`'`, role, `'`)
+                  if (role != actor.role[actor.role.length - 1]) {
+                    actorQuery = actorQuery.concat(',')
+                  }
+                });
+                actorQuery = actorQuery.concat(`])`)
+              } else {
+                actorQuery = actorQuery.concat(`null)`);
+              }
+              client.query(actorQuery);
+            }
+          });
+        }
+
+        // add/update/delete awards
+        if (movieData.awards.length != 0) {
+          movieData.awards.forEach((award, index) => {
+            if (movieData.awards_to_delete.includes(award.id)) {
+              // delete
+              client.query(`delete from movie_award where id= ${award.id}`);
+            } else if (movieData.og_awards.includes(award.id) && !movieData.awards_to_delete.includes(award.id)) {
+              // update
+              client.query(`update movie_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`)
+            } else if (!movieData.og_awards.includes(award.id)) {
+              // add
+              var awardQuery = `insert into movie_award (movie_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
+
+              client.query(awardQuery);
+            }
+          });
+        }
+
+        // add/update/delete lines
+        if (movieData.lines.length != 0) {
+          movieData.lines.forEach((quote, index) => {
+            var line = quote.quotation.replace(/'/g, "''");
+
+            if (movieData.lines_to_delete.includes(quote.id)) {
+              // delete
+              client.query(`delete from quote where id= ${quote.id}`);
+            } else if (movieData.og_lines.includes(quote.id) && !movieData.lines_to_delete.includes(quote.id)) {
+              // update
+              client.query(`update movie_quote set quotation = ${line}, role = '${quote.role}' where id = ${quote.id}`)
+            } else if (!movieData.og_lines.includes(quote.id)) {
+              // add
+              var quoteQuery = `insert into quote (movie_id, quotation, role) values (${id}, '${line}', '${quote.role}')`;
+
+              client.query(quoteQuery);
+            }
+          });
+        }
+
+        return result;
+      });
+      release();
+      res.send(err || JSON.stringify(result.rows[0].id));
+
     }
 
   });
