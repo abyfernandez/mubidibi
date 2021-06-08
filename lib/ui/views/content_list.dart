@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 // import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
@@ -164,7 +165,15 @@ class ContentList extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(
-                                content.title,
+                                content.title +
+                                    (content.releaseDate != "" ||
+                                            content.releaseDate != null
+                                        ? (" (" +
+                                            DateFormat('y').format(
+                                                DateTime.parse(
+                                                    content.releaseDate)) +
+                                            ") ")
+                                        : ""),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white,

@@ -11,6 +11,7 @@ import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/ui/widgets/award_widget.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/services/authentication_service.dart';
@@ -153,7 +154,7 @@ class _AddMovieState extends State<AddMovie> {
   List<int> linesToDelete = [];
   List<String> genresToDelete = [];
   List<int> awardsToDelete = [];
-  List<Award> awardOptions;
+  List<Award> awardOptions = [];
 
   // STEPPER TITLES
   int currentStep = 0;
@@ -222,7 +223,8 @@ class _AddMovieState extends State<AddMovie> {
     if (_datePicker != null && _datePicker != _date) {
       setState(() {
         _date = _datePicker;
-        dateController.text = DateFormat("MMM. d, y").format(_date) ?? '';
+        dateController.text =
+            DateFormat("MMM. d, y", 'fil').format(_date) ?? '';
       });
     }
   }
@@ -830,6 +832,10 @@ class _AddMovieState extends State<AddMovie> {
     filteredActors =
         actorList.where((actor) => actor.crew.saved == true).toList();
 
+    // updates listview tree according to existence of roles
+    lineList.removeWhere((a) => !rolesFilter.value.contains(a.item.role));
+    if (lineList == null) lineList = [];
+
     return Column(
       children: [
         filteredActors.length != 0 ? SizedBox(height: 10) : SizedBox(),
@@ -1009,7 +1015,11 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: Display Famous Lines in the Review Step
   Widget displayLines() {
-    filteredLines = lineList.where((line) => line.item.saved == true).toList();
+    filteredLines = lineList
+        .where((line) =>
+            line.item.saved == true &&
+            rolesFilter.value.contains(line.item.role))
+        .toList();
 
     return Column(
       children: [
@@ -1079,6 +1089,7 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: adds LineWidget in the ListView builder
   addLine() {
+    print('clicked');
     // extract the roles from the filteredActors list and flatten into a 1-dimensional array
     var rolesOptions =
         filteredActors.map((a) => a.crew.role).expand((i) => i).toList();
@@ -1099,6 +1110,7 @@ class _AddMovieState extends State<AddMovie> {
 
   @override
   void initState() {
+    initializeDateFormatting();
     // in case user just closes the app and not click the back buttons
     rolesFilter.value = [];
     actorsFilter = [];
@@ -1119,7 +1131,6 @@ class _AddMovieState extends State<AddMovie> {
     var currentUser = _authenticationService.currentUser;
 
     final _scaffoldKey = GlobalKey<ScaffoldState>();
-    // TO DO: add awards in stepper
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
       onModelReady: (model) async {
@@ -1135,7 +1146,8 @@ class _AddMovieState extends State<AddMovie> {
             : null;
 
         dateController.text = movie?.releaseDate != null
-            ? DateFormat("MMM. d, y").format(DateTime.parse(movie?.releaseDate))
+            ? DateFormat("MMM. d, y", "fil")
+                .format(DateTime.parse(movie?.releaseDate))
             : '';
         synopsisController.text = movie?.synopsis ?? '';
         runtimeController.text = movie?.runtime?.toString() ?? '';
@@ -1285,6 +1297,8 @@ class _AddMovieState extends State<AddMovie> {
                           children: [
                             SizedBox(height: 20),
                             MyStepper(
+                              physics: ClampingScrollPhysics(),
+
                               stepperCircle: [
                                 Icons.edit, // Mga Basic na Detalye
                                 Icons
@@ -1551,13 +1565,14 @@ class _AddMovieState extends State<AddMovie> {
                                       writersToDelete: writersToDelete,
                                       actorsToDelete: actorsToDelete,
                                       linesToDelete: linesToDelete,
+                                      awardsToDelete: awardsToDelete,
                                       genresToDelete: genresToDelete,
 
                                       // original lists for comparison in edit movie
                                       ogAct: crewEdit != null &&
                                               crewEdit[2].isNotEmpty
                                           ? crewEdit[2]
-                                              .map((a) => a.crewId)
+                                              .map((a) => a.id)
                                               .toList()
                                           : [],
                                       ogLines: movie != null &&
@@ -1636,11 +1651,13 @@ class _AddMovieState extends State<AddMovie> {
                                         : i < currentStep
                                             ? MyStepState.complete
                                             : MyStepState.indexed,
-                                    content: LimitedBox(
-                                      maxWidth: 300,
-                                      child: Form(
-                                          key: _formKeys[i],
-                                          child: getContent(i)),
+                                    content: Container(
+                                      width: 300,
+                                      child: SingleChildScrollView(
+                                        child: Form(
+                                            key: _formKeys[i],
+                                            child: getContent(i)),
+                                      ),
                                     ),
                                   ),
                               ],
@@ -1709,9 +1726,11 @@ class _AddMovieState extends State<AddMovie> {
                       controller: dateController,
                       keyboardType: TextInputType.datetime,
                       autovalidateMode: AutovalidateMode.onUserInteraction,
-                      onTap: () {
-                        _selectDate(context);
-                      },
+                      onTap: _date == null
+                          ? () {
+                              _selectDate(context);
+                            }
+                          : () => null,
                       style: TextStyle(
                         color: Colors.black,
                       ),
@@ -2463,8 +2482,18 @@ class _AddMovieState extends State<AddMovie> {
                                             setState(() {
                                               if (actorList[i].crew.crewId !=
                                                   null) {
+                                                // updates listview tree according to existence of roles
+                                                lineList.removeWhere((a) =>
+                                                    rolesFilter.value.contains(
+                                                        a.item.role) &&
+                                                    actorList[i]
+                                                        .crew
+                                                        .role
+                                                        .contains(a.item.role));
+
                                                 rolesFilter.value.remove(
                                                     actorList[i].crew.role);
+
                                                 actorsFilter.remove(
                                                     actorList[i].crew.crewId);
                                                 if (crewEdit != null &&
@@ -2625,11 +2654,14 @@ class _AddMovieState extends State<AddMovie> {
           ),
         );
       case 4: // Mga Sumikat na Linya
-        // TO DO: dynamic widget
 
         // updates filteredactors list
         filteredActors =
             actorList.where((actor) => actor.crew.saved == true).toList();
+
+        // // updates listview tree according to existence of roles
+        // lineList.removeWhere((a) => !rolesFilter.value.contains(a.item.role));
+
         return Container(
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2737,184 +2769,179 @@ class _AddMovieState extends State<AddMovie> {
             color: Color.fromRGBO(240, 240, 240, 1),
           ),
           padding: EdgeInsets.all(10),
-          child: Scrollbar(
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text("Pamagat: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      titleController.text,
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                      overflow: TextOverflow.clip,
-                      softWrap: true,
-                    ),
-                  ),
-                  SizedBox(height: 15),
-                  _date != null
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Petsa ng Paglabas: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  _date != null
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            _date == null
-                                ? ''
-                                : DateFormat("MMM. d, y").format(_date),
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      : SizedBox(),
-                  _date != null ? SizedBox(height: 15) : SizedBox(),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text("Buod: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        )),
-                  ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      synopsisController.text,
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 15),
-                  displayPosters(),
-                  displayTrailers(),
-                  displayGallery(),
-                  displayAudios(),
-                  directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  directors.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Mga Direktor: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  directors.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Column(
-                              children: directors.map<Widget>((direk) {
-                            return new Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                new Icon(Icons.fiber_manual_record, size: 16),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    direk.name,
-                                    style: TextStyle(fontSize: 16),
-                                    overflow: TextOverflow.clip,
-                                    softWrap: true,
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList()),
-                        )
-                      : SizedBox(),
-                  writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  writers.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Mga Manunulat: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  writers.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Column(
-                              children: writers.map<Widget>((writer) {
-                            return new Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                new Icon(Icons.fiber_manual_record, size: 16),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    writer.name,
-                                    style: TextStyle(fontSize: 16),
-                                    overflow: TextOverflow.clip,
-                                    softWrap: true,
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList()),
-                        )
-                      : SizedBox(),
-                  displayActors(),
-                  filmGenres.length != 0
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Mga Genre: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  filmGenres.length != 0
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Wrap(
-                              children: filmGenres
-                                  .map<Widget>((str) => Container(
-                                        margin: EdgeInsets.only(right: 3),
-                                        child: Chip(
-                                          label: Text(str),
-                                          backgroundColor: Colors.blue[100],
-                                        ),
-                                      ))
-                                  .toList()),
-                        )
-                      : SizedBox(),
-                  filmGenres.length != 0 ? SizedBox(height: 15) : SizedBox(),
-                  displayAwards(),
-                  displayLines(),
-                ],
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Container(
+                alignment: Alignment.topLeft,
+                child: Text("Pamagat: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
               ),
-            ),
+              Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  titleController.text,
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.clip,
+                  softWrap: true,
+                ),
+              ),
+              SizedBox(height: 15),
+              _date != null
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Petsa ng Paglabas: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              _date != null
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        _date == null
+                            ? ''
+                            : DateFormat("MMM. d, y", "fil").format(_date),
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : SizedBox(),
+              _date != null ? SizedBox(height: 15) : SizedBox(),
+              Container(
+                alignment: Alignment.topLeft,
+                child: Text("Buod: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    )),
+              ),
+              Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  synopsisController.text,
+                  style: TextStyle(
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              SizedBox(height: 15),
+              displayPosters(),
+              displayTrailers(),
+              displayGallery(),
+              displayAudios(),
+              directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+              directors.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Mga Direktor: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+              directors.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Column(
+                          children: directors.map<Widget>((direk) {
+                        return new Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            new Icon(Icons.fiber_manual_record, size: 16),
+                            SizedBox(
+                              width: 5,
+                            ),
+                            Expanded(
+                              child: Text(
+                                direk.name,
+                                style: TextStyle(fontSize: 16),
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList()),
+                    )
+                  : SizedBox(),
+              writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+              writers.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Mga Manunulat: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+              writers.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Column(
+                          children: writers.map<Widget>((writer) {
+                        return new Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            new Icon(Icons.fiber_manual_record, size: 16),
+                            SizedBox(
+                              width: 5,
+                            ),
+                            Expanded(
+                              child: Text(
+                                writer.name,
+                                style: TextStyle(fontSize: 16),
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
+                              ),
+                            ),
+                          ],
+                        );
+                      }).toList()),
+                    )
+                  : SizedBox(),
+              displayActors(),
+              filmGenres.length != 0
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Mga Genre: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              filmGenres.length != 0
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Wrap(
+                          children: filmGenres
+                              .map<Widget>((str) => Container(
+                                    margin: EdgeInsets.only(right: 3),
+                                    child: Chip(
+                                      label: Text(str),
+                                      backgroundColor: Colors.blue[100],
+                                    ),
+                                  ))
+                              .toList()),
+                    )
+                  : SizedBox(),
+              filmGenres.length != 0 ? SizedBox(height: 15) : SizedBox(),
+              displayAwards(),
+              displayLines(),
+            ],
           ),
         );
     }
@@ -3196,17 +3223,8 @@ class ActorWidgetState extends State<ActorWidget> {
               contentPadding: EdgeInsets.all(10),
               tileColor: Color.fromRGBO(240, 240, 240, 1),
               title: Text(
-                  (widget.crew != null
-                      ? (widget.crew.firstName +
-                          (widget.crew.middleName != null
-                              ? " " + widget.crew.middleName
-                              : "") +
-                          (widget.crew.lastName != null
-                              ? " " + widget.crew.lastName
-                              : "") +
-                          (widget.crew.suffix != null
-                              ? " " + widget.crew.suffix
-                              : ""))
+                  (widget.crew != null && widget.crew.crewId != null
+                      ? widget.crew.name
                       : ""),
                   softWrap: true,
                   overflow: TextOverflow.clip),

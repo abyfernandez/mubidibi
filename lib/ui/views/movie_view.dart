@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
@@ -16,7 +17,9 @@ import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/views/add_movie.dart';
 import 'package:mubidibi/ui/views/see_all_view.dart';
+import 'package:mubidibi/ui/views/video_items.dart';
 import 'package:mubidibi/ui/widgets/content_scroll.dart';
+import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/viewmodels/award_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -29,6 +32,9 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:mubidibi/ui/views/review_form.dart';
 import 'package:mubidibi/ui/views/display_reviews.dart';
+import 'package:chewie/chewie.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:video_player/video_player.dart';
 
 class MovieView extends StatefulWidget {
   final String movieId;
@@ -60,7 +66,9 @@ class _MovieViewState extends State<MovieView>
   final DialogService _dialogService = locator<DialogService>();
   var currentUser;
   IconData fabIcon;
-  int _screenshotSlider = 0;
+  int _gallerySlider = 0;
+  int _audioSlider = 0;
+  int _trailerSlider = 0;
   int _posterSlider = 0;
 
   // local variables
@@ -169,6 +177,7 @@ class _MovieViewState extends State<MovieView>
 
   @override
   void initState() {
+    initializeDateFormatting();
     fetchMovie();
     crew = fetchCrew();
     fetchAwards();
@@ -452,7 +461,16 @@ class _MovieViewState extends State<MovieView>
                                               ],
                                             ),
                                             child: Text(
-                                              movie.title,
+                                              movie.title +
+                                                  (movie.releaseDate != "" ||
+                                                          movie.releaseDate !=
+                                                              null
+                                                      ? (" (" +
+                                                          DateFormat('y').format(
+                                                              DateTime.parse(movie
+                                                                  .releaseDate)) +
+                                                          ") ")
+                                                      : ""),
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color: Colors.white,
@@ -477,7 +495,17 @@ class _MovieViewState extends State<MovieView>
                                                 ],
                                               ),
                                               child: Text(
-                                                movie.title,
+                                                movie.title +
+                                                    (movie.releaseDate != "" ||
+                                                            movie.releaseDate !=
+                                                                null
+                                                        ? (" (" +
+                                                            DateFormat('y')
+                                                                .format(DateTime
+                                                                    .parse(movie
+                                                                        .releaseDate)) +
+                                                            ") ")
+                                                        : ""),
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
                                                   color: Colors.white,
@@ -498,9 +526,12 @@ class _MovieViewState extends State<MovieView>
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => FullPhoto(
+                                            builder: (context) => FullPhotoT(
                                                 url: p?.url ??
-                                                    Config.imgNotFound),
+                                                    Config.imgNotFound,
+                                                description:
+                                                    p?.description ?? '',
+                                                type: 'network'),
                                           ),
                                         );
                                       },
@@ -552,7 +583,15 @@ class _MovieViewState extends State<MovieView>
                                           ],
                                         ),
                                         child: Text(
-                                          movie.title,
+                                          movie.title +
+                                              (movie.releaseDate != "" ||
+                                                      movie.releaseDate != null
+                                                  ? (" (" +
+                                                      DateFormat('y').format(
+                                                          DateTime.parse(movie
+                                                              .releaseDate)) +
+                                                      ") ")
+                                                  : ""),
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             color: Colors.white,
@@ -577,7 +616,16 @@ class _MovieViewState extends State<MovieView>
                                             ],
                                           ),
                                           child: Text(
-                                            movie.title,
+                                            movie.title +
+                                                (movie.releaseDate != "" ||
+                                                        movie.releaseDate !=
+                                                            null
+                                                    ? (" (" +
+                                                        DateFormat('y').format(
+                                                            DateTime.parse(movie
+                                                                .releaseDate)) +
+                                                        ") ")
+                                                    : ""),
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               color: Colors.white,
@@ -600,11 +648,14 @@ class _MovieViewState extends State<MovieView>
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => FullPhoto(
+                                        builder: (context) => FullPhotoT(
                                             url: movie.posters != null &&
                                                     movie.posters.length != 0
                                                 ? movie.posters[0].url
-                                                : Config.imgNotFound),
+                                                : Config.imgNotFound,
+                                            description:
+                                                movie.posters[0].description,
+                                            type: 'network'),
                                       ),
                                     );
                                   },
@@ -793,9 +844,12 @@ class _MovieViewState extends State<MovieView>
                             Text(
                               movie.releaseDate != null &&
                                       movie.releaseDate.trim() != ''
-                                  ? DateFormat("MMM. d, y").format(
-                                      DateTime.parse(movie.releaseDate),
-                                    )
+                                  // ? DateFormat("MMM. d, y", "fil").format(
+                                  //     DateTime.parse(movie.releaseDate),
+                                  //   )
+                                  ? DateFormat("MMM. d, y", "fil").format(
+                                      DateTime.parse(movie.releaseDate)
+                                          .add(Duration(hours: 16)))
                                   : '-',
                               style: TextStyle(
                                 fontSize: 16.0,
@@ -963,7 +1017,142 @@ class _MovieViewState extends State<MovieView>
                 awards != null && awards.length != 0
                     ? SizedBox(height: 25)
                     : SizedBox(),
-                // Screenshots
+                // Trailers
+                movie.trailers != null && movie.trailers.length != 0
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Text("Trailers",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      )
+                    : SizedBox(),
+                movie.trailers != null && movie.trailers.length != 0
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
+                movie.trailers != null && movie.trailers.length != 0
+                    ? SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            CarouselSlider(
+                              key: ValueKey('trailers'),
+                              options: CarouselOptions(
+                                  enableInfiniteScroll: false,
+                                  onPageChanged: (index, reason) {
+                                    setState(() {
+                                      _trailerSlider = index;
+                                    });
+                                  },
+                                  enlargeCenterPage: false,
+                                  height: 200,
+                                  aspectRatio: 16 / 9,
+                                  viewportFraction: 1),
+                              carouselController: _controller,
+                              items: movie.trailers.map((p) {
+                                return Stack(
+                                  children: [
+                                    Container(
+                                      alignment: Alignment.topCenter,
+                                      child: VideoItem(
+                                          videoPlayerController:
+                                              VideoPlayerController.network(
+                                                  p.url),
+                                          looping: false,
+                                          autoplay: false),
+                                    ),
+                                    // Arrow Buttons
+                                    // Container(
+                                    //   alignment: Alignment.center,
+                                    //   margin: EdgeInsets.only(left: 5, right: 5),
+                                    //   child: Row(
+                                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    //     crossAxisAlignment: CrossAxisAlignment.center,
+                                    //     children: [
+                                    //       _trailerSlider != 0
+                                    //           ? Stack(
+                                    //               children: [
+                                    //                 Container(
+                                    //                   decoration: BoxDecoration(
+                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
+                                    //                     borderRadius: BorderRadius.circular(50),
+                                    //                   ),
+                                    //                   child: GestureDetector(
+                                    //                     onTap: () {
+                                    //                       _controller.previousPage();
+                                    //                       setState(() {
+                                    //                         _trailerSlider -= 1;
+                                    //                       });
+                                    //                     },
+                                    //                     child: Icon(
+                                    //                         Icons.navigate_before_outlined,
+                                    //                         size: 30),
+                                    //                   ),
+                                    //                 )
+                                    //               ],
+                                    //             )
+                                    //           : Container(),
+                                    //       _trailerSlider != crew.trailers.length - 1
+                                    //           ? Stack(
+                                    //               children: [
+                                    //                 Container(
+                                    //                   decoration: BoxDecoration(
+                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
+                                    //                     borderRadius: BorderRadius.circular(50),
+                                    //                   ),
+                                    //                   child: GestureDetector(
+                                    //                     onTap: () {
+                                    //                       _controller.nextPage();
+                                    //                       setState(() {
+                                    //                         _trailerSlider += 1;
+                                    //                       });
+                                    //                     },
+                                    //                     child: Icon(Icons.navigate_next_outlined,
+                                    //                         size: 30),
+                                    //                   ),
+                                    //                 )
+                                    //               ],
+                                    //             )
+                                    //           : Container(),
+                                    //     ],
+                                    //   ),
+                                    // ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: movie.trailers.map((p) {
+                                int index = movie.trailers.indexOf(p);
+                                return GestureDetector(
+                                  child: Container(
+                                    width: 8.0,
+                                    height: 8.0,
+                                    margin: EdgeInsets.symmetric(
+                                        vertical: 10.0, horizontal: 2.0),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _trailerSlider == index
+                                          ? Color.fromRGBO(0, 0, 0, 0.9)
+                                          : Color.fromRGBO(0, 0, 0, 0.4),
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    _controller.animateToPage(index);
+                                    setState(() {
+                                      _trailerSlider = index;
+                                    });
+                                  },
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SizedBox(),
+                SizedBox(height: 25),
+                // Gallery
                 movie.gallery != null && movie.gallery.length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -987,138 +1176,138 @@ class _MovieViewState extends State<MovieView>
                                   enableInfiniteScroll: false,
                                   onPageChanged: (index, reason) {
                                     setState(() {
-                                      _screenshotSlider = index;
+                                      _gallerySlider = index;
                                     });
                                   },
                                   enlargeCenterPage: false,
                                   height: 200,
-                                  aspectRatio: 1,
+                                  aspectRatio: 16 / 9,
                                   viewportFraction: 1),
                               carouselController: _controller,
                               items: movie.gallery.map((p) {
                                 return Stack(
                                   children: [
-                                    Container(
-                                      child: GestureDetector(
-                                        child: Center(
-                                          child: CachedNetworkImage(
-                                            placeholder: (context, url) =>
-                                                Container(
-                                              child: Container(
-                                                alignment: Alignment.center,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  valueColor:
-                                                      AlwaysStoppedAnimation<
-                                                              Color>(
-                                                          Theme.of(context)
-                                                              .accentColor),
+                                    p.url.contains('/image/upload/')
+                                        ? Container(
+                                            child: GestureDetector(
+                                              child: Center(
+                                                child: CachedNetworkImage(
+                                                  placeholder: (context, url) =>
+                                                      Container(
+                                                    child: Container(
+                                                      alignment:
+                                                          Alignment.center,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        valueColor:
+                                                            AlwaysStoppedAnimation<
+                                                                Color>(Theme.of(
+                                                                    context)
+                                                                .accentColor),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          Material(
+                                                    child: Image.network(
+                                                      Config.imgNotFound,
+                                                      width: 300,
+                                                      height: 200,
+                                                      fit: BoxFit.cover,
+                                                      alignment:
+                                                          Alignment.center,
+                                                    ),
+                                                  ),
+                                                  imageUrl: p?.url ??
+                                                      Config.imgNotFound,
+                                                  width: 300,
+                                                  height: 200,
+                                                  fit: BoxFit.cover,
                                                 ),
                                               ),
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        FullPhotoT(
+                                                            url: p?.url ??
+                                                                Config
+                                                                    .imgNotFound,
+                                                            type: 'network',
+                                                            description:
+                                                                p.description),
+                                                  ),
+                                                );
+                                              },
                                             ),
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    Material(
-                                              child: Image.network(
-                                                Config.imgNotFound,
-                                                width: 300,
-                                                height: 200,
-                                                fit: BoxFit.cover,
-                                                alignment: Alignment.center,
-                                              ),
-                                            ),
-                                            imageUrl:
-                                                p?.url ?? Config.imgNotFound,
-                                            width: 300,
-                                            height: 200,
-                                            fit: BoxFit.cover,
+                                          )
+                                        : Container(
+                                            alignment: Alignment.topCenter,
+                                            child: VideoItem(
+                                                videoPlayerController:
+                                                    VideoPlayerController
+                                                        .network(p.url),
+                                                looping: false,
+                                                autoplay: false),
                                           ),
-                                        ),
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => FullPhoto(
-                                                  url: p?.url ??
-                                                      Config.imgNotFound),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
                                     // Arrow Buttons
-                                    Container(
-                                      alignment: Alignment.center,
-                                      margin:
-                                          EdgeInsets.only(left: 15, right: 15),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          _screenshotSlider != 0
-                                              ? Stack(
-                                                  children: [
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        color: Color.fromRGBO(
-                                                            240, 240, 240, 1),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(50),
-                                                      ),
-                                                      child: GestureDetector(
-                                                        onTap: () {
-                                                          _controller
-                                                              .previousPage();
-                                                          setState(() {
-                                                            _screenshotSlider -=
-                                                                1;
-                                                          });
-                                                        },
-                                                        child: Icon(
-                                                            Icons
-                                                                .navigate_before_outlined,
-                                                            size: 30),
-                                                      ),
-                                                    )
-                                                  ],
-                                                )
-                                              : Container(),
-                                          _screenshotSlider !=
-                                                  movie.gallery.length - 1
-                                              ? Stack(
-                                                  children: [
-                                                    Container(
-                                                      decoration: BoxDecoration(
-                                                        color: Color.fromRGBO(
-                                                            240, 240, 240, 1),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(50),
-                                                      ),
-                                                      child: GestureDetector(
-                                                        onTap: () {
-                                                          _controller
-                                                              .nextPage();
-                                                          setState(() {
-                                                            _screenshotSlider +=
-                                                                1;
-                                                          });
-                                                        },
-                                                        child: Icon(
-                                                            Icons
-                                                                .navigate_next_outlined,
-                                                            size: 30),
-                                                      ),
-                                                    )
-                                                  ],
-                                                )
-                                              : Container(),
-                                        ],
-                                      ),
-                                    ),
+                                    // Container(
+                                    //   alignment: Alignment.center,
+                                    //   margin: EdgeInsets.only(left: 5, right: 5),
+                                    //   child: Row(
+                                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    //     crossAxisAlignment: CrossAxisAlignment.center,
+                                    //     children: [
+                                    //       _gallerySlider != 0
+                                    //           ? Stack(
+                                    //               children: [
+                                    //                 Container(
+                                    //                   decoration: BoxDecoration(
+                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
+                                    //                     borderRadius: BorderRadius.circular(50),
+                                    //                   ),
+                                    //                   child: GestureDetector(
+                                    //                     onTap: () {
+                                    //                       _controller.previousPage();
+                                    //                       setState(() {
+                                    //                         _gallerySlider -= 1;
+                                    //                       });
+                                    //                     },
+                                    //                     child: Icon(
+                                    //                         Icons.navigate_before_outlined,
+                                    //                         size: 30),
+                                    //                   ),
+                                    //                 )
+                                    //               ],
+                                    //             )
+                                    //           : Container(),
+                                    //       _gallerySlider != crew.gallery.length - 1
+                                    //           ? Stack(
+                                    //               children: [
+                                    //                 Container(
+                                    //                   decoration: BoxDecoration(
+                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
+                                    //                     borderRadius: BorderRadius.circular(50),
+                                    //                   ),
+                                    //                   child: GestureDetector(
+                                    //                     onTap: () {
+                                    //                       _controller.nextPage();
+                                    //                       setState(() {
+                                    //                         _gallerySlider += 1;
+                                    //                       });
+                                    //                     },
+                                    //                     child: Icon(Icons.navigate_next_outlined,
+                                    //                         size: 30),
+                                    //                   ),
+                                    //                 )
+                                    //               ],
+                                    //             )
+                                    //           : Container(),
+                                    //     ],
+                                    //   ),
+                                    // ),
                                   ],
                                 );
                               }).toList(),
@@ -1135,7 +1324,7 @@ class _MovieViewState extends State<MovieView>
                                         vertical: 10.0, horizontal: 2.0),
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
-                                      color: _screenshotSlider == index
+                                      color: _gallerySlider == index
                                           ? Color.fromRGBO(0, 0, 0, 0.9)
                                           : Color.fromRGBO(0, 0, 0, 0.4),
                                     ),
@@ -1143,7 +1332,7 @@ class _MovieViewState extends State<MovieView>
                                   onTap: () {
                                     _controller.animateToPage(index);
                                     setState(() {
-                                      _screenshotSlider = index;
+                                      _gallerySlider = index;
                                     });
                                   },
                                 );

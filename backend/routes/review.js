@@ -41,7 +41,6 @@ exports.review = app => {
       client.query(
         'SELECT review.*, account.first_name, account.middle_name, account.last_name, account.suffix FROM review LEFT JOIN account ON review.account_id = account.id WHERE review.account_id = $1 and review.movie_id = $2', [req.body.account_id, req.body.movie_id],
         function onResult(err, result) {
-          console.log(result.rows[0])
           release()
           if (result) res.send(JSON.stringify(result.rows[0]));
           else res.send(err);
@@ -60,8 +59,6 @@ exports.review = app => {
 
     // build query
     var query;
-
-    console.log(req.body);
 
     if (req.body.review_id == 0) {
       query = `call add_review (
@@ -92,8 +89,6 @@ exports.review = app => {
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
-
-      console.log(req.params);
 
       await client.query('delete from review where id = $1 returning id', [parseInt(req.params.id)], function onResult(err, result) {
         release();
@@ -148,7 +143,6 @@ exports.review = app => {
       if (err) return res.send(err);
 
       await client.query('update review set is_approved = $1 where id = $2 returning is_approved', [req.body.status, req.body.id], function onResult(err, result) {
-        console.log(result.rows);
         release();
         res.send(err || JSON.stringify(result.rows[0].is_approved));
       });

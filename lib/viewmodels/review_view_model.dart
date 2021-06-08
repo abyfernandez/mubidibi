@@ -23,18 +23,6 @@ class ReviewViewModel extends BaseModel {
     notifyListeners();
   }
 
-  // // TO DO: Deprecate
-  // void setEditing(Review editingReview) {
-  //   _editingReview = editingReview;
-  //   notifyListeners();
-  // }
-
-  // // TO DO: Deprecate
-  // void setEdit(bool value) {
-  //   isEditing = value;
-  //   notifyListeners();
-  // }
-
   void setLength(bool empty) {
     isEmpty = empty;
     notifyListeners();

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/full_photo.dart';
+import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/ui/widgets/responsive.dart';
 import 'package:mubidibi/ui/widgets/vertical_icon_button.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
@@ -50,7 +52,6 @@ class _ContentHeaderMobile extends StatelessWidget {
       children: [
         Container(
           alignment: Alignment.center,
-          margin: const EdgeInsets.symmetric(horizontal: 8.0),
           height: (queryData.size.height / 2) + 100,
           decoration: BoxDecoration(
             boxShadow: [
@@ -62,7 +63,14 @@ class _ContentHeaderMobile extends StatelessWidget {
             ],
           ),
           child: Text(
-            featuredContent.title,
+            featuredContent.title +
+                (featuredContent.releaseDate != "" ||
+                        featuredContent.releaseDate != null
+                    ? (" (" +
+                        DateFormat('y').format(
+                            DateTime.parse(featuredContent.releaseDate)) +
+                        ") ")
+                    : ""),
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.white,
@@ -98,11 +106,13 @@ class _ContentHeaderMobile extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => FullPhoto(
+                builder: (context) => FullPhotoT(
                     url: featuredContent.posters != null &&
                             featuredContent.posters.length != 0
                         ? featuredContent.posters[0].url
-                        : Config.imgNotFound),
+                        : Config.imgNotFound,
+                    description: featuredContent.posters[0].description,
+                    type: 'network'),
               ),
             );
           },

@@ -4,12 +4,14 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -248,7 +250,15 @@ class _SeeAllViewState extends State<SeeAllView> {
                                         borderRadius: BorderRadius.circular(5),
                                       ),
                                       child: Text(
-                                        movie.title,
+                                        movie.title +
+                                            (movie.releaseDate != "" ||
+                                                    movie.releaseDate != null
+                                                ? (" (" +
+                                                    DateFormat('y').format(
+                                                        DateTime.parse(movie
+                                                            .releaseDate)) +
+                                                    ") ")
+                                                : ""),
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color: Colors.white,
@@ -389,7 +399,15 @@ class _SeeAllViewState extends State<SeeAllView> {
                                         borderRadius: BorderRadius.circular(5),
                                       ),
                                       child: Text(
-                                        movie.title,
+                                        movie.title +
+                                            (movie.releaseDate != "" ||
+                                                    movie.releaseDate != null
+                                                ? (" (" +
+                                                    DateFormat('y').format(
+                                                        DateTime.parse(movie
+                                                            .releaseDate)) +
+                                                    ") ")
+                                                : ""),
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color: Colors.white,
@@ -626,7 +644,10 @@ class _SeeAllViewState extends State<SeeAllView> {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => FullPhoto(url: p.url),
+                                      builder: (_) => FullPhotoT(
+                                          url: p.url,
+                                          description: p.description,
+                                          type: 'network'),
                                     ));
                               },
                             ),
@@ -676,7 +697,10 @@ class _SeeAllViewState extends State<SeeAllView> {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => FullPhoto(url: p.url),
+                                      builder: (_) => FullPhotoT(
+                                          url: p.url,
+                                          description: p.description,
+                                          type: 'network'),
                                     ));
                               },
                             ),

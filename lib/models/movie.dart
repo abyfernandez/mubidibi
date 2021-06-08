@@ -22,51 +22,56 @@ class Movie {
   final String releaseDate;
   final String addedBy;
   final bool isDeleted;
+  final List<dynamic> role; // for crew view purposes only
 
-  Movie(
-      {this.movieId,
-      this.title,
-      this.synopsis,
-      this.runtime,
-      this.posters,
-      this.genre,
-      this.gallery,
-      this.trailers,
-      this.audios,
-      this.quotes,
-      this.releaseDate,
-      this.addedBy,
-      this.isDeleted});
+  Movie({
+    this.movieId,
+    this.title,
+    this.synopsis,
+    this.runtime,
+    this.posters,
+    this.genre,
+    this.gallery,
+    this.trailers,
+    this.audios,
+    this.quotes,
+    this.releaseDate,
+    this.addedBy,
+    this.isDeleted,
+    this.role,
+  });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
     return Movie(
-        movieId: json['id'],
-        title: json['title'],
-        synopsis: json['synopsis'],
-        runtime: json['runtime'],
-        posters: json['posters'] == null
-            ? null
-            : List<MediaFile>.from(
-                json["posters"].map((x) => MediaFile.fromJson(x))),
-        gallery: json['gallery'] == null
-            ? null
-            : List<MediaFile>.from(
-                json["gallery"].map((x) => MediaFile.fromJson(x))),
-        trailers: json['trailers'] == null
-            ? null
-            : List<MediaFile>.from(
-                json["trailers"].map((x) => MediaFile.fromJson(x))),
-        audios: json['audios'] == null
-            ? null
-            : List<MediaFile>.from(
-                json["audios"].map((x) => MediaFile.fromJson(x))),
-        quotes: json['quotes'] == null
-            ? null
-            : List<Line>.from(json["quotes"].map((x) => Line.fromJson(x))),
-        genre: json['genre'],
-        releaseDate: json['release_date'],
-        addedBy: json['added_by'],
-        isDeleted: json['is_deleted']);
+      movieId: json['id'],
+      title: json['title'],
+      synopsis: json['synopsis'],
+      runtime: json['runtime'],
+      posters: json['posters'] == null
+          ? null
+          : List<MediaFile>.from(
+              json["posters"].map((x) => MediaFile.fromJson(x))),
+      gallery: json['gallery'] == null
+          ? null
+          : List<MediaFile>.from(
+              json["gallery"].map((x) => MediaFile.fromJson(x))),
+      trailers: json['trailers'] == null
+          ? null
+          : List<MediaFile>.from(
+              json["trailers"].map((x) => MediaFile.fromJson(x))),
+      audios: json['audios'] == null
+          ? null
+          : List<MediaFile>.from(
+              json["audios"].map((x) => MediaFile.fromJson(x))),
+      quotes: json['quotes'] == null
+          ? null
+          : List<Line>.from(json["quotes"].map((x) => Line.fromJson(x))),
+      genre: json['genre'],
+      releaseDate: json['release_date'],
+      addedBy: json['added_by'],
+      isDeleted: json['is_deleted'],
+      role: json['role'],
+    );
   }
 
   Map<String, dynamic> toJson() => {
@@ -82,5 +87,6 @@ class Movie {
         "release_date": releaseDate,
         "added_by": addedBy,
         "is_deleted": isDeleted,
+        "role": role,
       };
 }

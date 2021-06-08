@@ -59,7 +59,6 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   Widget build(BuildContext context) {
-    // TO DO: link to sign up
     return ViewModelProvider<LoginViewModel>.withConsumer(
       viewModel: LoginViewModel(),
       builder: (context, model, child) => Scaffold(
@@ -92,8 +91,6 @@ class _LoginViewState extends State<LoginView> {
             ),
           ],
         ),
-
-        // TO DO: Close the keyboard when login button is clicked so it does not appear when the loading icon is shown
         body: ModalProgressHUD(
           inAsyncCall: _saving,
           child: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -182,7 +179,6 @@ class _LoginViewState extends State<LoginView> {
                             ),
 
                             // LOG IN BUTTON
-                            // TO DO: After clicking login button, close keyboard
                             // TO DO: allow user to submit using the 'enter' key in the keyboard
                             Container(
                               padding: EdgeInsets.symmetric(vertical: 30.0),

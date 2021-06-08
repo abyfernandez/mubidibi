@@ -317,7 +317,7 @@ class ReviewFormState extends State<ReviewForm> {
                                                   ? Row(
                                                       children: [
                                                         GestureDetector(
-                                                          // TO DO: Warning sign na need mag-sign in pag tinatry ng guest user magvote
+                                                          // TO DO: Warning sign na need mag-sign in pag tinatry ng guest user magvote -- need improvement
                                                           onTap:
                                                               widget.currentUser !=
                                                                       null

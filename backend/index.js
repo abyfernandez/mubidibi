@@ -3,7 +3,7 @@ const { build } = require('./app');
 /**
  * starts the application
  */
-async function start () {
+async function start() {
   // calls to build an app
   const app = await build({
     logger: true,

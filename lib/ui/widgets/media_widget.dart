@@ -34,7 +34,10 @@ class MediaWidgetState extends State<MediaWidget> {
 
   @override
   void initState() {
-    widget.item.saved = widget.item.saved == null ? false : widget.item.saved;
+    widget.item.saved = widget.item.saved == null &&
+            (widget.item.file != null || widget.item.url != null)
+        ? false
+        : widget.item.saved;
     super.initState();
   }
 
@@ -482,28 +485,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                 ],
                               ),
                             ),
-                            // widget.item.type == "gallery" &&
-                            //         ((widget.item.file != null &&
-                            //                 lookupMimeType(
-                            //                             widget.item.file.path)
-                            //                         .startsWith('video/') ==
-                            //                     true) ||
-                            //             (widget.item.url != null &&
-                            //                 !widget.item.url
-                            //                     .contains('/image/upload/')))
-                            //     ? SizedBox(height: 10)
-                            //     : SizedBox(),
                             SizedBox(height: 10),
-                            // widget.item.type == "gallery" &&
-                            //         ((widget.item.file != null &&
-                            //                 lookupMimeType(
-                            //                             widget.item.file.path)
-                            //                         .startsWith('video/') ==
-                            //                     true) ||
-                            //             (widget.item.url != null &&
-                            //                 !widget.item.url
-                            //                     .contains('/image/upload/')))
-                            //     ?
                             Container(
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10)),

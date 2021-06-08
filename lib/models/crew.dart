@@ -9,6 +9,7 @@ String crewToJson(List<Crew> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class Crew {
+  int id;
   int crewId;
   String firstName;
   String middleName;
@@ -20,9 +21,9 @@ class Crew {
   final bool isAlive;
   final String birthplace;
   final MediaFile displayPic;
-  final List<MediaFile> photos;
+  final List<MediaFile> gallery;
   final String description;
-  List<String> role; // roles in movies
+  List<dynamic> role; // roles in movies
   List<String> type; // direktor/manunulat/aktor
   List<List<Movie>> movies;
   final bool isDeleted;
@@ -30,7 +31,8 @@ class Crew {
   bool edit;
 
   Crew(
-      {this.crewId,
+      {this.id,
+      this.crewId,
       this.firstName,
       this.middleName,
       this.lastName,
@@ -41,7 +43,7 @@ class Crew {
       this.isAlive,
       this.birthplace,
       this.displayPic,
-      this.photos,
+      this.gallery,
       this.description,
       this.role,
       this.type,
@@ -52,6 +54,7 @@ class Crew {
 
   factory Crew.fromJson(Map<String, dynamic> json) {
     return Crew(
+      id: json['id'],
       crewId: json['id'],
       firstName: json['first_name'],
       middleName: json['middle_name'],
@@ -65,14 +68,12 @@ class Crew {
       displayPic: json['display_pic'] == null
           ? null
           : MediaFile.fromJson(json['display_pic']),
-      photos: json["photos"] == null
+      gallery: json["gallery"] == null
           ? []
           : List<MediaFile>.from(
-              json["photos"].map((x) => MediaFile.fromJson(x))),
+              json["gallery"].map((x) => MediaFile.fromJson(x))),
       description: json['description'],
-      role: json["role"] == null
-          ? []
-          : List<String>.from(json["role"].map((x) => x)),
+      role: json["role"] == null ? [] : json["role"],
       type: json["type"] == null
           ? []
           : List<String>.from(json["type"].map((x) => x)),
@@ -85,7 +86,8 @@ class Crew {
   }
 
   Map<String, dynamic> toJson() => {
-        "id": crewId,
+        "id": id,
+        "crew_id": crewId,
         "first_name": firstName,
         "middle_name": middleName,
         "last_name": lastName,
@@ -96,7 +98,7 @@ class Crew {
         "is_alive": isAlive,
         "birthplace": birthplace,
         "display_pic": displayPic,
-        "photos": photos,
+        "gallery": gallery,
         "description": description,
         "role": role,
         "type": type,

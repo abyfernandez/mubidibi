@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mubidibi/models/user.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/services/authentication_service.dart';
@@ -39,13 +40,13 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView> {
       changed = [];
       users = users;
     });
-    print(changed);
   }
 
   @override
   void initState() {
     currentUser = _authenticationService.currentUser;
     fetchUsers();
+    initializeDateFormatting();
     super.initState();
   }
 
@@ -143,11 +144,12 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView> {
                                                               .birthday
                                                               .trim() !=
                                                           ''
-                                                  ? DateFormat("MMM. d, y")
-                                                      .format(
-                                                      DateTime.parse(
-                                                          users[i].birthday),
-                                                    )
+                                                  ? DateFormat(
+                                                          'MMM. d, y', 'fil')
+                                                      .format(DateTime.parse(
+                                                              users[i].birthday)
+                                                          .add(Duration(
+                                                              hours: 16)))
                                                   : '-',
                                             ),
                                           ],

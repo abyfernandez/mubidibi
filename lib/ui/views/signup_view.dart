@@ -76,7 +76,6 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
 
   @override
   Widget build(BuildContext context) {
-    // TO DO: include user's  email address
     return ViewModelProvider<SignUpViewModel>.withConsumer(
       viewModel: SignUpViewModel(),
       builder: (context, model, child) => Scaffold(
@@ -125,7 +124,7 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                           height: 30,
                         ),
                         // Email Address Form Field
-                        // TO DO: BEFORE PROCEEDING TO NEXT PAGE, VALIDTE EMAIL FIRST
+                        // TO DO: BEFORE PROCEEDING TO NEXT PAGE, VALIDATE EMAIL FIRST
                         InputField(
                           controller: emailController,
                           placeholder: "Email Address",

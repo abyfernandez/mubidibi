@@ -96,33 +96,47 @@ class CrewViewModel extends BaseModel {
   }
 
   // Function: ADD CREW (Director/Writer) -
-  Future<int> addCrew(
-      {@required String firstName,
-      String middleName,
-      @required String lastName,
-      String suffix,
-      String birthday,
-      String birthplace,
-      String description,
-      bool isAlive,
-      String deathdate,
-      String mimetype,
-      File displayPic,
-      String descDP,
-      String imageURI,
-      List gallery,
-      String addedBy,
-      int crewId, // for edit function,
-      List<int> director,
-      List<int> writer,
-      List<MovieActor> actor,
-      List<Award> awards}) async {
+  Future<int> addCrew({
+    @required String firstName,
+    String middleName,
+    @required String lastName,
+    String suffix,
+    String birthday,
+    String birthplace,
+    String description,
+    bool isAlive,
+    String deathdate,
+    String mimetype,
+    File displayPic,
+    String descDP,
+    List<String> galleryDesc,
+    List<File> gallery,
+    String addedBy,
+    int crewId, // for edit function,
+    List<int> directors,
+    List<int> writers,
+    List<MovieActor> actors,
+    List<Award> awards,
+
+    // for crew edit purposes
+    List<int> directorsToDelete,
+    List<int> writersToDelete,
+    List<int> actorsToDelete,
+    List<int> awardsToDelete,
+    List<int> galleryToDelete,
+    int displayPicToDelete,
+    // original lists for comparison in movie edit
+    List<int> ogAct,
+    List<int> ogAwards,
+  }) async {
     setBusy(true);
 
     var id;
     String filename;
     List<String> mime;
-    var images = [];
+
+    var media = []; // media
+    var mediaType = [];
     Response response;
 
     if (displayPic != null && mimetype.trim() != '') {
@@ -130,24 +144,21 @@ class CrewViewModel extends BaseModel {
       mime = mimetype.split('/');
     }
 
-    // TO DO: EDIT MOVIE
-    void setImages() {
-      if (displayPic != null) {
-        images.add(MultipartFile.fromFileSync(displayPic.path,
-            filename: filename,
-            contentType:
-                MediaType(mime[0], mime[1]))); // add displayPic in first index
-      }
-      images.addAll(gallery
-          .map((file) => MultipartFile.fromFileSync(file.path,
-              filename: file.path.split('/').last,
-              contentType: MediaType(lookupMimeType(file.path).split('/')[0],
-                  lookupMimeType(file.path).split('/')[1])))
-          .toList());
+    if (displayPic != null) {
+      media.add(MultipartFile.fromFileSync(displayPic.path,
+          filename: filename,
+          contentType:
+              MediaType(mime[0], mime[1]))); // add displayPic in first index
+      mediaType.add("display_pic");
     }
 
-    // prepare images for formdata
-    setImages();
+    media.addAll(gallery
+        .map((file) => MultipartFile.fromFileSync(file.path,
+            filename: file.path.split('/').last,
+            contentType: MediaType(lookupMimeType(file.path).split('/')[0],
+                lookupMimeType(file.path).split('/')[1])))
+        .toList());
+    mediaType.addAll(gallery.map((item) => "gallery").toList());
 
     // multi-part request
     Dio dio = new Dio();
@@ -163,14 +174,26 @@ class CrewViewModel extends BaseModel {
         'is_alive': isAlive,
         'deathdate': deathdate,
         'added_by': addedBy,
-        'displayPicURI': imageURI,
         'displayPic': displayPic == null ? false : true,
-        'director': director,
-        'writer': writer,
-        'actor': actor,
+        'directors': directors,
+        'writers': writers,
+        'actors': actors,
         'awards': awards,
+        'desc_dp': descDP,
+        'gallery_desc': galleryDesc,
+        'media_type': mediaType,
+        // For movie edit purposes:
+        'directors_to_delete': directorsToDelete,
+        'writers_to_delete': writersToDelete,
+        'actors_to_delete': actorsToDelete,
+        'awards_to_delete': awardsToDelete,
+        'gallery_to_delete': galleryToDelete,
+        'display_pic_to_delete': displayPicToDelete,
+        // original lists for comparison in movie update
+        'og_act': ogAct,
+        'og_awards': ogAwards,
       }),
-      "files": images,
+      "files": media,
     });
 
     if (crewId != 0) {

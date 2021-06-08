@@ -177,7 +177,7 @@ class _DashboardViewState extends State<DashboardView>
                         : Icons.admin_panel_settings;
                   });
                 },
-              )
+              ),
             ],
 
             // animation controller

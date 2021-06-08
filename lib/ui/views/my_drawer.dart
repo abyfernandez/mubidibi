@@ -5,9 +5,6 @@ import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/globals.dart' as Config;
-// import 'package:mubidibi/ui/views/home_view.dart';
-
-// TO DO: hide the bottom sheet when drawer is opened
 
 class MyDrawer extends StatelessWidget {
   final NavigationService _navigationService = locator<NavigationService>();

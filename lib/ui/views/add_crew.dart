@@ -2,11 +2,13 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
@@ -17,7 +19,6 @@ import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
-import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/widgets/award_widget.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
@@ -34,23 +35,30 @@ import 'package:mubidibi/globals.dart' as Config;
 
 // Global Variables for dynamic Widgets
 List<int> movieActorsFilter = []; // movies
-// ValueNotifier<List> gallery = ValueNotifier<List>([]);
 List gallery = [];
 
 class AddCrew extends StatefulWidget {
   final Crew crew;
+  final List<Movie> movieOpts;
+  final List<Award> crewAwards;
+  final List<Award> awardOpts;
 
-  AddCrew({Key key, this.crew}) : super(key: key);
+  AddCrew({Key key, this.crew, this.movieOpts, this.crewAwards, this.awardOpts})
+      : super(key: key);
 
   @override
-  _AddCrewState createState() => _AddCrewState(crew);
+  _AddCrewState createState() =>
+      _AddCrewState(crew, movieOpts, crewAwards, awardOpts);
 }
 
 // ADD MOVIE FIRST PAGE
 class _AddCrewState extends State<AddCrew> {
   final Crew crew;
+  final List<Movie> movieOpts;
+  final List<Award> crewAwards;
+  final List<Award> awardOpts;
 
-  _AddCrewState(this.crew);
+  _AddCrewState(this.crew, this.movieOpts, this.crewAwards, this.awardOpts);
 
   // Local state variables
   var currentUser;
@@ -58,17 +66,24 @@ class _AddCrewState extends State<AddCrew> {
   int crewId;
   File imageFile; // for uploading display photo w/ image picker
   var mimetype; // mimetype of DP
-  var imageURI = ''; // for crew edit
+  String displayPic; // for edit crew
 
-  List<Movie> movieOptions;
-  List<Award> awardOptions;
+  // Lists
   List<Movie> movieDirector = [];
   List<Movie> movieWriter = [];
+
+  // Dynamic Widget Lists
   List<AwardWidget> awardList = [];
-  List<AwardWidget> filteredAwards = [];
   List<MovieActorWidget> movieActorList = [];
-  List<MovieActorWidget> filteredMovieActorList = [];
   List<MediaWidget> galleryList = [];
+
+  // Options for Dropdowns
+  List<Movie> movieOptions;
+  List<Award> awardOptions;
+
+  // Filtered Lists for Display in Review Step
+  List<AwardWidget> filteredAwards = [];
+  List<MovieActorWidget> filteredMovieActorList = [];
   List<MediaWidget> filteredGalleryList = [];
 
   // CREW FIELD CONTROLLERS
@@ -111,16 +126,30 @@ class _AddCrewState extends State<AddCrew> {
   List<String> stepperTitle = [
     "Mga Basic na Detalye",
     "Mga Pelikula",
-    "Gallery at Mga Audio",
+    "Display Photo at Gallery",
     "Mga Award",
     "Review"
   ];
+
+  // Edit Crew Lists
+  List<int> movieDirectorsToDelete = [];
+  List<int> movieWritersToDelete = [];
+  List<int> movieActorsToDelete = [];
+  List<int> awardsToDelete = [];
+  List<int> galleryToDelete = []; // for gallery edit
+  int displayPicToDelete = 0;
 
   // SERVICES
   final AuthenticationService _authenticationService =
       locator<AuthenticationService>();
   final NavigationService _navigationService = locator<NavigationService>();
   final DialogService _dialogService = locator<DialogService>();
+
+  bool fileIsNull() {
+    return imageFile == null || (displayPic != null && displayPic != "")
+        ? true
+        : false;
+  }
 
   // Function: Display MovieActor in the Review Step
   Widget displayMovieActors() {
@@ -395,8 +424,9 @@ class _AddCrewState extends State<AddCrew> {
 
   // Function: Display DP in the Review Step
   Widget displayGallery() {
-    filteredGalleryList =
-        galleryList.where((g) => g.item.saved == true).toList();
+    filteredGalleryList = galleryList
+        .where((g) => g.item.saved == true || g.item.url != null)
+        .toList();
 
     return Column(
       children: [
@@ -411,53 +441,135 @@ class _AddCrewState extends State<AddCrew> {
                     )),
               )
             : SizedBox(),
-        // filteredGalleryList.length != 0 ? SizedBox(height: 10) : SizedBox(),
         filteredGalleryList.length != 0
             ? Column(
                 children: filteredGalleryList.map((g) {
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 10),
-                    color: Colors.white,
-                    padding: EdgeInsets.all(10),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        GestureDetector(
-                            child: Container(
-                              alignment: Alignment.centerLeft,
-                              height: 100,
-                              width: 80,
-                              child: Image.file(
-                                g.item.file,
-                                width: 80,
-                                height: 100,
-                                fit: BoxFit.cover,
+                  return Column(
+                    children: [
+                      (g.item.file != null &&
+                                  lookupMimeType(g.item.file.path)
+                                          .startsWith('video/') ==
+                                      true) ||
+                              (g.item.url != null &&
+                                  !g.item.url.contains('/image/upload'))
+                          ? Container(
+                              padding: EdgeInsets.all(10),
+                              color: Colors.white,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      g.item.file != null
+                                          ? g.item.file.path.split('/').last
+                                          : g.item.url,
+                                      style: TextStyle(color: Colors.blue),
+                                      overflow: TextOverflow.ellipsis,
+                                      softWrap: true,
+                                    ),
+                                  ),
+                                ],
                               ),
+                            )
+                          : SizedBox(),
+                      Container(
+                        margin: EdgeInsets.only(bottom: 10),
+                        color: Colors.white,
+                        padding: EdgeInsets.all(10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            (g.item.file != null &&
+                                        lookupMimeType(g.item.file.path)
+                                                .startsWith('image/') ==
+                                            true) ||
+                                    (g.item.url != null &&
+                                        g.item.url.contains('/image/upload'))
+                                ? GestureDetector(
+                                    child: Container(
+                                      alignment: Alignment.centerLeft,
+                                      height: 100,
+                                      width: 80,
+                                      child: g.item.file != null
+                                          ? Image.file(
+                                              g.item.file,
+                                              width: 80,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : CachedNetworkImage(
+                                              placeholder: (context, url) =>
+                                                  Container(
+                                                alignment: Alignment.center,
+                                                width: 80,
+                                                height: 100,
+                                                child: Image.network(g.item.url,
+                                                    fit: BoxFit.cover,
+                                                    height: 100,
+                                                    width: 80),
+                                              ),
+                                              errorWidget:
+                                                  (context, url, error) =>
+                                                      Material(
+                                                child: Container(
+                                                  alignment: Alignment.center,
+                                                  width: 80,
+                                                  height: 100,
+                                                  child: Image.network(
+                                                      Config.imgNotFound,
+                                                      width: 80,
+                                                      height: 100,
+                                                      fit: BoxFit.cover),
+                                                ),
+                                              ),
+                                              imageUrl: g.item.url ??
+                                                  Config.imgNotFound,
+                                              width: 80,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              g.item.file != null
+                                                  ? FullPhotoT(
+                                                      type: 'path',
+                                                      file: g.item.file)
+                                                  : FullPhotoT(
+                                                      type: "network",
+                                                      url: g.item.url),
+                                        ),
+                                      );
+                                    })
+                                : SizedBox(),
+                            (g.item.file != null &&
+                                        lookupMimeType(g.item.file.path)
+                                                .startsWith('image/') ==
+                                            true) ||
+                                    (g.item.url != null &&
+                                        g.item.url.contains('/image/upload'))
+                                ? SizedBox(width: 15)
+                                : SizedBox(),
+                            Expanded(
+                              child: Text(
+                                  g.item.description ?? "Walang description",
+                                  style: TextStyle(
+                                      color: g.item.description == null
+                                          ? Colors.black38
+                                          : Colors.black,
+                                      fontStyle: g.item.description == null
+                                          ? FontStyle.italic
+                                          : FontStyle.normal)),
                             ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FullPhotoT(
-                                      type: 'path', file: g.item.file),
-                                ),
-                              );
-                            }),
-                        SizedBox(width: 15),
-                        Expanded(
-                          child: Text(
-                              g.item.description ?? "Walang description",
-                              style: TextStyle(
-                                  color: g.item.description == null
-                                      ? Colors.black38
-                                      : Colors.black,
-                                  fontStyle: g.item.description == null
-                                      ? FontStyle.italic
-                                      : FontStyle.normal)),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   );
                 }).toList(),
               )
@@ -501,6 +613,7 @@ class _AddCrewState extends State<AddCrew> {
 
   @override
   void initState() {
+    initializeDateFormatting();
     currentUser = _authenticationService.currentUser;
     fetchMovies();
     fetchAwards();
@@ -529,13 +642,78 @@ class _AddCrewState extends State<AddCrew> {
         suffixController.text = crew?.suffix ?? "";
         _birthday =
             crew?.birthday != null ? DateTime.parse(crew?.birthday) : null;
+        birthdayController.text = crew?.birthday != null
+            ? DateFormat("MMM. d, y", "fil")
+                .format(DateTime.parse(crew?.birthday))
+            : '';
         birthplaceController.text = crew?.birthplace ?? "";
         isAlive = crew?.isAlive ?? true;
-        deathdateController.text = crew?.deathdate ?? "";
+
         _deathdate =
-            crew?.birthday != null ? DateTime.parse(crew?.birthday) : null;
+            crew?.deathdate != null ? DateTime.parse(crew?.deathdate) : null;
+        deathdateController.text = crew?.deathdate != null
+            ? DateFormat("MMM. d, y", "fil")
+                .format(DateTime.parse(crew?.deathdate))
+            : '';
         descriptionController.text = crew?.description ?? "";
+
+        // Mga Pelikula
+        movieDirector = crew != null &&
+                crew.movies != null &&
+                crew.movies[0] != null &&
+                crew.movies[0].isNotEmpty
+            ? crew.movies[0]
+            : [];
+        movieWriter = crew != null &&
+                crew.movies != null &&
+                crew.movies[1] != null &&
+                crew.movies[1].isNotEmpty
+            ? crew.movies[1]
+            : [];
+
+        List<Movie> aktors = crew != null &&
+                crew.movies != null &&
+                crew.movies[2] != null &&
+                crew.movies[2].isNotEmpty
+            ? crew.movies[2]
+            : [];
+
+        for (var i = 0; i < aktors.length; i++) {
+          // add Movie Actor widget to the list
+          movieActorList.add(MovieActorWidget(
+              movieOptions: movieOpts,
+              movieActor: MovieActor(
+                  id: aktors[i].movieId,
+                  movieId: aktors[i].movieId,
+                  movieTitle: aktors[i].title,
+                  role: aktors[i].role),
+              open: ValueNotifier<bool>(false)));
+        }
+
+        // Mga Award
+        var temp = crewAwards != null ? crewAwards : [];
+
+        for (var i = 0; i < temp.length; i++) {
+          awardList.add(AwardWidget(
+            awardOptions: awardOpts,
+            item: temp[i],
+            open: ValueNotifier<bool>(false),
+          ));
+        }
+
+        // Media
+
+        // Display Pic
+        displayPic = crew?.displayPic?.url ?? '';
         descriptionDPController.text = crew?.displayPic?.description ?? "";
+
+        // Gallery
+        List<MediaFile> g = crew?.gallery != null ? crew?.gallery : [];
+        for (var i = 0; i < g.length; i++) {
+          g[i].category = "crew";
+          galleryList.add(MediaWidget(
+              category: "crew", item: g[i], open: ValueNotifier<bool>(false)));
+        }
       },
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
@@ -590,6 +768,7 @@ class _AddCrewState extends State<AddCrew> {
                           children: [
                             SizedBox(height: 20),
                             MyStepper(
+                              physics: ClampingScrollPhysics(),
                               stepperCircle: [
                                 Icons.edit, // Mga Basic na Detalye
                                 Icons.movie_outlined, // Mga Pelikula
@@ -668,28 +847,27 @@ class _AddCrewState extends State<AddCrew> {
                                     _saving =
                                         true; // set saving to true to trigger circular progress indicator
 
-                                    // actors
-                                    List<MovieActor> movieActorsToSave = [];
-                                    if (filteredMovieActorList.isNotEmpty) {
-                                      movieActorsToSave = filteredMovieActorList
-                                          .map((a) => a.movieActor)
-                                          .toList();
-                                    }
-
-                                    // awards
-                                    List<Award> awardsToSave = [];
-                                    if (filteredAwards.isNotEmpty) {
-                                      awardsToSave = filteredAwards
-                                          .map((a) => a.item)
-                                          .toList();
-                                    }
-
                                     // movieDirectors
                                     List<int> movieDirectorsToSave = [];
                                     if (movieDirector.isNotEmpty) {
                                       movieDirectorsToSave = movieDirector
                                           .map((a) => a.movieId)
                                           .toList();
+
+                                      // remove those to be deleted
+                                      movieDirectorsToSave.removeWhere((a) =>
+                                          movieDirectorsToDelete.contains(a));
+
+                                      // remove those that are from the old list
+                                      if (crew?.movies != null &&
+                                          crew?.movies[0] != null &&
+                                          crew?.movies[0].isNotEmpty) {
+                                        var temp = crew?.movies[0]
+                                            .map((a) => a.movieId)
+                                            .toList();
+                                        movieDirectorsToSave.removeWhere(
+                                            (a) => temp.contains(a));
+                                      }
                                     }
 
                                     // movieWriters
@@ -698,33 +876,107 @@ class _AddCrewState extends State<AddCrew> {
                                       movieWritersToSave = movieWriter
                                           .map((a) => a.movieId)
                                           .toList();
+
+                                      // remove those to be deleted
+                                      movieWritersToSave.removeWhere((a) =>
+                                          movieWritersToDelete.contains(a));
+
+                                      // remove those that are from the old list
+                                      if (crew?.movies != null &&
+                                          crew?.movies[1] != null &&
+                                          crew?.movies[1].isNotEmpty) {
+                                        var temp = crew?.movies[1]
+                                            .map((a) => a.movieId)
+                                            .toList();
+                                        movieWritersToSave.removeWhere(
+                                            (a) => temp.contains(a));
+                                      }
+                                    }
+
+                                    // actors
+                                    List<MovieActor> movieActorsToSave = [];
+                                    if (filteredMovieActorList.isNotEmpty) {
+                                      movieActorsToSave = filteredMovieActorList
+                                          .map((a) => a.movieActor)
+                                          .toList();
+
+                                      movieActorsToSave.removeWhere((a) =>
+                                          movieActorsToDelete.contains(a.id));
+                                    }
+
+                                    // Awards
+                                    List<Award> awardsToSave = [];
+                                    if (filteredAwards.isNotEmpty) {
+                                      awardsToSave = filteredAwards
+                                          .map((a) => a.item)
+                                          .toList();
+
+                                      awardsToSave.removeWhere(
+                                          (a) => awardsToDelete.contains(a.id));
+                                    }
+
+                                    // Gallery
+                                    List<File> galleryToSave = [];
+                                    List<String> galleryDesc = [];
+                                    if (filteredGalleryList.isNotEmpty) {
+                                      var temp = filteredGalleryList;
+
+                                      temp.removeWhere(
+                                          (a) => a.item.file == null);
+                                      galleryToSave =
+                                          temp.map((a) => a.item.file).toList();
+
+                                      galleryDesc = temp
+                                          .map((a) => a.item.description)
+                                          .toList();
                                     }
 
                                     final response = await model.addCrew(
-                                        firstName: firstNameController.text,
-                                        middleName: middleNameController.text,
-                                        lastName: lastNameController.text,
-                                        suffix: suffixController.text,
-                                        birthday: _birthday != null
-                                            ? _birthday.toIso8601String()
-                                            : '',
-                                        birthplace: birthplaceController.text,
-                                        isAlive: isAlive,
-                                        deathdate: _deathdate != null
-                                            ? _deathdate.toIso8601String()
-                                            : '',
-                                        description: descriptionController.text,
-                                        displayPic: imageFile,
-                                        descDP: descriptionDPController.text,
-                                        imageURI: imageURI,
-                                        gallery: filteredGalleryList,
-                                        mimetype: mimetype,
-                                        addedBy: currentUser.userId,
-                                        director: movieDirectorsToSave,
-                                        writer: movieWritersToSave,
-                                        actor: movieActorsToSave,
-                                        awards: awardsToSave,
-                                        crewId: crewId);
+                                      firstName: firstNameController.text,
+                                      middleName: middleNameController.text,
+                                      lastName: lastNameController.text,
+                                      suffix: suffixController.text,
+                                      birthday: _birthday != null
+                                          ? _birthday.toIso8601String()
+                                          : '',
+                                      birthplace: birthplaceController.text,
+                                      isAlive: isAlive,
+                                      deathdate: _deathdate != null
+                                          ? _deathdate.toIso8601String()
+                                          : '',
+                                      description: descriptionController.text,
+                                      displayPic: imageFile,
+                                      descDP: descriptionDPController.text,
+                                      mimetype: mimetype,
+                                      addedBy: currentUser.userId,
+                                      crewId: crewId,
+                                      // for edit purposes
+                                      gallery: galleryToSave,
+                                      galleryDesc: galleryDesc,
+                                      galleryToDelete: galleryToDelete,
+                                      directors: movieDirectorsToSave,
+                                      directorsToDelete: movieDirectorsToDelete,
+                                      writers: movieWritersToSave,
+                                      writersToDelete: movieWritersToDelete,
+                                      actorsToDelete: movieActorsToDelete,
+                                      displayPicToDelete: displayPicToDelete,
+                                      actors: movieActorsToSave,
+                                      awards: awardsToSave,
+                                      awardsToDelete: awardsToDelete,
+                                      // original lists for comparison in update
+                                      ogAct: crew != null &&
+                                              crew.movies != null &&
+                                              crew.movies[2] != null &&
+                                              crew.movies[2].isNotEmpty
+                                          ? crew.movies[2]
+                                              .map((a) => a.movieId)
+                                              .toList()
+                                          : [],
+                                      ogAwards: crewAwards != null &&
+                                              crewAwards.isNotEmpty
+                                          ? crewAwards.map((a) => a.id).toList()
+                                          : [],
+                                    );
 
                                     // when response is returned, stop showing circular progress indicator
 
@@ -789,11 +1041,13 @@ class _AddCrewState extends State<AddCrew> {
                                         : i < currentStep
                                             ? MyStepState.complete
                                             : MyStepState.indexed,
-                                    content: LimitedBox(
-                                      maxWidth: 300,
-                                      child: Form(
-                                          key: _formKeys[i],
-                                          child: getContent(i)),
+                                    content: Container(
+                                      width: 300,
+                                      child: SingleChildScrollView(
+                                        child: Form(
+                                            key: _formKeys[i],
+                                            child: getContent(i)),
+                                      ),
                                     ),
                                   ),
                               ],
@@ -939,9 +1193,11 @@ class _AddCrewState extends State<AddCrew> {
                       onFieldSubmitted: (val) {
                         birthplaceNode.requestFocus();
                       },
-                      onTap: () {
-                        _selectDate(context, "birthday");
-                      },
+                      onTap: _birthday == null
+                          ? () {
+                              _selectDate(context, "birthday");
+                            }
+                          : null,
                       decoration: InputDecoration(
                         labelText: "Birthday",
                         filled: true,
@@ -1033,9 +1289,11 @@ class _AddCrewState extends State<AddCrew> {
                                       style: TextStyle(
                                         color: Colors.black,
                                       ),
-                                      onTap: () {
-                                        _selectDate(context, "deathdate");
-                                      },
+                                      onTap: _deathdate == null
+                                          ? () {
+                                              _selectDate(context, "deathdate");
+                                            }
+                                          : null,
                                       decoration: InputDecoration(
                                         labelText: "Death date",
                                         filled: true,
@@ -1147,15 +1405,40 @@ class _AddCrewState extends State<AddCrew> {
                 chipBuilder: (context, state, c) {
                   return InputChip(
                     key: ObjectKey(c),
-                    label: Text(c.title),
-                    onDeleted: () => state.deleteChip(c),
+                    label: Text(c.title +
+                        (c.releaseDate != "" || c.releaseDate != null
+                            ? (" (" +
+                                DateFormat('y')
+                                    .format(DateTime.parse(c.releaseDate)) +
+                                ") ")
+                            : "")),
+                    onDeleted: () {
+                      if (crew != null &&
+                          crew.movies[0]
+                              .map((direk) => direk.movieId)
+                              .toList()
+                              .contains(c.movieId)) {
+                        // for edit: delete item from DB
+                        if (movieDirectorsToDelete.contains(c.movieId) ==
+                            false) {
+                          movieDirectorsToDelete.add(c.movieId);
+                        }
+                      }
+                      state.deleteChip(c);
+                    },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
                 },
                 suggestionBuilder: (context, state, c) {
                   return ListTile(
                     key: ObjectKey(c),
-                    title: Text(c.title),
+                    title: Text(c.title +
+                        (c.releaseDate != "" || c.releaseDate != null
+                            ? (" (" +
+                                DateFormat('y')
+                                    .format(DateTime.parse(c.releaseDate)) +
+                                ") ")
+                            : "")),
                     onTap: () => state.selectSuggestion(c),
                   );
                 },
@@ -1204,15 +1487,39 @@ class _AddCrewState extends State<AddCrew> {
                 chipBuilder: (context, state, c) {
                   return InputChip(
                     key: ObjectKey(c),
-                    label: Text(c.title),
-                    onDeleted: () => state.deleteChip(c),
+                    label: Text(c.title +
+                        (c.releaseDate != "" || c.releaseDate != null
+                            ? (" (" +
+                                DateFormat('y')
+                                    .format(DateTime.parse(c.releaseDate)) +
+                                ") ")
+                            : "")),
+                    onDeleted: () {
+                      if (crew != null &&
+                          crew.movies[1]
+                              .map((writer) => writer.movieId)
+                              .toList()
+                              .contains(c.movieId)) {
+                        // for edit: delete item from DB
+                        if (movieWritersToDelete.contains(c.movieId) == false) {
+                          movieWritersToDelete.add(c.movieId);
+                        }
+                      }
+                      state.deleteChip(c);
+                    },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
                 },
                 suggestionBuilder: (context, state, c) {
                   return ListTile(
                     key: ObjectKey(c),
-                    title: Text(c.title),
+                    title: Text(c.title +
+                        (c.releaseDate != "" || c.releaseDate != null
+                            ? (" (" +
+                                DateFormat('y')
+                                    .format(DateTime.parse(c.releaseDate)) +
+                                ") ")
+                            : "")),
                     onTap: () => state.selectSuggestion(c),
                   );
                 },
@@ -1261,6 +1568,34 @@ class _AddCrewState extends State<AddCrew> {
                                         onPressed: () {
                                           FocusScope.of(context).unfocus();
                                           setState(() {
+                                            if (movieActorList[i]
+                                                    .movieActor
+                                                    .movieId !=
+                                                null) {
+                                              if (crew != null &&
+                                                  crew.movies != null &&
+                                                  crew.movies.isNotEmpty &&
+                                                  crew.movies[2]
+                                                      .map((c) => c.movieId)
+                                                      .toList()
+                                                      .contains(
+                                                          movieActorList[i]
+                                                              .movieActor
+                                                              .movieId)) {
+                                                // for edit: delete item from DB
+                                                if (movieActorsToDelete
+                                                        .contains(
+                                                            movieActorList[i]
+                                                                .movieActor
+                                                                .movieId) ==
+                                                    false) {
+                                                  movieActorsToDelete.add(
+                                                      movieActorList[i]
+                                                          .movieActor
+                                                          .movieId);
+                                                }
+                                              }
+                                            }
                                             movieActorList.removeAt(i);
                                           });
                                         },
@@ -1314,39 +1649,22 @@ class _AddCrewState extends State<AddCrew> {
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // image container
                   Container(
+                    padding: EdgeInsets.only(left: 10),
                     child: Stack(
                       children: [
-                        // SizedBox(height: 20),
-                        GestureDetector(
-                          onTap: getImage,
-                          child: Container(
-                            // margin: EdgeInsets.only(left: 20),
-                            height: 100, // 200
-                            width: 80, // 150
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(5),
-                            ),
-                            child: imageFile != null
-                                ? Container(
-                                    height: 100,
-                                    width: 80,
-                                    // child: imageFile != null
-                                    child: Image.file(
-                                      imageFile,
-                                      width: 80,
-                                      height: 100,
-                                      fit: BoxFit.cover,
-                                    )
-                                    // : Image.network(
-                                    //     imageURI,
-                                    //     width: 80,
-                                    //     height: 90,
-                                    //     fit: BoxFit.cover,
-                                    //   )
-                                    )
-                                : Container(
+                        (displayPic == null || displayPic == "") &&
+                                imageFile == null
+                            ? GestureDetector(
+                                onTap: getImage,
+                                child: Container(
+                                  // margin: EdgeInsets.only(left: 20),
+                                  height: 100, // 200
+                                  width: 80, // 150
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Container(
                                     height: 100,
                                     width: 80,
                                     child: Icon(
@@ -1358,20 +1676,84 @@ class _AddCrewState extends State<AddCrew> {
                                       borderRadius: BorderRadius.circular(5),
                                     ),
                                   ),
-                          ),
-                        ),
-                        imageFile != null
-                            // imageFile != null || imageURI.trim() != ''
+                                ),
+                              )
+                            : SizedBox(),
+
+                        // image is present
+                        imageFile != null ||
+                                (displayPic != null && displayPic != "")
+                            ? displayPic != null && displayPic != ""
+                                ? Container(
+                                    // show image from url
+                                    height: 100, // 200
+                                    width: 80, // 150
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: Container(
+                                      height: 100,
+                                      width: 80,
+                                      child: CachedNetworkImage(
+                                        placeholder: (context, url) =>
+                                            Container(
+                                          alignment: Alignment.center,
+                                          width: 80,
+                                          height: 100,
+                                          child: Image.network(displayPic,
+                                              fit: BoxFit.cover,
+                                              height: 100,
+                                              width: 80),
+                                        ),
+                                        errorWidget: (context, url, error) =>
+                                            Material(
+                                          child: Container(
+                                            alignment: Alignment.center,
+                                            width: 80,
+                                            height: 100,
+                                            child: Image.network(
+                                                Config.imgNotFound,
+                                                width: 80,
+                                                height: 100,
+                                                fit: BoxFit.cover),
+                                          ),
+                                        ),
+                                        imageUrl:
+                                            displayPic ?? Config.imgNotFound,
+                                        width: 80,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  )
+                                // show image file
+                                : Image.file(
+                                    imageFile,
+                                    width: 80,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  )
+                            : SizedBox(),
+
+                        imageFile != null ||
+                                (displayPic != null && displayPic != "")
                             ? Container(
-                                // margin: EdgeInsets.only(left: 25, top: 5),
                                 width: 25,
                                 alignment: Alignment.center,
                                 child: GestureDetector(
                                   child: Icon(Icons.close),
                                   onTap: () {
                                     setState(() {
-                                      imageFile = null;
-                                      // imageURI = '';
+                                      if (imageFile != null)
+                                        imageFile = null;
+                                      else if (displayPic != null &&
+                                          displayPic != "") {
+                                        displayPicToDelete = crew != null
+                                            ? crew.displayPic.id
+                                            : 0;
+                                        displayPic = null;
+                                        descriptionDPController.text = '';
+                                      }
                                     });
                                   },
                                 ),
@@ -1397,7 +1779,7 @@ class _AddCrewState extends State<AddCrew> {
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10)),
                       child: TextFormField(
-                        enabled: imageFile != null ? true : false,
+                        enabled: !fileIsNull(),
                         focusNode: descriptionDPNode,
                         controller: descriptionDPController,
                         textCapitalization: TextCapitalization.sentences,
@@ -1470,6 +1852,15 @@ class _AddCrewState extends State<AddCrew> {
                                                           .file
                                                           .path ==
                                                       f.path);
+                                                } else if (galleryList[i]
+                                                            .item
+                                                            .url !=
+                                                        null &&
+                                                    galleryList[i].item.id !=
+                                                        null) {
+                                                  // delete previously uploaded file
+                                                  galleryToDelete.add(
+                                                      galleryList[i].item.id);
                                                 }
                                               }
 
@@ -1550,6 +1941,20 @@ class _AddCrewState extends State<AddCrew> {
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
+                                              if (crewAwards != null &&
+                                                  crewAwards
+                                                      .map((a) => a.id)
+                                                      .contains(awardList[i]
+                                                          .item
+                                                          .id)) {
+                                                // for edit: delete item from DB
+                                                if (awardsToDelete.contains(
+                                                        awardList[i].item.id) ==
+                                                    false) {
+                                                  awardsToDelete.add(
+                                                      awardList[i].item.id);
+                                                }
+                                              }
                                               awardList.removeAt(i);
                                             });
                                           },
@@ -1595,297 +2000,306 @@ class _AddCrewState extends State<AddCrew> {
             color: Color.fromRGBO(240, 240, 240, 1),
           ),
           padding: EdgeInsets.all(10),
-          child: Scrollbar(
-            // isAlwaysShown: true,
-            // controller: _scrollController,
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      "Name: ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  "Name: ",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      firstNameController.text +
-                          (middleNameController.text.trim() != ""
-                              ? " " + middleNameController.text
-                              : "") +
-                          " " +
-                          lastNameController.text +
-                          (suffixController.text.trim() != ""
-                              ? " " + suffixController.text
-                              : ""),
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                      overflow: TextOverflow.clip,
-                      softWrap: true,
-                    ),
+                ),
+              ),
+              Container(
+                alignment: Alignment.topLeft,
+                child: Text(
+                  firstNameController.text +
+                      (middleNameController.text.trim() != ""
+                          ? " " + middleNameController.text
+                          : "") +
+                      " " +
+                      lastNameController.text +
+                      (suffixController.text.trim() != ""
+                          ? " " + suffixController.text
+                          : ""),
+                  style: TextStyle(
+                    fontSize: 16,
                   ),
-                  _birthday != null ? SizedBox(height: 10) : SizedBox(),
-                  _birthday != null
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Birthday: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                  overflow: TextOverflow.clip,
+                  softWrap: true,
+                ),
+              ),
+              _birthday != null ? SizedBox(height: 10) : SizedBox(),
+              _birthday != null
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        "Birthday: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : SizedBox(),
+              _birthday != null
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        _birthday == null
+                            ? ''
+                            : DateFormat("MMM. d, y").format(_birthday),
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ))
+                  : SizedBox(),
+              birthplaceController.text.trim() != ""
+                  ? SizedBox(height: 10)
+                  : SizedBox(),
+              birthplaceController.text.trim() != ""
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        "Birthplace: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : SizedBox(),
+              birthplaceController.text.trim() != ""
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        birthplaceController.text,
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.clip,
+                        softWrap: true,
+                      ))
+                  : SizedBox(),
+              isAlive == false ? SizedBox(height: 10) : SizedBox(),
+              isAlive == false
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Died: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              isAlive == false
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                          _deathdate == null
+                              ? 'Walang record'
+                              : DateFormat("MMM. d, y").format(_deathdate),
+                          style: TextStyle(
+                            fontStyle: _deathdate == null
+                                ? FontStyle.italic
+                                : FontStyle.normal,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              descriptionController.text.trim() != ""
+                  ? SizedBox(height: 15)
+                  : SizedBox(),
+              descriptionController.text.trim() != ""
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        "Description: ",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : SizedBox(),
+              descriptionController.text.trim() != ""
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        descriptionController.text.trim() != ""
+                            ? descriptionController.text
+                            : "",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                        overflow: TextOverflow.clip,
+                        softWrap: true,
+                      ),
+                    )
+                  : SizedBox(),
+              movieDirector.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+              movieDirector.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Mga Pelikula Bilang Direktor: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              movieDirector.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Column(
+                          children: movieDirector.map<Widget>((film) {
+                        return new Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            new Icon(Icons.fiber_manual_record, size: 16),
+                            SizedBox(
+                              width: 5,
                             ),
-                          ),
-                        )
-                      : SizedBox(),
-                  _birthday != null
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            _birthday == null
-                                ? ''
-                                : DateFormat("MMM. d, y").format(_birthday),
-                            style: TextStyle(
-                              fontSize: 16,
+                            new Expanded(
+                              child: Text(
+                                film.title,
+                                style: TextStyle(fontSize: 16),
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
+                              ),
                             ),
-                          ))
-                      : SizedBox(),
-                  birthplaceController.text.trim() != ""
-                      ? SizedBox(height: 10)
-                      : SizedBox(),
-                  birthplaceController.text.trim() != ""
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Birthplace: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
+                          ],
+                        );
+                      }).toList()),
+                    )
+                  : SizedBox(),
+              movieWriter.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+              movieWriter.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Mga Pelikula Bilang Manunulat: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              movieWriter.isNotEmpty
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Column(
+                          children: movieWriter.map<Widget>((film) {
+                        return new Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            new Icon(Icons.fiber_manual_record, size: 16),
+                            SizedBox(
+                              width: 5,
                             ),
-                          ),
-                        )
-                      : SizedBox(),
-                  birthplaceController.text.trim() != ""
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            birthplaceController.text,
-                            style: TextStyle(
-                              fontSize: 16,
+                            new Expanded(
+                              child: Text(
+                                film.title,
+                                style: TextStyle(fontSize: 16),
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
+                              ),
                             ),
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
-                          ))
-                      : SizedBox(),
-                  isAlive == false ? SizedBox(height: 10) : SizedBox(),
-                  isAlive == false
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Died: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  isAlive == false
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                              _deathdate == null
-                                  ? 'Walang record'
-                                  : DateFormat("MMM. d, y").format(_deathdate),
-                              style: TextStyle(
-                                fontStyle: _deathdate == null
-                                    ? FontStyle.italic
-                                    : FontStyle.normal,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  descriptionController.text.trim() != ""
-                      ? SizedBox(height: 15)
-                      : SizedBox(),
-                  descriptionController.text.trim() != ""
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Description: ",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        )
-                      : SizedBox(),
-                  descriptionController.text.trim() != ""
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            descriptionController.text.trim() != ""
-                                ? descriptionController.text
-                                : "",
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                            overflow: TextOverflow.clip,
-                            softWrap: true,
-                          ),
-                        )
-                      : SizedBox(),
-                  movieDirector.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  movieDirector.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Mga Pelikula Bilang Direktor: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  movieDirector.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Column(
-                              children: movieDirector.map<Widget>((film) {
-                            return new Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                new Icon(Icons.fiber_manual_record, size: 16),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                new Expanded(
-                                  child: Text(
-                                    film.title,
-                                    style: TextStyle(fontSize: 16),
-                                    overflow: TextOverflow.clip,
-                                    softWrap: true,
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList()),
-                        )
-                      : SizedBox(),
-                  movieWriter.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  movieWriter.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Mga Pelikula Bilang Manunulat: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  movieWriter.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Column(
-                              children: movieWriter.map<Widget>((film) {
-                            return new Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                new Icon(Icons.fiber_manual_record, size: 16),
-                                SizedBox(
-                                  width: 5,
-                                ),
-                                new Expanded(
-                                  child: Text(
-                                    film.title,
-                                    style: TextStyle(fontSize: 16),
-                                    overflow: TextOverflow.clip,
-                                    softWrap: true,
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList()),
-                        )
-                      : SizedBox(),
-                  displayMovieActors(),
-                  imageFile != null ? SizedBox(height: 10) : SizedBox(),
-                  imageFile != null
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Display Photo: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  imageFile != null ? SizedBox(height: 10) : SizedBox(),
-                  imageFile != null
-                      ? Container(
-                          margin: EdgeInsets.only(bottom: 10),
-                          color: Colors.white,
-                          padding: EdgeInsets.all(10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                  child: Container(
-                                    alignment: Alignment.centerLeft,
-                                    height: 100,
-                                    width: 80,
-                                    child: Image.file(
-                                      imageFile,
-                                      width: 80,
-                                      height: 100,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => FullPhotoT(
-                                            type: 'path', file: imageFile),
-                                      ),
-                                    );
-                                  }),
-                              SizedBox(width: 15),
-                              Expanded(
-                                child: Text(
-                                    descriptionDPController.text.trim() != ""
-                                        ? descriptionDPController.text
-                                        : "Walang description",
-                                    style: TextStyle(
-                                        color: descriptionDPController.text
-                                                    .trim() ==
+                          ],
+                        );
+                      }).toList()),
+                    )
+                  : SizedBox(),
+              displayMovieActors(),
+              imageFile != null || (displayPic != null && displayPic != "")
+                  ? SizedBox(height: 10)
+                  : SizedBox(),
+              imageFile != null || (displayPic != null && displayPic != "")
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Display Photo: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              imageFile != null || (displayPic != null && displayPic != "")
+                  ? SizedBox(height: 10)
+                  : SizedBox(),
+              imageFile != null || (displayPic != null && displayPic != "")
+                  ? Container(
+                      margin: EdgeInsets.only(bottom: 10),
+                      color: Colors.white,
+                      padding: EdgeInsets.all(10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          GestureDetector(
+                              child: Container(
+                                alignment: Alignment.centerLeft,
+                                height: 100,
+                                width: 80,
+                                child: imageFile != null
+                                    ? Image.file(
+                                        imageFile,
+                                        width: 80,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : displayPic != null && displayPic != ""
+                                        ? Image.network(
+                                            displayPic,
+                                            width: 80,
+                                            height: 100,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : SizedBox(),
+                              ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => imageFile != null
+                                          ? FullPhotoT(
+                                              type: 'path', file: imageFile)
+                                          : FullPhotoT(
+                                              type: 'network',
+                                              url: displayPic)),
+                                );
+                              }),
+                          SizedBox(width: 15),
+                          Expanded(
+                            child: Text(
+                                descriptionDPController.text.trim() != ""
+                                    ? descriptionDPController.text
+                                    : "Walang description",
+                                style: TextStyle(
+                                    color:
+                                        descriptionDPController.text.trim() ==
                                                 ""
                                             ? Colors.black38
                                             : Colors.black,
-                                        fontStyle: descriptionDPController.text
-                                                    .trim() ==
+                                    fontStyle:
+                                        descriptionDPController.text.trim() ==
                                                 ""
                                             ? FontStyle.italic
                                             : FontStyle.normal)),
-                              ),
-                            ],
                           ),
-                        )
-                      : SizedBox(),
-                  SizedBox(height: 15),
-                  displayGallery(),
-                  SizedBox(height: 15),
-                  displayAwards(),
-                  SizedBox(height: 25),
-                ],
-              ),
-            ),
+                        ],
+                      ),
+                    )
+                  : SizedBox(),
+              SizedBox(height: 15),
+              displayGallery(),
+              SizedBox(height: 15),
+              displayAwards(),
+              // SizedBox(height: 15),
+            ],
           ),
         );
     }
@@ -1917,12 +2331,16 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
   @override
   void initState() {
     widget.movieActor.saved =
-        widget.movieActor.saved == null ? false : widget.movieActor.saved;
+        widget.movieActor.saved == null && widget.movieActor.movieId == null
+            ? false
+            : widget.movieActor.saved;
     if (widget.movieActor.movieId != null) {
       var film = widget.movieOptions
           .singleWhere((a) => a.movieId == widget.movieActor.movieId);
 
-      if (film != null) movieActorId = [film];
+      if (film != null) {
+        movieActorId = [film];
+      }
     }
     super.initState();
   }
@@ -2012,7 +2430,13 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                 chipBuilder: (context, state, c) {
                   return InputChip(
                     key: ObjectKey(c),
-                    label: Text(c != null ? c.title : ""),
+                    label: Text(c.title +
+                        (c.releaseDate != "" || c.releaseDate != null
+                            ? (" (" +
+                                DateFormat('y')
+                                    .format(DateTime.parse(c.releaseDate)) +
+                                ") ")
+                            : "")),
                     onDeleted: () => {
                       setState(() {
                         movieActorsFilter.remove(c.movieId);
@@ -2025,7 +2449,13 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                 suggestionBuilder: (context, state, c) {
                   return ListTile(
                     key: ObjectKey(c),
-                    title: Text(c.title),
+                    title: Text(c.title +
+                        (c.releaseDate != "" || c.releaseDate != null
+                            ? (" (" +
+                                DateFormat('y')
+                                    .format(DateTime.parse(c.releaseDate)) +
+                                ") ")
+                            : "")),
                     onTap: () => {
                       if (!movieActorsFilter.contains(c.movieId))
                         {
@@ -2112,6 +2542,7 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                 onPressed: () {
                   FocusScope.of(context).unfocus();
                   if (widget.movieActor.movieId != null &&
+                      widget.movieActor.role != null &&
                       widget.movieActor.role.length != 0) {
                     setState(() {
                       // save to actors and roles list
@@ -2138,13 +2569,15 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
               contentPadding: EdgeInsets.all(10),
               tileColor: Color.fromRGBO(240, 240, 240, 1),
               title: Text(
-                  (widget.movieActor != null
+                  (widget.movieActor != null &&
+                          widget.movieActor.movieId != null
                       ? (widget.movieActor.movieTitle)
                       : ""),
                   softWrap: true,
                   overflow: TextOverflow.clip),
               subtitle: Text(
-                widget.movieActor.role != null
+                widget.movieActor.role != null &&
+                        widget.movieActor.role.isNotEmpty
                     ? widget.movieActor.role.join(", ")
                     : "",
                 style: TextStyle(

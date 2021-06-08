@@ -93,7 +93,6 @@ exports.movie = app => {
   app.post('/mubidibi/add-movie/', async (req, res) => {
 
     // upload image to cloudinary 
-    // TO DO: create centralized cloudinary (for both mobile and web use)
     var cloudinary = require('cloudinary');
 
     cloudinary.config({
@@ -351,7 +350,6 @@ exports.movie = app => {
       api_secret: 'ci9a7ntqqXuKt-6vlfpw5qk8Q5E',
     });
 
-    // MOVIE SCREENSHOTS AND POSTER UPLOAD   -- poster first element in the array
 
     var movieData = [];    // movie data sent from the frontend
     const pics = await req.parts();
@@ -416,15 +414,13 @@ exports.movie = app => {
       });
     });
 
-    console.log('movieData: ', movieData);
-
     // construct query 
     var query = `UPDATE movie 
     SET title = '${title}', 
     synopsis = '${synopsis}', 
     release_date = `
 
-    if (movieData.release_date != "" || movieData.release_date != null) {
+    if (movieData.release_date != "" && movieData.release_date != null) {
       query = query.concat(`'${movieData.release_date}', 
       `)
     } else {
@@ -434,7 +430,7 @@ exports.movie = app => {
 
     query = query.concat(`runtime = `);
 
-    if (movieData.running_time != "" || movieData.running_time != null) {
+    if (movieData.running_time != "" && movieData.running_time != null) {
       query = query.concat(`${parseInt(movieData.running_time)}, 
       `)
     } else {
@@ -445,7 +441,7 @@ exports.movie = app => {
     query = query.concat(`genre = `);
 
     // check first if genre array is empty or not
-    if (movieData.genre.length != 0 || movieData.genre != null) {
+    if (movieData.genre != null && movieData.genre.length != 0) {
       query = query.concat(`array [`)
       movieData.genre.forEach(genre => {
         query = query.concat(`'`, genre, `'`)
@@ -592,14 +588,32 @@ exports.movie = app => {
               client.query(`delete from movie_actor where movie_id = ${id} and actor_id= ${actor.id}`);
             } else if (movieData.og_act.includes(actor.id) && !movieData.actors_to_delete.includes(actor.id)) {
               // update
-              client.query(`update movie_actor set role = '${actor.role}' where actor_id = ${actor.id} and movie_id = ${id}`)
+              var actorQuery = `update movie_actor set actor_id = ${actor.crew_id}, role = `;
+              if (actor.role.length) {
+                actorQuery = actorQuery.concat(`array [`);
+                actor.role.forEach(role => {
+                  actorQuery = actorQuery.concat(`'`, role, `'`)
+                  if (role != actor.role[actor.role.length - 1]) {
+                    actorQuery = actorQuery.concat(',')
+                  }
+                });
+                actorQuery = actorQuery.concat(`] `)
+              } else {
+                actorQuery = actorQuery.concat(`null `);
+              }
+              actorQuery = actorQuery.concat(`where actor_id = ${actor.id} and movie_id = ${id}`);
+              console.log("actorQuery: ", actorQuery)
+
+              client.query(actorQuery);
+
             } else if (!movieData.og_act.includes(actor.id)) {
               // add
               var actorQuery = `call add_movie_actor (
                 ${id},
-                ${actor.id},
+                ${actor.crew_id},
                 `;
 
+              console.log("ROLES: ", actor.role);
               if (actor.role.length) {
                 actorQuery = actorQuery.concat(`array [`);
                 actor.role.forEach(role => {
@@ -612,6 +626,7 @@ exports.movie = app => {
               } else {
                 actorQuery = actorQuery.concat(`null)`);
               }
+              console.log("actorQuery: ", actorQuery)
               client.query(actorQuery);
             }
           });
@@ -626,6 +641,8 @@ exports.movie = app => {
             } else if (movieData.og_awards.includes(award.id) && !movieData.awards_to_delete.includes(award.id)) {
               // update
               client.query(`update movie_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`)
+              console.log('award query: ', `update movie_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`);
+
             } else if (!movieData.og_awards.includes(award.id)) {
               // add
               var awardQuery = `insert into movie_award (movie_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
@@ -645,7 +662,7 @@ exports.movie = app => {
               client.query(`delete from quote where id= ${quote.id}`);
             } else if (movieData.og_lines.includes(quote.id) && !movieData.lines_to_delete.includes(quote.id)) {
               // update
-              client.query(`update movie_quote set quotation = ${line}, role = '${quote.role}' where id = ${quote.id}`)
+              client.query(`update quote set quotation = '${line}', role = '${quote.role}' where id = ${quote.id}`)
             } else if (!movieData.og_lines.includes(quote.id)) {
               // add
               var quoteQuery = `insert into quote (movie_id, quotation, role) values (${id}, '${line}', '${quote.role}')`;

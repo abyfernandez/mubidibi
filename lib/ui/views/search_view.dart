@@ -4,6 +4,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 // import 'package:mubidibi/services/navigation_service.dart';
@@ -73,7 +74,6 @@ class _SearchViewState extends State<SearchView> {
                       children: [
                         Expanded(
                           child: Container(
-                            // TO DO: REDUCE SIZE OF TEXTFORMFIELD
                             margin: EdgeInsets.all(10),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
@@ -244,7 +244,6 @@ class _SearchViewState extends State<SearchView> {
                         // SizedBox(width: 15),
                       ],
                     ),
-                    // TO DO: Include name for crew, and change display for crew (maybe listview??)
                     Wrap(
                         children: _searchBy == "Pelikula"
                             ? movieQueryResult.length != 0
@@ -274,7 +273,18 @@ class _SearchViewState extends State<SearchView> {
                                                       BorderRadius.circular(5),
                                                 ),
                                                 child: Text(
-                                                  movie.title,
+                                                  movie.title +
+                                                      (movie.releaseDate !=
+                                                                  "" ||
+                                                              movie.releaseDate !=
+                                                                  null
+                                                          ? (" (" +
+                                                              DateFormat('y')
+                                                                  .format(DateTime
+                                                                      .parse(movie
+                                                                          .releaseDate)) +
+                                                              ") ")
+                                                          : ""),
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(
                                                     color: Colors.white,
@@ -315,7 +325,18 @@ class _SearchViewState extends State<SearchView> {
                                                   alignment:
                                                       Alignment.bottomLeft,
                                                   child: Text(
-                                                    movie.title,
+                                                    movie.title +
+                                                        (movie.releaseDate !=
+                                                                    "" ||
+                                                                movie.releaseDate !=
+                                                                    null
+                                                            ? (" (" +
+                                                                DateFormat('y')
+                                                                    .format(DateTime
+                                                                        .parse(movie
+                                                                            .releaseDate)) +
+                                                                ") ")
+                                                            : ""),
                                                     style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 14,
@@ -391,8 +412,11 @@ class _SearchViewState extends State<SearchView> {
                                                     alignment: Alignment.center,
                                                     image:
                                                         CachedNetworkImageProvider(
-                                                      c.displayPic != null
-                                                          ? c.displayPic
+                                                      c.displayPic != null &&
+                                                              c.displayPic
+                                                                      .url !=
+                                                                  null
+                                                          ? c.displayPic.url
                                                           : Config.userNotFound,
                                                     ),
                                                     fit: BoxFit.cover,

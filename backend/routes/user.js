@@ -45,7 +45,6 @@ exports.user = app => {
       if (err) return res.send(err)
 
       changed.forEach(i => {
-        console.log(i);
         client.query(`UPDATE account SET is_admin = $1 WHERE id = $2`, [users[i].is_admin, users[i].id], function onResult(err, result) {
           if (err) res.send(err);
         });
