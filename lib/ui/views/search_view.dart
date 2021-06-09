@@ -275,7 +275,7 @@ class _SearchViewState extends State<SearchView> {
                                                 child: Text(
                                                   movie.title +
                                                       (movie.releaseDate !=
-                                                                  "" ||
+                                                                  "" &&
                                                               movie.releaseDate !=
                                                                   null
                                                           ? (" (" +
@@ -327,7 +327,7 @@ class _SearchViewState extends State<SearchView> {
                                                   child: Text(
                                                     movie.title +
                                                         (movie.releaseDate !=
-                                                                    "" ||
+                                                                    "" &&
                                                                 movie.releaseDate !=
                                                                     null
                                                             ? (" (" +

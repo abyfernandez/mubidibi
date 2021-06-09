@@ -51,6 +51,8 @@ class FullPhotoScreenState extends State<FullPhotoScreen> {
   final File file;
   final String description;
 
+  bool isVisible = true;
+
   FullPhotoScreenState(
       {Key key, this.url, @required this.type, this.file, this.description});
 
@@ -61,35 +63,88 @@ class FullPhotoScreenState extends State<FullPhotoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print(description);
+    // return SingleChildScrollView(
+    //   // height: double.infinity,
+    //   child: Column(
+    //     children: [
+    //       Container(
+    //         height: MediaQuery.of(context).size.height / 4 * 3.5,
+    //         child: PhotoView(
+    //           imageProvider:
+    //               type == "network" ? NetworkImage(url) : FileImage(file),
+    //           backgroundDecoration: BoxDecoration(color: Colors.white),
+    //         ),
+    //       ),
+    //       Container(
+    //           margin: EdgeInsets.all(15),
+    //           decoration: BoxDecoration(
+    //             boxShadow: [
+    //               BoxShadow(
+    //                 color: Color.fromRGBO(240, 240, 240, 1),
+    //                 offset: Offset(0.0, 0.0),
+    //                 blurRadius: 0,
+    //               ),
+    //             ],
+    //           ),
+    //           child: Text(
+    //             description ?? '',
+    //             style: TextStyle(color: Colors.black),
+    //             overflow: TextOverflow.clip,
+    //             softWrap: true,
+    //           ),
+    //         ),
+    //     ],
+    //   ),
+    // );
     return Container(
-      height: double.infinity,
-      child: Column(
-        children: [
-          Container(
-            height: MediaQuery.of(context).size.height / 4 * 3.5,
-            child: PhotoView(
-              imageProvider:
-                  type == "network" ? NetworkImage(url) : FileImage(file),
-              backgroundDecoration: BoxDecoration(color: Colors.white),
+      child: GestureDetector(
+          child: Stack(children: [
+            Container(
+              child: PhotoView(
+                imageProvider:
+                    type == "network" ? NetworkImage(url) : FileImage(file),
+                backgroundDecoration: BoxDecoration(color: Colors.white),
+              ),
             ),
-          ),
-          Container(
-            margin: EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  offset: Offset(0.0, 0.0),
-                  blurRadius: 0,
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Visibility(
+                maintainInteractivity: true,
+                maintainSize: true,
+                maintainAnimation: true,
+                maintainState: true,
+                visible: isVisible,
+                child: Container(
+                  padding: EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black54,
+                        offset: Offset(0.0, 0.0),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    margin: EdgeInsets.all(5),
+                    child: Text(
+                      description ?? '',
+                      style: TextStyle(color: Colors.white),
+                      overflow: TextOverflow.clip,
+                      softWrap: true,
+                    ),
+                  ),
                 ),
-              ],
+              ),
             ),
-            child:
-                Text(description ?? '', style: TextStyle(color: Colors.black)),
-          ),
-        ],
-      ),
+          ]),
+          onTap: () {
+            setState(() {
+              isVisible = !isVisible;
+            });
+          }),
     );
   }
 }

@@ -64,7 +64,7 @@ class _ContentHeaderMobile extends StatelessWidget {
           ),
           child: Text(
             featuredContent.title +
-                (featuredContent.releaseDate != "" ||
+                (featuredContent.releaseDate != "" &&
                         featuredContent.releaseDate != null
                     ? (" (" +
                         DateFormat('y').format(

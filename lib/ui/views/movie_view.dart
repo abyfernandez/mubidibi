@@ -14,10 +14,11 @@ import 'package:mubidibi/models/review.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
+import 'package:mubidibi/ui/shared/audio_file.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/views/add_movie.dart';
 import 'package:mubidibi/ui/views/see_all_view.dart';
-import 'package:mubidibi/ui/views/video_items.dart';
+import 'package:mubidibi/ui/shared/video_file.dart';
 import 'package:mubidibi/ui/widgets/content_scroll.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/viewmodels/award_view_model.dart';
@@ -32,9 +33,11 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:mubidibi/ui/views/review_form.dart';
 import 'package:mubidibi/ui/views/display_reviews.dart';
-import 'package:chewie/chewie.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:video_player/video_player.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/timezone.dart';
 
 class MovieView extends StatefulWidget {
   final String movieId;
@@ -70,14 +73,17 @@ class _MovieViewState extends State<MovieView>
   int _audioSlider = 0;
   int _trailerSlider = 0;
   int _posterSlider = 0;
+  var mnl;
 
   // local variables
   bool _saving = false;
   ValueNotifier<double> rating = ValueNotifier<double>(0.0);
   var tempRating = 0.0;
   var numItems = 0;
-  final CarouselController _controller = CarouselController();
+  final CarouselController _galleryController = CarouselController();
   final CarouselController _posterController = CarouselController();
+  final CarouselController _trailerController = CarouselController();
+  final CarouselController _audioController = CarouselController();
 
   // variables needed for adding reviews
   final reviewController = TextEditingController();
@@ -182,6 +188,7 @@ class _MovieViewState extends State<MovieView>
     crew = fetchCrew();
     fetchAwards();
     fabIcon = Icons.settings;
+    tz.initializeTimeZones();
 
     currentUser = _authenticationService.currentUser;
 
@@ -235,7 +242,7 @@ class _MovieViewState extends State<MovieView>
                 icon: Icons.edit_outlined,
                 titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                 onPress: () async {
-                  await Navigator.push(
+                  final value = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => AddMovie(
@@ -247,6 +254,8 @@ class _MovieViewState extends State<MovieView>
                       ),
                     ),
                   );
+                  setState(() {});
+
                   _animationController.reverse();
                   setState(() {
                     fabIcon = fabIcon == Icons.settings
@@ -462,7 +471,7 @@ class _MovieViewState extends State<MovieView>
                                             ),
                                             child: Text(
                                               movie.title +
-                                                  (movie.releaseDate != "" ||
+                                                  (movie.releaseDate != "" &&
                                                           movie.releaseDate !=
                                                               null
                                                       ? (" (" +
@@ -496,7 +505,7 @@ class _MovieViewState extends State<MovieView>
                                               ),
                                               child: Text(
                                                 movie.title +
-                                                    (movie.releaseDate != "" ||
+                                                    (movie.releaseDate != "" &&
                                                             movie.releaseDate !=
                                                                 null
                                                         ? (" (" +
@@ -584,7 +593,7 @@ class _MovieViewState extends State<MovieView>
                                         ),
                                         child: Text(
                                           movie.title +
-                                              (movie.releaseDate != "" ||
+                                              (movie.releaseDate != "" &&
                                                       movie.releaseDate != null
                                                   ? (" (" +
                                                       DateFormat('y').format(
@@ -617,7 +626,7 @@ class _MovieViewState extends State<MovieView>
                                           ),
                                           child: Text(
                                             movie.title +
-                                                (movie.releaseDate != "" ||
+                                                (movie.releaseDate != "" &&
                                                         movie.releaseDate !=
                                                             null
                                                     ? (" (" +
@@ -844,12 +853,10 @@ class _MovieViewState extends State<MovieView>
                             Text(
                               movie.releaseDate != null &&
                                       movie.releaseDate.trim() != ''
-                                  // ? DateFormat("MMM. d, y", "fil").format(
-                                  //     DateTime.parse(movie.releaseDate),
-                                  //   )
                                   ? DateFormat("MMM. d, y", "fil").format(
-                                      DateTime.parse(movie.releaseDate)
-                                          .add(Duration(hours: 16)))
+                                      TZDateTime.from(
+                                          DateTime.parse(movie.releaseDate),
+                                          tz.getLocation('Asia/Manila')))
                                   : '-',
                               style: TextStyle(
                                 fontSize: 16.0,
@@ -904,9 +911,7 @@ class _MovieViewState extends State<MovieView>
                     ),
                   ),
                 ),
-                crewEdit != null && crewEdit[0].length != 0
-                    ? SizedBox(height: 25)
-                    : SizedBox(),
+                SizedBox(height: 25),
                 crewEdit != null && crewEdit[0].length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
@@ -1038,112 +1043,150 @@ class _MovieViewState extends State<MovieView>
                             CarouselSlider(
                               key: ValueKey('trailers'),
                               options: CarouselOptions(
-                                  enableInfiniteScroll: false,
-                                  onPageChanged: (index, reason) {
-                                    setState(() {
-                                      _trailerSlider = index;
-                                    });
-                                  },
-                                  enlargeCenterPage: false,
-                                  height: 200,
-                                  aspectRatio: 16 / 9,
-                                  viewportFraction: 1),
-                              carouselController: _controller,
+                                enableInfiniteScroll: false,
+                                onPageChanged: (index, reason) {
+                                  setState(() {
+                                    _trailerSlider = index;
+                                  });
+                                },
+                                enlargeCenterPage: false,
+                                height: 200,
+                                aspectRatio: 9 / 16,
+                                viewportFraction: 1,
+                              ),
+                              carouselController: _trailerController,
                               items: movie.trailers.map((p) {
-                                return Stack(
-                                  children: [
-                                    Container(
-                                      alignment: Alignment.topCenter,
-                                      child: VideoItem(
+                                return Container(
+                                  decoration:
+                                      BoxDecoration(color: Colors.transparent),
+                                  padding: EdgeInsets.only(left: 20, right: 20),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        alignment: Alignment.topCenter,
+                                        child: VideoFile(
                                           videoPlayerController:
                                               VideoPlayerController.network(
                                                   p.url),
                                           looping: false,
-                                          autoplay: false),
-                                    ),
-                                    // Arrow Buttons
-                                    // Container(
-                                    //   alignment: Alignment.center,
-                                    //   margin: EdgeInsets.only(left: 5, right: 5),
-                                    //   child: Row(
-                                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    //     crossAxisAlignment: CrossAxisAlignment.center,
-                                    //     children: [
-                                    //       _trailerSlider != 0
-                                    //           ? Stack(
-                                    //               children: [
-                                    //                 Container(
-                                    //                   decoration: BoxDecoration(
-                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
-                                    //                     borderRadius: BorderRadius.circular(50),
-                                    //                   ),
-                                    //                   child: GestureDetector(
-                                    //                     onTap: () {
-                                    //                       _controller.previousPage();
-                                    //                       setState(() {
-                                    //                         _trailerSlider -= 1;
-                                    //                       });
-                                    //                     },
-                                    //                     child: Icon(
-                                    //                         Icons.navigate_before_outlined,
-                                    //                         size: 30),
-                                    //                   ),
-                                    //                 )
-                                    //               ],
-                                    //             )
-                                    //           : Container(),
-                                    //       _trailerSlider != crew.trailers.length - 1
-                                    //           ? Stack(
-                                    //               children: [
-                                    //                 Container(
-                                    //                   decoration: BoxDecoration(
-                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
-                                    //                     borderRadius: BorderRadius.circular(50),
-                                    //                   ),
-                                    //                   child: GestureDetector(
-                                    //                     onTap: () {
-                                    //                       _controller.nextPage();
-                                    //                       setState(() {
-                                    //                         _trailerSlider += 1;
-                                    //                       });
-                                    //                     },
-                                    //                     child: Icon(Icons.navigate_next_outlined,
-                                    //                         size: 30),
-                                    //                   ),
-                                    //                 )
-                                    //               ],
-                                    //             )
-                                    //           : Container(),
-                                    //     ],
-                                    //   ),
-                                    // ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: movie.trailers.map((p) {
-                                int index = movie.trailers.indexOf(p);
-                                return GestureDetector(
-                                  child: Container(
-                                    width: 8.0,
-                                    height: 8.0,
-                                    margin: EdgeInsets.symmetric(
-                                        vertical: 10.0, horizontal: 2.0),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: _trailerSlider == index
-                                          ? Color.fromRGBO(0, 0, 0, 0.9)
-                                          : Color.fromRGBO(0, 0, 0, 0.4),
-                                    ),
+                                          autoplay: false,
+                                          type: "simple",
+                                          description: p.url,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 5,
+                                        right: 10,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(20)),
+                                          child: FlatButton(
+                                            color: Color.fromRGBO(
+                                                240, 240, 240, 1),
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.info_outline),
+                                                SizedBox(width: 5),
+                                                Text('Info')
+                                              ],
+                                            ),
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => VideoFile(
+                                                      videoPlayerController:
+                                                          VideoPlayerController
+                                                              .network(p.url),
+                                                      looping: false,
+                                                      autoplay: false,
+                                                      type: "detailed",
+                                                      description:
+                                                          p.description ?? ''),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      // Arrow Buttons
+                                      Container(
+                                        alignment: Alignment.center,
+                                        margin: EdgeInsets.only(
+                                            left: 15, right: 15),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            _trailerSlider != 0
+                                                ? Stack(
+                                                    children: [
+                                                      Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Color.fromRGBO(
+                                                              240, 240, 240, 1),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(50),
+                                                        ),
+                                                        child: GestureDetector(
+                                                          onTap: () {
+                                                            _trailerController
+                                                                .previousPage();
+                                                            setState(() {
+                                                              _trailerSlider -=
+                                                                  1;
+                                                            });
+                                                          },
+                                                          child: Icon(
+                                                              Icons
+                                                                  .navigate_before_outlined,
+                                                              size: 30),
+                                                        ),
+                                                      )
+                                                    ],
+                                                  )
+                                                : Container(),
+                                            _trailerSlider !=
+                                                    movie.trailers.length - 1
+                                                ? Stack(
+                                                    children: [
+                                                      Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Color.fromRGBO(
+                                                              240, 240, 240, 1),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(50),
+                                                        ),
+                                                        child: GestureDetector(
+                                                          onTap: () {
+                                                            _trailerController
+                                                                .nextPage();
+                                                            setState(() {
+                                                              _trailerSlider +=
+                                                                  1;
+                                                            });
+                                                          },
+                                                          child: Icon(
+                                                              Icons
+                                                                  .navigate_next_outlined,
+                                                              size: 30),
+                                                        ),
+                                                      )
+                                                    ],
+                                                  )
+                                                : Container(),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  onTap: () {
-                                    _controller.animateToPage(index);
-                                    setState(() {
-                                      _trailerSlider = index;
-                                    });
-                                  },
                                 );
                               }).toList(),
                             ),
@@ -1183,162 +1226,357 @@ class _MovieViewState extends State<MovieView>
                                   height: 200,
                                   aspectRatio: 16 / 9,
                                   viewportFraction: 1),
-                              carouselController: _controller,
+                              carouselController: _galleryController,
                               items: movie.gallery.map((p) {
-                                return Stack(
-                                  children: [
-                                    p.url.contains('/image/upload/')
-                                        ? Container(
-                                            child: GestureDetector(
-                                              child: Center(
-                                                child: CachedNetworkImage(
-                                                  placeholder: (context, url) =>
-                                                      Container(
-                                                    child: Container(
-                                                      alignment:
-                                                          Alignment.center,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                        valueColor:
-                                                            AlwaysStoppedAnimation<
-                                                                Color>(Theme.of(
-                                                                    context)
-                                                                .accentColor),
+                                return Container(
+                                  decoration:
+                                      BoxDecoration(color: Colors.transparent),
+                                  child: Stack(
+                                    children: [
+                                      p.url.contains('/image/upload/')
+                                          ? Container(
+                                              child: GestureDetector(
+                                                child: Center(
+                                                  child: CachedNetworkImage(
+                                                    placeholder:
+                                                        (context, url) =>
+                                                            Container(
+                                                      child: Container(
+                                                        alignment:
+                                                            Alignment.center,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                          valueColor:
+                                                              AlwaysStoppedAnimation<
+                                                                  Color>(Theme.of(
+                                                                      context)
+                                                                  .accentColor),
+                                                        ),
                                                       ),
                                                     ),
-                                                  ),
-                                                  errorWidget:
-                                                      (context, url, error) =>
-                                                          Material(
-                                                    child: Image.network(
-                                                      Config.imgNotFound,
-                                                      width: 300,
-                                                      height: 200,
-                                                      fit: BoxFit.cover,
-                                                      alignment:
-                                                          Alignment.center,
+                                                    errorWidget:
+                                                        (context, url, error) =>
+                                                            Material(
+                                                      child: Image.network(
+                                                        Config.imgNotFound,
+                                                        width: 300,
+                                                        height: 200,
+                                                        fit: BoxFit.cover,
+                                                        alignment:
+                                                            Alignment.center,
+                                                      ),
                                                     ),
+                                                    imageUrl: p?.url ??
+                                                        Config.imgNotFound,
+                                                    width: 300,
+                                                    height: 200,
+                                                    fit: BoxFit.cover,
                                                   ),
-                                                  imageUrl: p?.url ??
-                                                      Config.imgNotFound,
-                                                  width: 300,
-                                                  height: 200,
-                                                  fit: BoxFit.cover,
                                                 ),
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          FullPhotoT(
+                                                              url: p?.url ??
+                                                                  Config
+                                                                      .imgNotFound,
+                                                              type: 'network',
+                                                              description: p
+                                                                  .description),
+                                                    ),
+                                                  );
+                                                },
                                               ),
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        FullPhotoT(
-                                                            url: p?.url ??
-                                                                Config
-                                                                    .imgNotFound,
-                                                            type: 'network',
-                                                            description:
-                                                                p.description),
-                                                  ),
-                                                );
-                                              },
+                                            )
+                                          : Container(
+                                              alignment: Alignment.topCenter,
+                                              child: VideoFile(
+                                                  videoPlayerController:
+                                                      VideoPlayerController
+                                                          .network(p.url),
+                                                  looping: false,
+                                                  autoplay: false,
+                                                  type: "simple"),
                                             ),
-                                          )
-                                        : Container(
-                                            alignment: Alignment.topCenter,
-                                            child: VideoItem(
-                                                videoPlayerController:
-                                                    VideoPlayerController
-                                                        .network(p.url),
-                                                looping: false,
-                                                autoplay: false),
-                                          ),
-                                    // Arrow Buttons
-                                    // Container(
-                                    //   alignment: Alignment.center,
-                                    //   margin: EdgeInsets.only(left: 5, right: 5),
-                                    //   child: Row(
-                                    //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    //     crossAxisAlignment: CrossAxisAlignment.center,
-                                    //     children: [
-                                    //       _gallerySlider != 0
-                                    //           ? Stack(
-                                    //               children: [
-                                    //                 Container(
-                                    //                   decoration: BoxDecoration(
-                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
-                                    //                     borderRadius: BorderRadius.circular(50),
-                                    //                   ),
-                                    //                   child: GestureDetector(
-                                    //                     onTap: () {
-                                    //                       _controller.previousPage();
-                                    //                       setState(() {
-                                    //                         _gallerySlider -= 1;
-                                    //                       });
-                                    //                     },
-                                    //                     child: Icon(
-                                    //                         Icons.navigate_before_outlined,
-                                    //                         size: 30),
-                                    //                   ),
-                                    //                 )
-                                    //               ],
-                                    //             )
-                                    //           : Container(),
-                                    //       _gallerySlider != crew.gallery.length - 1
-                                    //           ? Stack(
-                                    //               children: [
-                                    //                 Container(
-                                    //                   decoration: BoxDecoration(
-                                    //                     color: Color.fromRGBO(240, 240, 240, 1),
-                                    //                     borderRadius: BorderRadius.circular(50),
-                                    //                   ),
-                                    //                   child: GestureDetector(
-                                    //                     onTap: () {
-                                    //                       _controller.nextPage();
-                                    //                       setState(() {
-                                    //                         _gallerySlider += 1;
-                                    //                       });
-                                    //                     },
-                                    //                     child: Icon(Icons.navigate_next_outlined,
-                                    //                         size: 30),
-                                    //                   ),
-                                    //                 )
-                                    //               ],
-                                    //             )
-                                    //           : Container(),
-                                    //     ],
-                                    //   ),
-                                    // ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: movie.gallery.map((p) {
-                                int index = movie.gallery.indexOf(p);
-                                return GestureDetector(
-                                  child: Container(
-                                    width: 8.0,
-                                    height: 8.0,
-                                    margin: EdgeInsets.symmetric(
-                                        vertical: 10.0, horizontal: 2.0),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: _gallerySlider == index
-                                          ? Color.fromRGBO(0, 0, 0, 0.9)
-                                          : Color.fromRGBO(0, 0, 0, 0.4),
-                                    ),
+                                      // Arrow Buttons
+                                      Container(
+                                        alignment: Alignment.center,
+                                        margin: EdgeInsets.only(
+                                            left: 15, right: 15),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          children: [
+                                            _gallerySlider != 0
+                                                ? Stack(
+                                                    children: [
+                                                      Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Color.fromRGBO(
+                                                              240, 240, 240, 1),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(50),
+                                                        ),
+                                                        child: GestureDetector(
+                                                          onTap: () {
+                                                            _galleryController
+                                                                .previousPage();
+                                                            setState(() {
+                                                              _gallerySlider -=
+                                                                  1;
+                                                            });
+                                                          },
+                                                          child: Icon(
+                                                              Icons
+                                                                  .navigate_before_outlined,
+                                                              size: 30),
+                                                        ),
+                                                      )
+                                                    ],
+                                                  )
+                                                : Container(),
+                                            _gallerySlider !=
+                                                    movie.gallery.length - 1
+                                                ? Stack(
+                                                    children: [
+                                                      Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: Color.fromRGBO(
+                                                              240, 240, 240, 1),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(50),
+                                                        ),
+                                                        child: GestureDetector(
+                                                          onTap: () {
+                                                            _galleryController
+                                                                .nextPage();
+                                                            setState(() {
+                                                              _gallerySlider +=
+                                                                  1;
+                                                            });
+                                                          },
+                                                          child: Icon(
+                                                              Icons
+                                                                  .navigate_next_outlined,
+                                                              size: 30),
+                                                        ),
+                                                      )
+                                                    ],
+                                                  )
+                                                : Container(),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  onTap: () {
-                                    _controller.animateToPage(index);
-                                    setState(() {
-                                      _gallerySlider = index;
-                                    });
-                                  },
                                 );
                               }).toList(),
                             ),
                           ],
+                        ),
+                      )
+                    : SizedBox(),
+                SizedBox(height: 25),
+                // Audios
+                movie.audios != null && movie.audios.length != 0
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Text("Audios",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            )),
+                      )
+                    : SizedBox(),
+                movie.audios != null && movie.audios.length != 0
+                    ? SizedBox(height: 25)
+                    : SizedBox(),
+                movie.audios != null && movie.audios.length != 0
+                    ? Container(
+                        color: Colors.transparent,
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              CarouselSlider(
+                                key: ValueKey('audios'),
+                                options: CarouselOptions(
+                                  enableInfiniteScroll: false,
+                                  onPageChanged: (index, reason) {
+                                    setState(() {
+                                      _audioSlider = index;
+                                    });
+                                  },
+                                  enlargeCenterPage: false,
+                                  height: 200,
+                                  aspectRatio: 16 / 9,
+                                  viewportFraction: 1,
+                                ),
+                                carouselController: _audioController,
+                                items: movie.audios.map((p) {
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                        color: Colors.transparent),
+                                    padding:
+                                        EdgeInsets.only(left: 20, right: 20),
+                                    child: Stack(
+                                      children: [
+                                        Container(
+                                          color: Colors.white,
+                                        ),
+                                        Center(
+                                            child: Icon(Icons.music_note_sharp,
+                                                size: 30,
+                                                color: Colors.black87)),
+                                        Positioned(
+                                          left: 0,
+                                          right: 0,
+                                          bottom: 0,
+                                          child: AudioFile(
+                                              videoPlayerController:
+                                                  VideoPlayerController.network(
+                                                      p.url),
+                                              looping: false,
+                                              autoplay: false),
+                                        ),
+                                        Positioned(
+                                          top: 5,
+                                          right: 10,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(20)),
+                                            child: FlatButton(
+                                              color: Color.fromRGBO(
+                                                  240, 240, 240, 1),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.info_outline),
+                                                  SizedBox(width: 5),
+                                                  Text('Info')
+                                                ],
+                                              ),
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => AudioFile(
+                                                        videoPlayerController:
+                                                            VideoPlayerController
+                                                                .network(p.url),
+                                                        looping: false,
+                                                        autoplay: false,
+                                                        type: "detailed",
+                                                        description:
+                                                            p.description ??
+                                                                ''),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        ),
+                                        // Arrow Buttons
+                                        Container(
+                                          alignment: Alignment.center,
+                                          margin: EdgeInsets.only(
+                                              left: 15, right: 15),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              _audioSlider != 0
+                                                  ? Stack(
+                                                      children: [
+                                                        Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color:
+                                                                Color.fromRGBO(
+                                                                    240,
+                                                                    240,
+                                                                    240,
+                                                                    1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        50),
+                                                          ),
+                                                          child:
+                                                              GestureDetector(
+                                                            onTap: () {
+                                                              _audioController
+                                                                  .previousPage();
+                                                              setState(() {
+                                                                _audioSlider -=
+                                                                    1;
+                                                              });
+                                                            },
+                                                            child: Icon(
+                                                                Icons
+                                                                    .navigate_before_outlined,
+                                                                size: 30),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    )
+                                                  : Container(),
+                                              _audioSlider !=
+                                                      movie.audios.length - 1
+                                                  ? Stack(
+                                                      children: [
+                                                        Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color:
+                                                                Color.fromRGBO(
+                                                                    240,
+                                                                    240,
+                                                                    240,
+                                                                    1),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        50),
+                                                          ),
+                                                          child:
+                                                              GestureDetector(
+                                                            onTap: () {
+                                                              _audioController
+                                                                  .nextPage();
+                                                              setState(() {
+                                                                _audioSlider +=
+                                                                    1;
+                                                              });
+                                                            },
+                                                            child: Icon(
+                                                                Icons
+                                                                    .navigate_next_outlined,
+                                                                size: 30),
+                                                          ),
+                                                        )
+                                                      ],
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : SizedBox(),

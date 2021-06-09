@@ -203,9 +203,11 @@ class _LoginViewState extends State<LoginView> {
                                           });
 
                                           // show snack bar or flutter toast (success)
-                                          // TO DO: flutter toast or snackbar to notify that user has successfully logged in
+                                          // TO DO: route test -- flutter toast or snackbar to notify that user has successfully logged in
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
+                                          // Navigator.pushReplacementNamed(
+                                          //     context, HomeViewRoute);
                                         } else {
                                           FocusScope.of(context).unfocus();
 

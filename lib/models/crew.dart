@@ -24,7 +24,7 @@ class Crew {
   final List<MediaFile> gallery;
   final String description;
   List<dynamic> role; // roles in movies
-  List<String> type; // direktor/manunulat/aktor
+  List<dynamic> type; // direktor/manunulat/aktor
   List<List<Movie>> movies;
   final bool isDeleted;
   bool saved;

@@ -33,6 +33,9 @@ import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:http/http.dart' as http;
 import 'package:mubidibi/globals.dart' as Config;
 import 'dart:convert';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/timezone.dart';
 
 // For Dynamic Widgets
 List<int> actorsFilter = []; // actors
@@ -81,6 +84,7 @@ class _AddMovieState extends State<AddMovie> {
   int movieId;
   String test;
   var currentUser;
+  var mnl;
 
   // MOVIE FIELD CONTROLLERS
   DateTime _date;
@@ -197,7 +201,7 @@ class _AddMovieState extends State<AddMovie> {
         trailers = [];
         audios = [];
       });
-      await _navigationService.pop();
+      Navigator.pop(context);
     }
     return Future.value(false);
   }
@@ -223,8 +227,9 @@ class _AddMovieState extends State<AddMovie> {
     if (_datePicker != null && _datePicker != _date) {
       setState(() {
         _date = _datePicker;
-        dateController.text =
-            DateFormat("MMM. d, y", 'fil').format(_date) ?? '';
+        dateController.text = DateFormat("MMM. d, y", "fil").format(
+                TZDateTime.from(_date, tz.getLocation('Asia/Manila'))) ??
+            '';
       });
     }
   }
@@ -605,7 +610,6 @@ class _AddMovieState extends State<AddMovie> {
         if (imagePaths.contains(path) == false) {
           return File(path);
         } else {
-          print('get trailerss: exists');
           print('File already exists'); // FlutterToast or Snackbar
         }
       }).toList();
@@ -832,10 +836,6 @@ class _AddMovieState extends State<AddMovie> {
     filteredActors =
         actorList.where((actor) => actor.crew.saved == true).toList();
 
-    // updates listview tree according to existence of roles
-    lineList.removeWhere((a) => !rolesFilter.value.contains(a.item.role));
-    if (lineList == null) lineList = [];
-
     return Column(
       children: [
         filteredActors.length != 0 ? SizedBox(height: 10) : SizedBox(),
@@ -1015,11 +1015,13 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: Display Famous Lines in the Review Step
   Widget displayLines() {
-    filteredLines = lineList
-        .where((line) =>
-            line.item.saved == true &&
-            rolesFilter.value.contains(line.item.role))
-        .toList();
+    filteredLines = lineList != null && lineList.isNotEmpty
+        ? lineList
+            .where((line) =>
+                line.item.saved == true &&
+                rolesFilter.value.contains(line.item.role))
+            .toList()
+        : [];
 
     return Column(
       children: [
@@ -1089,17 +1091,17 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: adds LineWidget in the ListView builder
   addLine() {
-    print('clicked');
     // extract the roles from the filteredActors list and flatten into a 1-dimensional array
+
     var rolesOptions =
         filteredActors.map((a) => a.crew.role).expand((i) => i).toList();
 
-    setState(() {
-      // update the values in rolesFilter
-      rolesFilter = ValueNotifier<List>([]);
-      rolesOptions.forEach((r) {
-        if (rolesFilter.value.contains(r) == false) rolesFilter.value.add(r);
-      });
+    // setState(() {
+    // update the values in rolesFilter
+    rolesFilter = ValueNotifier<List>([]);
+    rolesOptions.forEach((r) {
+      if (rolesFilter.value.contains(r) == false) rolesFilter.value.add(r);
+      // });
 
       lineList.add(LineWidget(
         item: new Line(),
@@ -1111,6 +1113,7 @@ class _AddMovieState extends State<AddMovie> {
   @override
   void initState() {
     initializeDateFormatting();
+    tz.initializeTimeZones();
     // in case user just closes the app and not click the back buttons
     rolesFilter.value = [];
     actorsFilter = [];
@@ -1137,7 +1140,6 @@ class _AddMovieState extends State<AddMovie> {
         movieId = movie?.movieId ?? 0;
 
         // update controller's text field
-
         // Basic Details
         titleController.text = movie?.title ?? '';
 
@@ -1147,7 +1149,7 @@ class _AddMovieState extends State<AddMovie> {
 
         dateController.text = movie?.releaseDate != null
             ? DateFormat("MMM. d, y", "fil")
-                .format(DateTime.parse(movie?.releaseDate))
+                .format(TZDateTime.from(_date, tz.getLocation('Asia/Manila')))
             : '';
         synopsisController.text = movie?.synopsis ?? '';
         runtimeController.text = movie?.runtime?.toString() ?? '';
@@ -1312,6 +1314,7 @@ class _AddMovieState extends State<AddMovie> {
                               type: MyStepperType.vertical,
                               currentStep: currentStep,
                               onStepTapped: (step) async {
+                                FocusScope.of(context).unfocus();
                                 if (currentStep == 0) {
                                   // first step
                                   setState(() {
@@ -1536,9 +1539,8 @@ class _AddMovieState extends State<AddMovie> {
                                     final response = await model.addMovie(
                                       title: titleController.text,
                                       synopsis: synopsisController.text,
-                                      releaseDate: _date != null
-                                          ? _date.toIso8601String()
-                                          : '',
+                                      releaseDate:
+                                          _date != null ? _date.toString() : '',
                                       runtime: runtimeController.text,
                                       genre: genresToSave,
                                       directors: directorsToSave,
@@ -1688,7 +1690,7 @@ class _AddMovieState extends State<AddMovie> {
                 decoration:
                     BoxDecoration(borderRadius: BorderRadius.circular(10)),
                 child: TextFormField(
-                  autofocus: true,
+                  // autofocus: true,
                   focusNode: titleNode,
                   textCapitalization: TextCapitalization.words,
                   controller: titleController,
@@ -1846,9 +1848,13 @@ class _AddMovieState extends State<AddMovie> {
                                 if (query.isNotEmpty) {
                                   var lowercaseQuery = query.toLowerCase();
                                   return genres.where((item) {
-                                    return item
-                                        .toLowerCase()
-                                        .contains(query.toLowerCase());
+                                    return !filmGenres
+                                            .map((d) => d)
+                                            .toList()
+                                            .contains(item) &&
+                                        item
+                                            .toLowerCase()
+                                            .contains(query.toLowerCase());
                                   }).toList(growable: false)
                                     ..sort((a, b) => a
                                         .toLowerCase()
@@ -1857,19 +1863,15 @@ class _AddMovieState extends State<AddMovie> {
                                             .toLowerCase()
                                             .indexOf(lowercaseQuery)));
                                 }
-                                return genres;
+                                return [];
                               },
                               submittedText: test != null
                                   ? test.trimLeft().trimRight()
                                   : "",
                               onChanged: (data) {
-                                List<String> categories = data.length != 0
-                                    ? data
-                                        .map((item) => item.toString().trim())
-                                        .toList()
-                                    : [];
+                                var newList = List<String>.from(data);
                                 setState(() {
-                                  filmGenres = categories;
+                                  filmGenres = newList;
                                 });
                               },
                               chipBuilder: (context, state, c) {
@@ -2181,7 +2183,6 @@ class _AddMovieState extends State<AddMovie> {
               Container(
                   width: 140,
                   child: FlatButton(
-                    // focusNode: addActorNode,
                     color: Color.fromRGBO(240, 240, 240, 1),
                     onPressed: addtoGallery,
                     child: Row(
@@ -2317,20 +2318,26 @@ class _AddMovieState extends State<AddMovie> {
                     if (query.isNotEmpty) {
                       var lowercaseQuery = query.toLowerCase();
                       return crewList.where((item) {
-                        return item.name
-                            .toLowerCase()
-                            .contains(query.toLowerCase());
+                        return !directors
+                                .map((d) => d.crewId)
+                                .toList()
+                                .contains(item.crewId) &&
+                            item.name
+                                .toLowerCase()
+                                .contains(query.toLowerCase());
                       }).toList(growable: false)
                         ..sort((a, b) => a.name
                             .toLowerCase()
                             .indexOf(lowercaseQuery)
                             .compareTo(
                                 b.name.toLowerCase().indexOf(lowercaseQuery)));
+                    } else {
+                      return [];
                     }
-                    return crewList;
                   },
                   onChanged: (data) {
-                    directors = data;
+                    var newList = List<Crew>.from(data);
+                    directors = newList;
                   },
                   chipBuilder: (context, state, c) {
                     return InputChip(
@@ -2389,9 +2396,13 @@ class _AddMovieState extends State<AddMovie> {
                     if (query.isNotEmpty) {
                       var lowercaseQuery = query.toLowerCase();
                       return crewList.where((item) {
-                        return item.name
-                            .toLowerCase()
-                            .contains(query.toLowerCase());
+                        return !directors
+                                .map((d) => d.crewId)
+                                .toList()
+                                .contains(item.crewId) &&
+                            item.name
+                                .toLowerCase()
+                                .contains(query.toLowerCase());
                       }).toList(growable: false)
                         ..sort((a, b) => a.name
                             .toLowerCase()
@@ -2399,10 +2410,11 @@ class _AddMovieState extends State<AddMovie> {
                             .compareTo(
                                 b.name.toLowerCase().indexOf(lowercaseQuery)));
                     }
-                    return crewList;
+                    return [];
                   },
                   onChanged: (data) {
-                    writers = data;
+                    var newList = List<Crew>.from(data);
+                    writers = newList;
                   },
                   chipBuilder: (context, state, c) {
                     return InputChip(
@@ -2447,7 +2459,6 @@ class _AddMovieState extends State<AddMovie> {
                 width: 140,
                 child: actorList.isEmpty
                     ? FlatButton(
-                        focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
                         onPressed: addActor,
                         child: Row(
@@ -2538,7 +2549,6 @@ class _AddMovieState extends State<AddMovie> {
                 width: 140,
                 child: actorList.isNotEmpty
                     ? FlatButton(
-                        focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
                         onPressed: addActor,
                         child: Row(
@@ -2566,7 +2576,6 @@ class _AddMovieState extends State<AddMovie> {
                 width: 140,
                 child: awardList.isEmpty
                     ? FlatButton(
-                        // focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
                         onPressed: addAward,
                         child: Row(
@@ -2635,7 +2644,6 @@ class _AddMovieState extends State<AddMovie> {
                 width: 140,
                 child: awardList.isNotEmpty
                     ? FlatButton(
-                        // focusNode: addActorNode,
                         color: Color.fromRGBO(240, 240, 240, 1),
                         onPressed: addAward,
                         child: Row(
@@ -2661,6 +2669,7 @@ class _AddMovieState extends State<AddMovie> {
 
         // // updates listview tree according to existence of roles
         // lineList.removeWhere((a) => !rolesFilter.value.contains(a.item.role));
+        // if (lineList == null) lineList = [];
 
         return Container(
             child: Column(
@@ -2689,53 +2698,66 @@ class _AddMovieState extends State<AddMovie> {
                         )
                       : SizedBox(),
             ),
-            ListView.builder(
-                itemCount: lineList.length,
-                shrinkWrap: true,
-                itemBuilder: (BuildContext context, int i) {
-                  return ValueListenableBuilder(
-                      valueListenable: lineList[i].open,
-                      builder: (context, value, widget) {
-                        return Stack(
-                          children: [
-                            lineList[i],
-                            value == true
-                                ? Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: Container(
-                                      child: OutlineButton(
-                                        padding: EdgeInsets.all(0),
-                                        color: Colors.white,
-                                        onPressed: () {
-                                          FocusScope.of(context).unfocus();
-                                          setState(() {
-                                            if (lineList[i].item.id != null &&
-                                                movie != null &&
-                                                movie.quotes
-                                                    .map((q) => q.id)
-                                                    .toList()
-                                                    .contains(
-                                                        lineList[i].item.id)) {
-                                              // for edit: delete item from DB
-                                              if (linesToDelete.contains(
-                                                      lineList[i].item.id) ==
-                                                  false) {
-                                                linesToDelete
-                                                    .add(lineList[i].item.id);
-                                              }
-                                            }
-                                            lineList.removeAt(i);
-                                          });
-                                        },
-                                        child: Text('Tanggalin'),
-                                      ),
-                                      alignment: Alignment.centerRight,
-                                    ),
-                                  )
-                                : SizedBox(),
-                          ],
-                        );
+            ValueListenableBuilder(
+                valueListenable: rolesFilter,
+                builder: (context, val, widget) {
+                  return ListView.builder(
+                      itemCount: lineList.length,
+                      shrinkWrap: true,
+                      itemBuilder: (BuildContext context, int i) {
+                        // updates listview tree according to existence of roles
+                        if (!val.contains(lineList[i].item.role)) {
+                          lineList.removeAt(i);
+                        }
+                        return ValueListenableBuilder(
+                            valueListenable: lineList[i].open,
+                            builder: (context, value, widget) {
+                              return Stack(
+                                children: [
+                                  lineList[i],
+                                  value == true
+                                      ? Positioned(
+                                          bottom: 0,
+                                          right: 0,
+                                          child: Container(
+                                            child: OutlineButton(
+                                              padding: EdgeInsets.all(0),
+                                              color: Colors.white,
+                                              onPressed: () {
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                                setState(() {
+                                                  if (lineList[i].item.id !=
+                                                          null &&
+                                                      movie != null &&
+                                                      movie.quotes
+                                                          .map((q) => q.id)
+                                                          .toList()
+                                                          .contains(lineList[i]
+                                                              .item
+                                                              .id)) {
+                                                    // for edit: delete item from DB
+                                                    if (linesToDelete.contains(
+                                                            lineList[i]
+                                                                .item
+                                                                .id) ==
+                                                        false) {
+                                                      linesToDelete.add(
+                                                          lineList[i].item.id);
+                                                    }
+                                                  }
+                                                  lineList.removeAt(i);
+                                                });
+                                              },
+                                              child: Text('Tanggalin'),
+                                            ),
+                                            alignment: Alignment.centerRight,
+                                          ),
+                                        )
+                                      : SizedBox(),
+                                ],
+                              );
+                            });
                       });
                 }),
             SizedBox(
@@ -2745,8 +2767,8 @@ class _AddMovieState extends State<AddMovie> {
               width: 140,
               child: lineList.isNotEmpty
                   ? FlatButton(
-                      // focusNode: addActorNode,
-                      color: Color.fromRGBO(240, 240, 240, 1),
+                      // color: Color.fromRGBO(240, 240, 240, 1),
+                      color: Colors.green,
                       onPressed: addLine,
                       child: Row(
                         children: [
@@ -2808,7 +2830,9 @@ class _AddMovieState extends State<AddMovie> {
                       child: Text(
                         _date == null
                             ? ''
-                            : DateFormat("MMM. d, y", "fil").format(_date),
+                            : DateFormat("MMM. d, y", "fil").format(
+                                TZDateTime.from(
+                                    _date, tz.getLocation('Asia/Manila'))),
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -3028,9 +3052,11 @@ class ActorWidgetState extends State<ActorWidget> {
                     var lowercaseQuery = query.toLowerCase();
 
                     return filteredList.where((item) {
-                      return item.name
-                          .toLowerCase()
-                          .contains(query.toLowerCase());
+                      return !actorId
+                              .map((d) => d.crewId)
+                              .toList()
+                              .contains(item.crewId) &&
+                          item.name.toLowerCase().contains(query.toLowerCase());
                     }).toList(growable: false)
                       ..sort((a, b) => a.name
                           .toLowerCase()
@@ -3041,22 +3067,23 @@ class ActorWidgetState extends State<ActorWidget> {
                   return filteredList;
                 },
                 onChanged: (data) {
-                  if (data.length != 0) {
+                  var newList = List<Crew>.from(data);
+                  if (newList.length != 0) {
                     setState(() {
-                      widget.crew.crewId = data[0].crewId;
-                      widget.crew.firstName = data[0].firstName;
-                      widget.crew.middleName = data[0].middleName;
-                      widget.crew.lastName = data[0].lastName;
-                      widget.crew.suffix = data[0].suffix;
-                      widget.crew.name = data[0].name;
+                      widget.crew.crewId = newList[0].crewId;
+                      widget.crew.firstName = newList[0].firstName;
+                      widget.crew.middleName = newList[0].middleName;
+                      widget.crew.lastName = newList[0].lastName;
+                      widget.crew.suffix = newList[0].suffix;
+                      widget.crew.name = newList[0].name;
                       showError = widget.crew.crewId != null &&
                               widget.crew.role != null &&
                               widget.crew.role.length != 0
                           ? false
                           : true;
-                      actorId = [data[0]];
-                      if (!actorsFilter.contains(data[0].crewId)) {
-                        actorsFilter.add(data[0].crewId);
+                      actorId = [newList[0]];
+                      if (!actorsFilter.contains(newList[0].crewId)) {
+                        actorsFilter.add(newList[0].crewId);
                       }
                     });
                   } else {
@@ -3135,11 +3162,10 @@ class ActorWidgetState extends State<ActorWidget> {
                 },
                 submittedText: temp != null ? temp.trimLeft().trimRight() : "",
                 onChanged: (data) {
-                  List<String> tempList = [];
-                  tempList = data.map((role) => role.toString()).toList();
+                  var newList = List<String>.from(data);
 
                   setState(() {
-                    widget.crew.role = tempList;
+                    widget.crew.role = newList;
                     showError = widget.crew.crewId != null &&
                             widget.crew.role != null &&
                             widget.crew.role.length != 0

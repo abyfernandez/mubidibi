@@ -1,3 +1,5 @@
+import 'package:http/http.dart';
+
 import 'base_model.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:http/http.dart' as http;
@@ -101,19 +103,39 @@ class AwardViewModel extends BaseModel {
   }) async {
     setBusy(true);
 
-    var response = await http.post(
-      Config.api + 'add-award/',
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(<String, dynamic>{
-        'award_id': awardId,
-        'name': name,
-        'description': description,
-        'category': category,
-        'added_by': addedBy,
-      }),
-    );
+    Response response;
+
+    if (awardId != 0) {
+      // UPDATE AWARD
+      response = await http.put(
+        Config.api + 'update-award/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'award_id': awardId,
+          'name': name,
+          'description': description,
+          'category': category,
+          'added_by': addedBy,
+        }),
+      );
+    } else {
+      // ADD
+      response = await http.post(
+        Config.api + 'add-award/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          'award_id': awardId,
+          'name': name,
+          'description': description,
+          'category': category,
+          'added_by': addedBy,
+        }),
+      );
+    }
 
     var id;
     if (response.statusCode == 200) {

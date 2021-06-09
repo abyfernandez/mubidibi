@@ -22,6 +22,12 @@ class MyDrawer extends StatelessWidget {
           iconTheme: IconThemeData(
               // color: Colors.black, //change your color here
               ),
+          leading: GestureDetector(
+              child: Icon(Icons.arrow_back),
+              onTap: () async {
+                FocusScope.of(context).unfocus();
+                await _navigationService.pop();
+              }),
         ),
         body: Container(
           color: Colors.white,
@@ -71,21 +77,21 @@ class MyDrawer extends StatelessWidget {
                         ),
                       )
                     : SizedBox(),
-                Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
-                ListTile(
-                  leading: Icon(
-                    Icons.info_outlined,
-                    size: 20,
-                  ),
-                  title: Text(
-                    "About Mubidibi",
-                    style: TextStyle(fontWeight: FontWeight.w300, fontSize: 16),
-                  ),
-                  onTap: () {
-                    // TO DO: Create page for App Info
-                  },
-                ),
-                Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
+                // Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
+                // ListTile(
+                //   leading: Icon(
+                //     Icons.info_outlined,
+                //     size: 20,
+                //   ),
+                //   title: Text(
+                //     "About Mubidibi",
+                //     style: TextStyle(fontWeight: FontWeight.w300, fontSize: 16),
+                //   ),
+                //   onTap: () {
+                //     // TO DO: Create page for App Info
+                //   },
+                // ),
+                // Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
                 currentUser != null
                     ? ListTile(
                         leading: Icon(
@@ -107,8 +113,11 @@ class MyDrawer extends StatelessWidget {
                                       "Are you sure that you want to sign out?");
                           if (response.confirmed == true) {
                             await _authenticationService.signOut();
-                            await _navigationService
-                                .navigateTo(StartUpViewRoute);
+                            // await _navigationService
+                            //     .navigateTo(StartUpViewRoute);
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                                StartUpViewRoute,
+                                (Route<dynamic> route) => false);
                           }
                         },
                       )

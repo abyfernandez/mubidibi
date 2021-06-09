@@ -22,6 +22,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.5.0-nullsafety.1"
+  audioplayers:
+    dependency: "direct main"
+    description:
+      name: audioplayers
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.17.0"
   boolean_selector:
     dependency: transitive
     description:
@@ -64,6 +71,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.12.2"
+  chewie_audio:
+    dependency: "direct main"
+    description:
+      name: chewie_audio
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.2"
   clock:
     dependency: transitive
     description:
@@ -588,6 +602,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "2.0.30"
+  timezone:
+    dependency: "direct main"
+    description:
+      name: timezone
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "0.6.1"
   typed_data:
     dependency: transitive
     description:
@@ -630,13 +651,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.4+1"
-  video_thumbnail:
-    dependency: "direct main"
-    description:
-      name: video_thumbnail
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.2.5+1"
   wakelock:
     dependency: transitive
     description:

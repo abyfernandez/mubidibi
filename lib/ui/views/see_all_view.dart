@@ -251,7 +251,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                       ),
                                       child: Text(
                                         movie.title +
-                                            (movie.releaseDate != "" ||
+                                            (movie.releaseDate != "" &&
                                                     movie.releaseDate != null
                                                 ? (" (" +
                                                     DateFormat('y').format(
@@ -400,7 +400,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                       ),
                                       child: Text(
                                         movie.title +
-                                            (movie.releaseDate != "" ||
+                                            (movie.releaseDate != "" &&
                                                     movie.releaseDate != null
                                                 ? (" (" +
                                                     DateFormat('y').format(

@@ -12,6 +12,9 @@ import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/viewmodels/user_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/timezone.dart';
 
 class ConfigureAdminView extends StatefulWidget {
   ConfigureAdminView({Key key}) : super(key: key);
@@ -47,6 +50,8 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView> {
     currentUser = _authenticationService.currentUser;
     fetchUsers();
     initializeDateFormatting();
+    tz.initializeTimeZones();
+
     super.initState();
   }
 
@@ -145,11 +150,13 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView> {
                                                               .trim() !=
                                                           ''
                                                   ? DateFormat(
-                                                          'MMM. d, y', 'fil')
-                                                      .format(DateTime.parse(
-                                                              users[i].birthday)
-                                                          .add(Duration(
-                                                              hours: 16)))
+                                                          "MMM. d, y", "fil")
+                                                      .format(TZDateTime.from(
+                                                          DateTime.parse(
+                                                              users[i]
+                                                                  .birthday),
+                                                          tz.getLocation(
+                                                              'Asia/Manila')))
                                                   : '-',
                                             ),
                                           ],

@@ -86,15 +86,19 @@ class LineWidgetState extends State<LineWidget> {
                           contentPadding: EdgeInsets.all(10),
                         ),
                         findSuggestions: (String query) {
-                          List<dynamic> tempList = value;
+                          List<dynamic> tempList = value ?? [];
 
                           if (query.isNotEmpty) {
                             var lowercaseQuery = query.toLowerCase();
 
                             return tempList.where((item) {
-                              return item
-                                  .toLowerCase()
-                                  .contains(query.toLowerCase());
+                              return !tempRole
+                                      .map((d) => d)
+                                      .toList()
+                                      .contains(item) &&
+                                  item
+                                      .toLowerCase()
+                                      .contains(query.toLowerCase());
                             }).toList(growable: false)
                               ..sort((a, b) => a
                                   .toLowerCase()
@@ -102,18 +106,19 @@ class LineWidgetState extends State<LineWidget> {
                                   .compareTo(
                                       b.toLowerCase().indexOf(lowercaseQuery)));
                           }
-                          return tempList;
+                          return [];
                         },
                         onChanged: (data) {
-                          if (data.length != 0) {
+                          var newList = List.from(data);
+                          if (newList.length != 0) {
                             setState(() {
-                              widget.item.role = data[0];
+                              widget.item.role = newList[0];
                               showError = widget.item.role != null &&
                                       widget.item.line != null
                                   ? false
                                   : true;
                               showRoleError = showRoleErrorT();
-                              tempRole = [data[0]];
+                              tempRole = [newList[0]];
                             });
                           } else {
                             setState(() {

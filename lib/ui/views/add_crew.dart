@@ -32,6 +32,9 @@ import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
 import 'package:mubidibi/globals.dart' as Config;
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/timezone.dart';
 
 // Global Variables for dynamic Widgets
 List<int> movieActorsFilter = []; // movies
@@ -246,8 +249,9 @@ class _AddCrewState extends State<AddCrew> {
       if (_datePicker != null && _datePicker != _birthday) {
         setState(() {
           _birthday = _datePicker;
-          birthdayController.text =
-              DateFormat("MMM. d, y").format(_birthday) ?? '';
+          birthdayController.text = DateFormat("MMM. d, y", "fil").format(
+                  TZDateTime.from(_birthday, tz.getLocation('Asia/Manila'))) ??
+              '';
         });
       }
     } else {
@@ -264,8 +268,9 @@ class _AddCrewState extends State<AddCrew> {
       if (_datePicker != null && _datePicker != _deathdate) {
         setState(() {
           _deathdate = _datePicker;
-          deathdateController.text =
-              DateFormat("MMM. d, y").format(_deathdate) ?? '';
+          deathdateController.text = DateFormat("MMM. d, y", "fil").format(
+                  TZDateTime.from(_deathdate, tz.getLocation('Asia/Manila'))) ??
+              '';
         });
       }
     }
@@ -614,6 +619,8 @@ class _AddCrewState extends State<AddCrew> {
   @override
   void initState() {
     initializeDateFormatting();
+    tz.initializeTimeZones();
+
     currentUser = _authenticationService.currentUser;
     fetchMovies();
     fetchAwards();
@@ -643,8 +650,8 @@ class _AddCrewState extends State<AddCrew> {
         _birthday =
             crew?.birthday != null ? DateTime.parse(crew?.birthday) : null;
         birthdayController.text = crew?.birthday != null
-            ? DateFormat("MMM. d, y", "fil")
-                .format(DateTime.parse(crew?.birthday))
+            ? DateFormat("MMM. d, y", "fil").format(
+                TZDateTime.from(_birthday, tz.getLocation('Asia/Manila')))
             : '';
         birthplaceController.text = crew?.birthplace ?? "";
         isAlive = crew?.isAlive ?? true;
@@ -652,8 +659,8 @@ class _AddCrewState extends State<AddCrew> {
         _deathdate =
             crew?.deathdate != null ? DateTime.parse(crew?.deathdate) : null;
         deathdateController.text = crew?.deathdate != null
-            ? DateFormat("MMM. d, y", "fil")
-                .format(DateTime.parse(crew?.deathdate))
+            ? DateFormat("MMM. d, y", "fil").format(
+                TZDateTime.from(_deathdate, tz.getLocation('Asia/Manila')))
             : '';
         descriptionController.text = crew?.description ?? "";
 
@@ -683,10 +690,11 @@ class _AddCrewState extends State<AddCrew> {
           movieActorList.add(MovieActorWidget(
               movieOptions: movieOpts,
               movieActor: MovieActor(
-                  id: aktors[i].movieId,
-                  movieId: aktors[i].movieId,
-                  movieTitle: aktors[i].title,
-                  role: aktors[i].role),
+                id: aktors[i].movieId,
+                movieId: aktors[i].movieId,
+                movieTitle: aktors[i].title,
+                role: aktors[i].role,
+              ),
               open: ValueNotifier<bool>(false)));
         }
 
@@ -937,12 +945,12 @@ class _AddCrewState extends State<AddCrew> {
                                       lastName: lastNameController.text,
                                       suffix: suffixController.text,
                                       birthday: _birthday != null
-                                          ? _birthday.toIso8601String()
+                                          ? _birthday.toString()
                                           : '',
                                       birthplace: birthplaceController.text,
                                       isAlive: isAlive,
                                       deathdate: _deathdate != null
-                                          ? _deathdate.toIso8601String()
+                                          ? _deathdate.toString()
                                           : '',
                                       description: descriptionController.text,
                                       displayPic: imageFile,
@@ -1079,7 +1087,7 @@ class _AddCrewState extends State<AddCrew> {
                 decoration:
                     BoxDecoration(borderRadius: BorderRadius.circular(10)),
                 child: TextFormField(
-                  autofocus: true,
+                  // autofocus: true,
                   focusNode: firstNameNode,
                   keyboardType: TextInputType.text,
                   textCapitalization: TextCapitalization.words,
@@ -1387,9 +1395,13 @@ class _AddCrewState extends State<AddCrew> {
                   if (query.isNotEmpty) {
                     var lowercaseQuery = query.toLowerCase();
                     return movieOptions.where((item) {
-                      return item.title
-                          .toLowerCase()
-                          .contains(query.toLowerCase());
+                      return !movieDirector
+                              .map((d) => d.movieId)
+                              .toList()
+                              .contains(item.movieId) &&
+                          item.title
+                              .toLowerCase()
+                              .contains(query.toLowerCase());
                     }).toList(growable: false)
                       ..sort((a, b) => a.title
                           .toLowerCase()
@@ -1397,16 +1409,17 @@ class _AddCrewState extends State<AddCrew> {
                           .compareTo(
                               b.title.toLowerCase().indexOf(lowercaseQuery)));
                   }
-                  return movieOptions;
+                  return [];
                 },
                 onChanged: (data) {
-                  movieDirector = data;
+                  var newList = List<Movie>.from(data);
+                  movieDirector = newList;
                 },
                 chipBuilder: (context, state, c) {
                   return InputChip(
                     key: ObjectKey(c),
                     label: Text(c.title +
-                        (c.releaseDate != "" || c.releaseDate != null
+                        (c.releaseDate != "" && c.releaseDate != null
                             ? (" (" +
                                 DateFormat('y')
                                     .format(DateTime.parse(c.releaseDate)) +
@@ -1433,7 +1446,7 @@ class _AddCrewState extends State<AddCrew> {
                   return ListTile(
                     key: ObjectKey(c),
                     title: Text(c.title +
-                        (c.releaseDate != "" || c.releaseDate != null
+                        (c.releaseDate != "" && c.releaseDate != null
                             ? (" (" +
                                 DateFormat('y')
                                     .format(DateTime.parse(c.releaseDate)) +
@@ -1469,9 +1482,13 @@ class _AddCrewState extends State<AddCrew> {
                   if (query.isNotEmpty) {
                     var lowercaseQuery = query.toLowerCase();
                     return movieOptions.where((item) {
-                      return item.title
-                          .toLowerCase()
-                          .contains(query.toLowerCase());
+                      return !movieWriter
+                              .map((d) => d.movieId)
+                              .toList()
+                              .contains(item.movieId) &&
+                          item.title
+                              .toLowerCase()
+                              .contains(query.toLowerCase());
                     }).toList(growable: false)
                       ..sort((a, b) => a.title
                           .toLowerCase()
@@ -1479,16 +1496,17 @@ class _AddCrewState extends State<AddCrew> {
                           .compareTo(
                               b.title.toLowerCase().indexOf(lowercaseQuery)));
                   }
-                  return movieOptions;
+                  return [];
                 },
                 onChanged: (data) {
-                  movieWriter = data;
+                  var newList = List<Movie>.from(data);
+                  movieWriter = newList;
                 },
                 chipBuilder: (context, state, c) {
                   return InputChip(
                     key: ObjectKey(c),
                     label: Text(c.title +
-                        (c.releaseDate != "" || c.releaseDate != null
+                        (c.releaseDate != "" && c.releaseDate != null
                             ? (" (" +
                                 DateFormat('y')
                                     .format(DateTime.parse(c.releaseDate)) +
@@ -1514,7 +1532,7 @@ class _AddCrewState extends State<AddCrew> {
                   return ListTile(
                     key: ObjectKey(c),
                     title: Text(c.title +
-                        (c.releaseDate != "" || c.releaseDate != null
+                        (c.releaseDate != "" && c.releaseDate != null
                             ? (" (" +
                                 DateFormat('y')
                                     .format(DateTime.parse(c.releaseDate)) +
@@ -2052,7 +2070,9 @@ class _AddCrewState extends State<AddCrew> {
                       child: Text(
                         _birthday == null
                             ? ''
-                            : DateFormat("MMM. d, y").format(_birthday),
+                            : DateFormat("MMM. d, y", "fil").format(
+                                TZDateTime.from(
+                                    _birthday, tz.getLocation('Asia/Manila'))),
                         style: TextStyle(
                           fontSize: 16,
                         ),
@@ -2102,7 +2122,9 @@ class _AddCrewState extends State<AddCrew> {
                       child: Text(
                           _deathdate == null
                               ? 'Walang record'
-                              : DateFormat("MMM. d, y").format(_deathdate),
+                              : DateFormat("MMM. d, y", "fil").format(
+                                  TZDateTime.from(_birthday,
+                                      tz.getLocation('Asia/Manila'))),
                           style: TextStyle(
                             fontStyle: _deathdate == null
                                 ? FontStyle.italic
@@ -2379,9 +2401,13 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                     var lowercaseQuery = query.toLowerCase();
 
                     return filteredList.where((item) {
-                      return item.title
-                          .toLowerCase()
-                          .contains(query.toLowerCase());
+                      return !movieActorId
+                              .map((d) => d.movieId)
+                              .toList()
+                              .contains(item.movieId) &&
+                          item.title
+                              .toLowerCase()
+                              .contains(query.toLowerCase());
                     }).toList(growable: false)
                       ..sort((a, b) => a.title
                           .toLowerCase()
@@ -2389,22 +2415,24 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                           .compareTo(
                               b.title.toLowerCase().indexOf(lowercaseQuery)));
                   }
-                  return filteredList;
+                  return [];
                 },
                 onChanged: (data) {
-                  if (data.length != 0) {
+                  var newList = List<Movie>.from(data);
+
+                  if (newList.length != 0) {
                     setState(() {
-                      widget.movieActor.movieId = data[0].movieId;
-                      widget.movieActor.movieTitle = data[0].title;
+                      widget.movieActor.movieId = newList[0].movieId;
+                      widget.movieActor.movieTitle = newList[0].title;
                       showError = widget.movieActor.movieId != null &&
                               widget.movieActor.role != null &&
                               widget.movieActor.role.length != 0
                           ? false
                           : true;
 
-                      movieActorId = [data[0]];
-                      if (!movieActorsFilter.contains(data[0].movieId)) {
-                        movieActorsFilter.add(data[0].movieId);
+                      movieActorId = [newList[0]];
+                      if (!movieActorsFilter.contains(newList[0].movieId)) {
+                        movieActorsFilter.add(newList[0].movieId);
                       }
                     });
                   } else {
@@ -2431,7 +2459,7 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                   return InputChip(
                     key: ObjectKey(c),
                     label: Text(c.title +
-                        (c.releaseDate != "" || c.releaseDate != null
+                        (c.releaseDate != "" && c.releaseDate != null
                             ? (" (" +
                                 DateFormat('y')
                                     .format(DateTime.parse(c.releaseDate)) +
@@ -2450,7 +2478,7 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                   return ListTile(
                     key: ObjectKey(c),
                     title: Text(c.title +
-                        (c.releaseDate != "" || c.releaseDate != null
+                        (c.releaseDate != "" && c.releaseDate != null
                             ? (" (" +
                                 DateFormat('y')
                                     .format(DateTime.parse(c.releaseDate)) +
@@ -2494,11 +2522,10 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                 },
                 submittedText: temp != null ? temp.trimLeft().trimRight() : "",
                 onChanged: (data) {
-                  List<String> tempList = [];
-                  tempList = data.map((role) => role.toString()).toList();
+                  var newList = List<String>.from(data);
 
                   setState(() {
-                    widget.movieActor.role = tempList;
+                    widget.movieActor.role = newList;
                     showError = widget.movieActor.movieId != null &&
                             widget.movieActor.role != null &&
                             widget.movieActor.role.length != 0

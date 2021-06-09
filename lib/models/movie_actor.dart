@@ -4,7 +4,7 @@ class MovieActor {
   int id;
   int movieId;
   String movieTitle;
-  List<String> role;
+  List<dynamic> role;
   bool saved;
 
   MovieActor({

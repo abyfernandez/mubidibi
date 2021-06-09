@@ -97,23 +97,19 @@ class _HomeViewState extends State<HomeView> {
     return Scaffold(
       key: _scaffoldKey,
       drawerEnableOpenDragGesture: false,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Center(child: _showPage),
-      ),
       extendBodyBehindAppBar: pageIndex == 0 ? true : false,
-      // TO DO: Show dialog box on back press
-      // WillPopScope(
-      //   onWillPop: pageIndex == 0 && !isDrawerOpen
-      //       ? onBackPress
-      //       : () => Future.value(false),
-      //   child: Container(
-      //     color: Colors.white,
-      //     child: Center(
-      //       child: _showPage,
-      //     ),
-      //   ),
-      // ),
+      body: WillPopScope(
+        onWillPop: onBackPress,
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Container(
+            color: Colors.white,
+            child: Center(
+              child: _showPage,
+            ),
+          ),
+        ),
+      ),
       appBar: pageIndex == 0
           ? AppBar(
               title: Text("mubidibi",

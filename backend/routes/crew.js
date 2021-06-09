@@ -181,8 +181,10 @@ exports.crew = app => {
 
           // get roles for actor
           for (var i = 0; i < movies_acted.rows.length; i++) {
-            var { rows } = await client.query(`select * from movie_actor where movie_id = ${movies_acted.rows[i].id} and actor_id = ${crew.id}`);
-            movies_acted.rows[i]['role'] = rows;
+            var { rows } = await client.query(`select role from movie_actor where movie_id = ${movies_acted.rows[i].id} and actor_id = ${crew.id}`);
+
+            console.log(rows[0].role);
+            movies_acted.rows[i]['role'] = rows[0].role;
           }
 
           movies.push(movies_directed.rows);

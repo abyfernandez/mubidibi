@@ -139,6 +139,7 @@ class _AddAwardState extends State<AddAward> {
                           children: [
                             SizedBox(height: 20),
                             MyStepper(
+                              physics: ClampingScrollPhysics(),
                               stepperCircle: [
                                 Icons.edit, // Mga Basic na Detalye
                                 Icons.grading, // Review
@@ -260,9 +261,11 @@ class _AddAwardState extends State<AddAward> {
                                         : i < currentStep
                                             ? MyStepState.complete
                                             : MyStepState.indexed,
-                                    content: LimitedBox(
-                                      maxWidth: 300,
-                                      child: getContent(i),
+                                    content: Container(
+                                      width: 300,
+                                      child: SingleChildScrollView(
+                                        child: getContent(i),
+                                      ),
                                     ),
                                   ),
                               ],
@@ -384,8 +387,6 @@ class _AddAwardState extends State<AddAward> {
                                             ? category.remove(cat)
                                             : category.add(cat);
                                       });
-                                      print(_selected);
-                                      print(category);
                                     },
                                   ));
                             }).toList(),
@@ -419,88 +420,83 @@ class _AddAwardState extends State<AddAward> {
           ),
           padding: EdgeInsets.all(10),
           child: Scrollbar(
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  // award name
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      "Award: ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // award name
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    "Award: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                  Container(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      nameController.text.trim() != ""
-                          ? nameController.text
-                          : "",
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
+                ),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    nameController.text.trim() != "" ? nameController.text : "",
+                    style: TextStyle(
+                      fontSize: 16,
                     ),
                   ),
-                  // Category
-                  category.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-                  category.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Category: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  category.isNotEmpty
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Wrap(
-                              children: category
-                                  .map<Widget>((str) => Container(
-                                        margin: EdgeInsets.only(right: 3),
-                                        child: Chip(
-                                          label: Text(str),
-                                          backgroundColor: Colors.blue[100],
-                                        ),
-                                      ))
-                                  .toList()),
-                        )
-                      : SizedBox(),
-                  // Description
-                  descriptionController.text.trim() != ""
-                      ? SizedBox(height: 10)
-                      : SizedBox(),
-                  descriptionController.text.trim() != ""
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text("Description: ",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              )),
-                        )
-                      : SizedBox(),
-                  descriptionController.text.trim() != ""
-                      ? Container(
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            descriptionController.text,
+                ),
+                // Category
+                category.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                category.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Category: ",
                             style: TextStyle(
+                              fontWeight: FontWeight.bold,
                               fontSize: 16,
-                            ),
+                            )),
+                      )
+                    : SizedBox(),
+                category.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Wrap(
+                            children: category
+                                .map<Widget>((str) => Container(
+                                      margin: EdgeInsets.only(right: 3),
+                                      child: Chip(
+                                        label: Text(str),
+                                        backgroundColor: Colors.blue[100],
+                                      ),
+                                    ))
+                                .toList()),
+                      )
+                    : SizedBox(),
+                // Description
+                descriptionController.text.trim() != ""
+                    ? SizedBox(height: 10)
+                    : SizedBox(),
+                descriptionController.text.trim() != ""
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Description: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                descriptionController.text.trim() != ""
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          descriptionController.text,
+                          style: TextStyle(
+                            fontSize: 16,
                           ),
-                        )
-                      : SizedBox(),
-                  SizedBox(height: 10)
-                ],
-              ),
+                        ),
+                      )
+                    : SizedBox(),
+                SizedBox(height: 10)
+              ],
             ),
           ),
         );

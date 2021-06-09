@@ -97,57 +97,33 @@ exports.award = app => {
     var query;
 
     // add award
-    if (req.body.award_id == 0) {
-      query = `select add_award (
+    query = `select add_award (
           '${name}', 
           `;
-      // check first if category array is empty or not
-      if (req.body.category.length && req.body.category != null) {
-        query = query.concat(`array [`)
-        req.body.category.forEach(cat => {
-          query = query.concat(`'`, cat == 'Pelikula' ? 'movie' : 'crew', `'`)
-          if (cat != req.body.category[req.body.category.length - 1]) {
-            query = query.concat(',')
-          }
-        });
-        query = query.concat(`], 
+    // check first if category array is empty or not
+    if (req.body.category.length && req.body.category != null) {
+      query = query.concat(`array [`)
+      req.body.category.forEach(cat => {
+        query = query.concat(`'`, cat == 'Pelikula' ? 'movie' : 'crew', `'`)
+        if (cat != req.body.category[req.body.category.length - 1]) {
+          query = query.concat(',')
+        }
+      });
+      query = query.concat(`], 
       `)
-      } else {
-        query = query.concat(`null, 
-      `);
-      }
-
-      // added_by
-      query = query.concat(`'${req.body.added_by}',
-      `);
-      // description
-      if (description != null) query = query.concat(`'${description}')
-      `);
-      else query = query.concat(`null 
-      )`);
     } else {
-      // update award
-      query = `update award set name = '${name}', description = `;
-      // description
-      if (description != null) query = query.concat(`'${description}', `);
-      else query = query.concat(`null, `);
-      query = query.concat(`category = `)
-      // check first if category array is empty or not
-      if (req.body.category.length && req.body.category != null) {
-        query = query.concat(`array [`)
-        req.body.category.forEach(cat => {
-          query = query.concat(`'`, cat == 'Pelikula' ? 'movie' : 'crew', `'`)
-          if (cat != req.body.category[req.body.category.length - 1]) {
-            query = query.concat(',')
-          }
-        });
-        query = query.concat(`] `)
-      } else {
-        query = query.concat(`null `);
-      }
-      // award id
-      query = query.concat(`where id = ${req.body.award_id} returning id as add_award`)
+      query = query.concat(`null, 
+      `);
     }
+
+    // added_by
+    query = query.concat(`'${req.body.added_by}',
+      `);
+    // description
+    if (description != null) query = query.concat(`'${description}')
+      `);
+    else query = query.concat(`null 
+      )`);
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
@@ -155,6 +131,45 @@ exports.award = app => {
 
       release();
       res.send(err || JSON.stringify(award.rows[0].add_award));
+    }
+  });
+
+  // UPDATE AWARD
+  app.put('/mubidibi/update-award/', async (req, res) => {
+    app.pg.connect(onConnect); // DB Connection
+
+    // catch apostrophes to avoid errors when inserting data
+    var name = req.body.name.replace(/'/g, "''");
+    var description = req.body.description != "" ? req.body.description.replace(/'/g, "''") : null;
+
+    // build query
+    var query = `update award set name = '${name}', description = `;
+    // description
+    if (description != null) query = query.concat(`'${description}', `);
+    else query = query.concat(`null, `);
+    query = query.concat(`category = `)
+    // check first if category array is empty or not
+    if (req.body.category.length && req.body.category != null) {
+      query = query.concat(`array [`)
+      req.body.category.forEach(cat => {
+        query = query.concat(`'`, cat == 'Pelikula' ? 'movie' : 'crew', `'`)
+        if (cat != req.body.category[req.body.category.length - 1]) {
+          query = query.concat(',')
+        }
+      });
+      query = query.concat(`] `)
+    } else {
+      query = query.concat(`null `);
+    }
+    // award id
+    query = query.concat(`where id = ${req.body.award_id} returning id`)
+
+    async function onConnect(err, client, release) {
+      if (err) return res.send(err);
+      var award = await client.query(query);
+
+      release();
+      res.send(err || JSON.stringify(award.rows[0].id));
     }
   });
 }

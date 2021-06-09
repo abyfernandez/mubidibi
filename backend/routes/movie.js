@@ -83,6 +83,7 @@ exports.movie = app => {
 
           return movie;
         });
+      console.log(result);
       release();
       if (result) res.send(JSON.stringify(result));
       else res.send(err);

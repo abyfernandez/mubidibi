@@ -83,9 +83,13 @@ class AwardWidgetState extends State<AwardWidget> {
                       if (query.isNotEmpty) {
                         var lowercaseQuery = query.toLowerCase();
                         return widget.awardOptions.where((item) {
-                          return item.name
-                              .toLowerCase()
-                              .contains(query.toLowerCase());
+                          return !awardId
+                                  .map((d) => d.awardId)
+                                  .toList()
+                                  .contains(item.awardId) &&
+                              item.name
+                                  .toLowerCase()
+                                  .contains(query.toLowerCase());
                         }).toList(growable: false)
                           ..sort((a, b) => a.name
                               .toLowerCase()
@@ -94,20 +98,21 @@ class AwardWidgetState extends State<AwardWidget> {
                                   .toLowerCase()
                                   .indexOf(lowercaseQuery)));
                       }
-                      return widget.awardOptions;
+                      return [];
                     },
                     onChanged: (data) {
-                      if (data.length != 0) {
+                      var newList = List<Award>.from(data);
+                      if (newList.length != 0) {
                         setState(() {
-                          widget.item.awardId = data[0].awardId;
-                          widget.item.name = data[0].name;
-                          widget.item.description = data[0].description;
+                          widget.item.awardId = newList[0].awardId;
+                          widget.item.name = newList[0].name;
+                          widget.item.description = newList[0].description;
                           showError = widget.item.awardId != null &&
                                   (widget.item.type != null &&
                                       widget.item.type.trim() != "")
                               ? false
                               : true;
-                          awardId = [data[0]];
+                          awardId = [newList[0]];
                         });
                       } else {
                         setState(() {

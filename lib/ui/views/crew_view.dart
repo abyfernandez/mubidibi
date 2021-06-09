@@ -3,9 +3,8 @@ import 'dart:convert';
 import 'dart:ui';
 // import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:chewie/chewie.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:mubidibi/ui/views/video_items.dart';
+import 'package:mubidibi/ui/shared/video_file.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:video_player/video_player.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
@@ -31,6 +30,9 @@ import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:provider_architecture/viewmodel_provider.dart';
 import 'package:mubidibi/globals.dart' as Config;
 import 'full_photo.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/timezone.dart';
 
 class CrewView extends StatefulWidget {
   final String crewId;
@@ -62,8 +64,7 @@ class _CrewViewState extends State<CrewView>
 
   // Video Player / Carousel variables
   int _gallerySlider = 0;
-  final CarouselController _controller = CarouselController();
-  final CarouselController _posterController = CarouselController();
+  final CarouselController _galleryController = CarouselController();
 
   void fetchCrew() async {
     var model = CrewViewModel();
@@ -98,6 +99,8 @@ class _CrewViewState extends State<CrewView>
   @override
   void initState() {
     initializeDateFormatting();
+    tz.initializeTimeZones();
+
     fetchCrew();
     fetchAwards();
     currentUser = _authenticationService.currentUser;
@@ -167,7 +170,7 @@ class _CrewViewState extends State<CrewView>
                           ),
                           child: Text(
                             movie.title +
-                                (movie.releaseDate != "" ||
+                                (movie.releaseDate != "" &&
                                         movie.releaseDate != null
                                     ? (" (" +
                                         DateFormat('y').format(
@@ -223,142 +226,124 @@ class _CrewViewState extends State<CrewView>
                 height: 200,
                 aspectRatio: 16 / 9,
                 viewportFraction: 1),
-            carouselController: _controller,
+            carouselController: _galleryController,
             items: crew.gallery.map((p) {
-              return Stack(
-                children: [
-                  p.url.contains('/image/upload/')
-                      ? Container(
-                          child: GestureDetector(
-                            child: Center(
-                              child: CachedNetworkImage(
-                                placeholder: (context, url) => Container(
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    child: CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Theme.of(context).accentColor),
+              return Container(
+                decoration: BoxDecoration(color: Colors.transparent),
+                child: Stack(
+                  children: [
+                    p.url.contains('/image/upload/')
+                        ? Container(
+                            child: GestureDetector(
+                              child: Center(
+                                child: CachedNetworkImage(
+                                  placeholder: (context, url) => Container(
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Theme.of(context).accentColor),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                errorWidget: (context, url, error) => Material(
-                                  child: Image.network(
-                                    Config.imgNotFound,
-                                    width: 300,
-                                    height: 200,
-                                    fit: BoxFit.cover,
-                                    alignment: Alignment.center,
+                                  errorWidget: (context, url, error) =>
+                                      Material(
+                                    child: Image.network(
+                                      Config.imgNotFound,
+                                      width: 300,
+                                      height: 200,
+                                      fit: BoxFit.cover,
+                                      alignment: Alignment.center,
+                                    ),
                                   ),
+                                  imageUrl: p?.url ?? Config.imgNotFound,
+                                  width: 300,
+                                  height: 200,
+                                  fit: BoxFit.cover,
                                 ),
-                                imageUrl: p?.url ?? Config.imgNotFound,
-                                width: 300,
-                                height: 200,
-                                fit: BoxFit.cover,
                               ),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FullPhotoT(
+                                        url: p?.url ?? Config.imgNotFound,
+                                        type: 'network',
+                                        description: p.description),
+                                  ),
+                                );
+                              },
                             ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FullPhotoT(
-                                      url: p?.url ?? Config.imgNotFound,
-                                      type: 'network',
-                                      description: p.description),
-                                ),
-                              );
-                            },
+                          )
+                        : Container(
+                            alignment: Alignment.topCenter,
+                            child: VideoFile(
+                                videoPlayerController:
+                                    VideoPlayerController.network(p.url),
+                                looping: false,
+                                autoplay: false,
+                                type: "simple"),
                           ),
-                        )
-                      : Container(
-                          alignment: Alignment.topCenter,
-                          child: VideoItem(
-                              videoPlayerController:
-                                  VideoPlayerController.network(p.url),
-                              looping: false,
-                              autoplay: false),
-                        ),
-                  // Arrow Buttons
-                  // Container(
-                  //   alignment: Alignment.center,
-                  //   margin: EdgeInsets.only(left: 5, right: 5),
-                  //   child: Row(
-                  //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //     crossAxisAlignment: CrossAxisAlignment.center,
-                  //     children: [
-                  //       _gallerySlider != 0
-                  //           ? Stack(
-                  //               children: [
-                  //                 Container(
-                  //                   decoration: BoxDecoration(
-                  //                     color: Color.fromRGBO(240, 240, 240, 1),
-                  //                     borderRadius: BorderRadius.circular(50),
-                  //                   ),
-                  //                   child: GestureDetector(
-                  //                     onTap: () {
-                  //                       _controller.previousPage();
-                  //                       setState(() {
-                  //                         _gallerySlider -= 1;
-                  //                       });
-                  //                     },
-                  //                     child: Icon(
-                  //                         Icons.navigate_before_outlined,
-                  //                         size: 30),
-                  //                   ),
-                  //                 )
-                  //               ],
-                  //             )
-                  //           : Container(),
-                  //       _gallerySlider != crew.gallery.length - 1
-                  //           ? Stack(
-                  //               children: [
-                  //                 Container(
-                  //                   decoration: BoxDecoration(
-                  //                     color: Color.fromRGBO(240, 240, 240, 1),
-                  //                     borderRadius: BorderRadius.circular(50),
-                  //                   ),
-                  //                   child: GestureDetector(
-                  //                     onTap: () {
-                  //                       _controller.nextPage();
-                  //                       setState(() {
-                  //                         _gallerySlider += 1;
-                  //                       });
-                  //                     },
-                  //                     child: Icon(Icons.navigate_next_outlined,
-                  //                         size: 30),
-                  //                   ),
-                  //                 )
-                  //               ],
-                  //             )
-                  //           : Container(),
-                  //     ],
-                  //   ),
-                  // ),
-                ],
-              );
-            }).toList(),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: crew.gallery.map((p) {
-              int index = crew.gallery.indexOf(p);
-              return GestureDetector(
-                child: Container(
-                  width: 8.0,
-                  height: 8.0,
-                  margin: EdgeInsets.symmetric(vertical: 10.0, horizontal: 2.0),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _gallerySlider == index
-                        ? Color.fromRGBO(0, 0, 0, 0.9)
-                        : Color.fromRGBO(0, 0, 0, 0.4),
-                  ),
+                    // Arrow Buttons
+                    Container(
+                      alignment: Alignment.center,
+                      margin: EdgeInsets.only(left: 15, right: 15),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          _gallerySlider != 0
+                              ? Stack(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Color.fromRGBO(240, 240, 240, 1),
+                                        borderRadius: BorderRadius.circular(50),
+                                      ),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          _galleryController.previousPage();
+                                          setState(() {
+                                            _gallerySlider -= 1;
+                                          });
+                                        },
+                                        child: Icon(
+                                            Icons.navigate_before_outlined,
+                                            size: 30),
+                                      ),
+                                    )
+                                  ],
+                                )
+                              : Container(),
+                          _gallerySlider != crew.gallery.length - 1
+                              ? Stack(
+                                  children: [
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        color: Color.fromRGBO(240, 240, 240, 1),
+                                        borderRadius: BorderRadius.circular(50),
+                                      ),
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          _galleryController.nextPage();
+                                          setState(() {
+                                            _gallerySlider += 1;
+                                          });
+                                        },
+                                        child: Icon(
+                                            Icons.navigate_next_outlined,
+                                            size: 30),
+                                      ),
+                                    )
+                                  ],
+                                )
+                              : Container(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                onTap: () {
-                  _controller.animateToPage(index);
-                  setState(() {
-                    _gallerySlider = index;
-                  });
-                },
               );
             }).toList(),
           ),
@@ -571,24 +556,19 @@ class _CrewViewState extends State<CrewView>
                 children: [
                   Expanded(
                     child: Container(
-                      margin: EdgeInsets.all(20),
+                      margin: EdgeInsets.only(left: 20, right: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          MyTooltip(
-                            message: 'This item is currently hidden.',
-                            child: Container(
-                              child: Text(
-                                crew.name,
-                                softWrap: true,
-                                overflow: TextOverflow.clip,
-                                style: TextStyle(
-                                  fontSize: 25,
-                                  fontFamily: 'Poppins',
-                                  color: crew.isDeleted == true
-                                      ? Colors.red
-                                      : Colors.black,
-                                ),
+                          Container(
+                            child: Text(
+                              crew.name,
+                              softWrap: true,
+                              overflow: TextOverflow.clip,
+                              style: TextStyle(
+                                fontSize: 25,
+                                fontFamily: 'Poppins',
+                                color: Colors.black,
                               ),
                             ),
                           ),
@@ -601,8 +581,10 @@ class _CrewViewState extends State<CrewView>
                               Text(
                                 "Born:   " +
                                     (crew.birthday != null
-                                        ? DateFormat('MMM. d, y', 'fil').format(
-                                            DateTime.parse(crew.birthday))
+                                        ? DateFormat("MMM. d, y", "fil").format(
+                                            TZDateTime.from(
+                                                DateTime.parse(crew.birthday),
+                                                tz.getLocation('Asia/Manila')))
                                         : '-'),
                                 style: TextStyle(fontSize: 16),
                                 softWrap: true,
@@ -612,9 +594,12 @@ class _CrewViewState extends State<CrewView>
                                   ? Text(
                                       'Died:   ' +
                                           (crew.deathdate != null
-                                              ? DateFormat('MMM. d, y', 'fil')
-                                                  .format(DateTime.parse(
-                                                      crew.deathdate))
+                                              ? DateFormat("MMM. d, y", "fil")
+                                                  .format(TZDateTime.from(
+                                                      DateTime.parse(
+                                                          crew.deathdate),
+                                                      tz.getLocation(
+                                                          'Asia/Manila')))
                                               : '-'),
                                       style: TextStyle(fontSize: 16),
                                       softWrap: true,
@@ -687,6 +672,31 @@ class _CrewViewState extends State<CrewView>
                 ],
               ),
               SizedBox(height: 10),
+              currentUser != null && currentUser.isAdmin == true
+                  ? crew.isDeleted
+                      ? Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 15),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.error_outline, color: Colors.red),
+                              SizedBox(width: 5),
+                              Expanded(
+                                child: Text(
+                                  'This item is currently hidden. Restore in settings.',
+                                  style: TextStyle(
+                                      color: Colors.red, fontSize: 16),
+                                  softWrap: true,
+                                  overflow: TextOverflow.clip,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : SizedBox()
+                  : SizedBox(),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                 child: Column(

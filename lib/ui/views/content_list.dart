@@ -166,7 +166,7 @@ class ContentList extends StatelessWidget {
                               ),
                               child: Text(
                                 content.title +
-                                    (content.releaseDate != "" ||
+                                    (content.releaseDate != "" &&
                                             content.releaseDate != null
                                         ? (" (" +
                                             DateFormat('y').format(
