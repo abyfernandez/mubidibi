@@ -22,13 +22,13 @@ class DisplayReviews extends StatefulWidget {
   final User currentUser;
   final GlobalKey<ScaffoldState> sKey;
 
-  const DisplayReviews(
-      {Key key,
-      this.computeOverallRating,
-      this.movie,
-      this.currentUser,
-      this.sKey,})
-      : super(key: key);
+  const DisplayReviews({
+    Key key,
+    this.computeOverallRating,
+    this.movie,
+    this.currentUser,
+    this.sKey,
+  }) : super(key: key);
 
   @override
   DisplayReviewsState createState() => DisplayReviewsState();

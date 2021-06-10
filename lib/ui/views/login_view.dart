@@ -9,8 +9,7 @@ import 'package:mubidibi/services/navigation_service.dart';
 // import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 import 'package:mubidibi/constants/route_names.dart';
-
-// TO DO: add logo name on top of the fields
+import 'package:shimmer/shimmer.dart';
 
 class LoginView extends StatefulWidget {
   @override
@@ -65,31 +64,18 @@ class _LoginViewState extends State<LoginView> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           iconTheme: IconThemeData(
-            color: Colors.lightBlue, // change your color here
+            color: Colors.black, // change your color here
           ),
           backgroundColor: Colors.white,
-          centerTitle: true,
-          titleSpacing: 1.5,
-          title: Text("mubidibi",
-              style: TextStyle(
-                  color: Colors.lightBlue, fontWeight: FontWeight.bold)),
-          actions: [
-            Container(
-              alignment: Alignment.centerLeft,
-              padding: EdgeInsets.only(right: 20),
-              child: InkWell(
-                  child: Text(
-                    "Help",
-                    style: TextStyle(
-                        color: Colors.lightBlue,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16),
-                  ),
-                  onTap: () {
-                    print("Help button pressed.");
-                  }),
-            ),
-          ],
+          shadowColor: Colors.transparent,
+          leading: GestureDetector(
+            child: Icon(Icons.arrow_back),
+            onTap: () async {
+              FocusScope.of(context).unfocus();
+              // _navigationService.pop();
+              _navigationService.navigateTo(HomeViewRoute);
+            },
+          ),
         ),
         body: ModalProgressHUD(
           inAsyncCall: _saving,
@@ -112,69 +98,115 @@ class _LoginViewState extends State<LoginView> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: <Widget>[
+                            SizedBox(
+                              width: 300,
+                              height: 100,
+                              child: Center(
+                                child: Shimmer.fromColors(
+                                  period: Duration(milliseconds: 500),
+                                  baseColor: Colors.blue,
+                                  highlightColor: Colors.red,
+                                  child: Container(
+                                    height: 100,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      "mubidibi",
+                                      style: TextStyle(
+                                        fontSize: 50,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
                             // EMAIL ADDRESS FIELD
                             // TO DO: validate with regex before allowing to be submitted
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                SizedBox(height: 50.0),
-                                Container(
-                                  child: InputField(
-                                    fieldFocusNode: emailNode,
-                                    nextFocusNode: passwordlNode,
-                                    placeholder: 'Email Address',
-                                    controller: emailController,
-                                    onChanged: (val) {
-                                      setState(() {
-                                        isButtonDisabled();
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
+                            // Column(
+                            // crossAxisAlignment: CrossAxisAlignment.start,
+                            // children: <Widget>[
+                            SizedBox(height: 50.0),
+                            Container(
+                              child: InputField(
+                                fieldFocusNode: emailNode,
+                                nextFocusNode: passwordlNode,
+                                placeholder: 'Email Address',
+                                controller: emailController,
+                                onChanged: (val) {
+                                  setState(() {
+                                    isButtonDisabled();
+                                  });
+                                },
+                              ),
                             ),
-                            SizedBox(
-                              height: 10.0,
-                            ),
+                            SizedBox(height: 10.0),
 
                             // PASSWORD FIELD
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Container(
-                                  child: InputField(
-                                    fieldFocusNode: passwordlNode,
-                                    nextFocusNode: loginButtonNode,
-                                    placeholder: 'Password',
-                                    password: true,
-                                    controller: passwordController,
-                                    onChanged: (val) {
-                                      setState(() {
-                                        isButtonDisabled();
-                                      });
-                                    },
-                                  ),
-                                ),
+                            Container(
+                              child: InputField(
+                                fieldFocusNode: passwordlNode,
+                                nextFocusNode: loginButtonNode,
+                                placeholder: 'Password',
+                                password: true,
+                                controller: passwordController,
+                                onChanged: (val) {
+                                  setState(() {
+                                    isButtonDisabled();
+                                  });
+                                },
+                                enterPressed: isButtonDisabled()
+                                    ? null
+                                    : () async {
+                                        FocusScope.of(context).unfocus();
 
-                                // link to sign up
-                                Row(
-                                  children: [
-                                    Text('Gumawa ng bagong account '),
-                                    InkWell(
-                                        onTap: () {
+                                        _saving =
+                                            true; // set saving to true to trigger circular progress indicator
+                                        var response = await model.login(
+                                            email: emailController.text,
+                                            password: passwordController.text);
+
+                                        if (response == true) {
+                                          // set _saving to false and redirect to dashboard view
+                                          setState(() {
+                                            _saving = false;
+                                          });
+
+                                          // show snack bar or flutter toast (success)
+                                          // TO DO: route test -- flutter toast or snackbar to notify that user has successfully logged in
+                                          _navigationService
+                                              .navigateTo(HomeViewRoute);
+                                          // Navigator.pushReplacementNamed(
+                                          //     context, HomeViewRoute);
+                                        } else {
                                           FocusScope.of(context).unfocus();
 
-                                          _navigationService
-                                              .navigateTo(SignUpViewRoute);
-                                        },
-                                        child: Text('dito',
-                                            style: TextStyle(
-                                                color: Colors.lightBlue,
-                                                decoration:
-                                                    TextDecoration.underline))),
-                                    Text('.'),
-                                  ],
-                                ),
+                                          // set _saving to false and display error dialog box or snackbar/flutter toast for login error
+                                          setState(() {
+                                            _saving = false;
+                                          });
+                                        }
+                                      },
+                              ),
+                            ),
+
+                            // link to sign up
+                            Row(
+                              children: [
+                                Text('Gumawa ng bagong account '),
+                                InkWell(
+                                    onTap: () {
+                                      FocusScope.of(context).unfocus();
+
+                                      _navigationService
+                                          .navigateTo(SignUpViewRoute);
+                                    },
+                                    child: Text('dito',
+                                        style: TextStyle(
+                                            color: Colors.lightBlue,
+                                            decoration:
+                                                TextDecoration.underline))),
+                                Text('.'),
                               ],
                             ),
 
@@ -238,9 +270,7 @@ class _LoginViewState extends State<LoginView> {
                               ),
                             ),
 
-                            SizedBox(
-                              height: 10.0,
-                            ),
+                            SizedBox(height: 10.0),
 
                             // // DIVIDER
                             // Column(children: <Widget>[

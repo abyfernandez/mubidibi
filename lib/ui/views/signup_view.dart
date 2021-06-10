@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 // import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,9 @@ import 'package:mubidibi/viewmodels/signup_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:flutter/services.dart';
 // import 'package:mubidibi/locator.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/timezone.dart';
 
 class SignUpFirstPage extends StatefulWidget {
   SignUpFirstPage({Key key}) : super(key: key);
@@ -54,18 +58,32 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
         ),
       ),
     );
-    emailController = result[0];
-    passwordController = result[1];
-    firstNameController = result[2];
-    middleNameController = result[3];
-    lastNameController = result[4];
-    suffixController = result[5];
-    birthdayController = result[6];
+
+    if (result != null) {
+      emailController = result[0];
+      passwordController = result[1];
+      firstNameController = result[2];
+      middleNameController = result[3];
+      lastNameController = result[4];
+      suffixController = result[5];
+      birthdayController = result[6];
+    }
+
+    print(emailController.text);
+    print(passwordController.text);
+    print(firstNameController.text);
+    print(middleNameController.text);
+    print(lastNameController.text);
+    print(suffixController.text);
+    print(birthdayController.text);
   }
 
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting();
+    tz.initializeTimeZones();
+
     if (emailController.text.trim() != "" &&
         passwordController.text.trim() != "") {
       _isButtonDisabled = false;
@@ -82,7 +100,7 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           backgroundColor: Colors.white,
-          elevation: 0,
+          shadowColor: Colors.transparent,
           iconTheme: IconThemeData(
             color: Colors.black, //change your color here
           ),
@@ -110,10 +128,10 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Create Account",
+                              "Gumawa ng Account",
                               style: TextStyle(
                                 color: Colors.lightBlue,
-                                fontSize: 35.0,
+                                fontSize: 30.0, // 35
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -237,8 +255,9 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
     if (_datePicker != null && _datePicker != _birthday) {
       setState(() {
         _birthday = _datePicker;
-        birthdayController.text =
-            DateFormat("MMM. d, y").format(_birthday) ?? '';
+        birthdayController.text = DateFormat("MMM. d, y", "fil").format(
+                TZDateTime.from(_birthday, tz.getLocation('Asia/Manila'))) ??
+            '';
       });
       print(_birthday);
     }
@@ -247,6 +266,9 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting();
+    tz.initializeTimeZones();
+
     emailController = previousFields[0];
     passwordController = previousFields[1];
     firstNameController = previousFields[2];
@@ -273,11 +295,25 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
       viewModel: SignUpViewModel(),
       builder: (context, model, child) => Scaffold(
         appBar: AppBar(
-          elevation: 0,
-          iconTheme: IconThemeData(
-            color: Colors.white, //change your color here
-          ),
-        ),
+            backgroundColor: Colors.white,
+            shadowColor: Colors.transparent,
+            iconTheme: IconThemeData(
+              color: Colors.black, //change your color here
+            ),
+            leading: GestureDetector(
+                child: Icon(Icons.arrow_back),
+                onTap: () async {
+                  FocusScope.of(context).unfocus();
+                  Navigator.pop(context, [
+                    emailController,
+                    passwordController,
+                    firstNameController,
+                    middleNameController,
+                    lastNameController,
+                    suffixController,
+                    birthdayController
+                  ]);
+                })),
         backgroundColor: Colors.white,
         body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
@@ -301,10 +337,10 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Create Account",
+                              "Gumawa ng Account",
                               style: TextStyle(
                                 color: Colors.lightBlue,
-                                fontSize: 35.0,
+                                fontSize: 30.0, // 35
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -384,14 +420,6 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                                   ),
                                   contentPadding: EdgeInsets.only(left: 15),
                                 ),
-
-                                // field is not required
-                                // validator: (value) {
-                                //   if (value.isEmpty || value == null) {
-                                //     return 'This field is required';
-                                //   }
-                                //   return null;
-                                // },
                               ),
                             ),
 
@@ -416,8 +444,9 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                                 ),
                                 decoration: InputDecoration(
                                   hintText: _birthday != null
-                                      ? DateFormat("MMM. d, y")
-                                          .format(_birthday)
+                                      ? DateFormat("MMM. d, y", "fil").format(
+                                          TZDateTime.from(_birthday,
+                                              tz.getLocation('Asia/Manila')))
                                       : "Birthday",
                                   hintStyle: TextStyle(
                                     color: Colors.white,
@@ -429,32 +458,8 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                                   ),
                                   contentPadding: EdgeInsets.only(left: 15),
                                 ),
-
-                                // field is not required
-                                // validator: (value) {
-                                //   if (value.isEmpty || value == null) {
-                                //     return 'This field is required';
-                                //   }
-                                //   return null;
-                                // },
                               ),
                             ),
-
-                            // Birthday Form Field
-                            // Container(
-                            //   width: 100,
-                            //   child: InputField(
-                            //     controller: birthdayController,
-                            //     isReadOnly: true,
-                            //     onTap: () {
-                            //       _selectDate(context);
-                            //     },
-                            //     placeholder: "Birthday",
-                            //     hintText: _birthday != null
-                            //         ? DateFormat("MMM. d, y").format(_birthday)
-                            //         : "Birthday",
-                            //   ),
-                            // ),
                           ],
                         ),
                         SizedBox(
@@ -540,6 +545,6 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
         middleName: middleNameController?.text ?? null,
         lastName: lastNameController.text,
         suffix: suffixController?.text ?? null,
-        birthday: _birthday != null ? _birthday.toIso8601String() : null);
+        birthday: _birthday != null ? _birthday.toString() : null);
   }
 }

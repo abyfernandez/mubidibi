@@ -743,7 +743,7 @@ exports.crew = app => {
       if (err) return res.send(err);
 
       // restore Crew: sets the is_deleted field to false;
-      client.query('UPDATE crew SET is_deleted = false where id = $1 RETURNING id', [parseInt(req.body.id)],
+      client.query('UPDATE crew SET is_deleted = false where id = $1 RETURNING id', [req.body.id],
         function onResult(err, result) {
           release();
           res.send(err || JSON.stringify(result.rows[0].id));

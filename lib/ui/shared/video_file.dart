@@ -41,9 +41,19 @@ class VideoFileState extends State<VideoFile> {
       looping: widget.looping,
       errorBuilder: (context, errorMessage) {
         return Center(
-          child: Text(
-            'Error playing file',
-            style: TextStyle(color: Colors.red),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline_rounded, color: Colors.red),
+              SizedBox(width: 5),
+              Text(
+                'Error loading file',
+                style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
+              ),
+            ],
           ),
         );
       },
@@ -78,23 +88,6 @@ class VideoFileState extends State<VideoFile> {
                           height: 200,
                           child: Stack(
                             children: [
-                              // Center(
-                              //   child: Container(
-                              //     height: 200,
-                              //     color: Colors.white,
-                              //   ),
-                              // ),
-                              // Center(
-                              //     child: Icon(Icons.music_note_sharp,
-                              //         size: 30, color: Colors.black87)),
-                              // Positioned(
-                              //   left: 0,
-                              //   right: 0,
-                              //   bottom: 0,
-                              //   child: Chewie(
-                              //     controller: _chewieController,
-                              // ),
-                              // ),
                               Center(
                                 child: Container(
                                   child: Chewie(

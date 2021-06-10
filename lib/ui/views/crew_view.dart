@@ -145,7 +145,7 @@ class _CrewViewState extends State<CrewView>
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              MovieView(movieId: movie.movieId.toString()),
+                              MovieView(movieId: movie.movieId),
                         ),
                       );
                     },
@@ -163,25 +163,28 @@ class _CrewViewState extends State<CrewView>
                               BoxShadow(
                                 color: Colors.black54,
                                 offset: Offset(0.0, 0.0),
-                                blurRadius: 2.0, // 2
+                                blurRadius: 0.0, // 2
                               ),
                             ],
                             borderRadius: BorderRadius.circular(5),
                           ),
-                          child: Text(
-                            movie.title +
-                                (movie.releaseDate != "" &&
-                                        movie.releaseDate != null
-                                    ? (" (" +
-                                        DateFormat('y').format(
-                                            DateTime.parse(movie.releaseDate)) +
-                                        ") ")
-                                    : ""),
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                          child: Container(
+                            padding: EdgeInsets.all(5),
+                            child: Text(
+                              movie.title +
+                                  (movie.releaseDate != "" &&
+                                          movie.releaseDate != null
+                                      ? (" (" +
+                                          DateFormat('y').format(DateTime.parse(
+                                              movie.releaseDate)) +
+                                          ") ")
+                                      : ""),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -251,16 +254,16 @@ class _CrewViewState extends State<CrewView>
                                       Material(
                                     child: Image.network(
                                       Config.imgNotFound,
-                                      width: 300,
-                                      height: 200,
-                                      fit: BoxFit.cover,
+                                      width: 200,
+                                      height: 300,
+                                      fit: BoxFit.contain, // .cover
                                       alignment: Alignment.center,
                                     ),
                                   ),
                                   imageUrl: p?.url ?? Config.imgNotFound,
-                                  width: 300,
-                                  height: 200,
-                                  fit: BoxFit.cover,
+                                  width: 200,
+                                  height: 300,
+                                  fit: BoxFit.contain, // .cover
                                 ),
                               ),
                               onTap: () {
@@ -288,7 +291,7 @@ class _CrewViewState extends State<CrewView>
                     // Arrow Buttons
                     Container(
                       alignment: Alignment.center,
-                      margin: EdgeInsets.only(left: 15, right: 15),
+                      margin: EdgeInsets.only(left: 0, right: 0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -487,8 +490,8 @@ class _CrewViewState extends State<CrewView>
 
                           _saving = true;
 
-                          var restoreRes = await model.restoreCrew(
-                              id: crew.crewId.toString());
+                          var restoreRes =
+                              await model.restoreCrew(id: crew.crewId);
                           if (restoreRes != 0) {
                             // show success snackbar
 
@@ -990,43 +993,42 @@ class _CrewViewState extends State<CrewView>
                             mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    "Gallery",
-                                    style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  crew.gallery.length >= 4
-                                      ? GestureDetector(
-                                          child: Text(
-                                            'Tingnan Lahat',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.blue),
-                                            overflow: TextOverflow.ellipsis,
-                                            softWrap: true,
-                                          ),
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) =>
-                                                    SeeAllView(
-                                                  type: 'photos',
-                                                  title: "Gallery",
-                                                  photos: crew.gallery,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        )
-                                      : Container(),
-                                ],
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              Text(
+                                "Gallery",
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
                               ),
+                              // crew.gallery.length >= 4
+                              //     ? GestureDetector(
+                              //         child: Text(
+                              //           'Tingnan Lahat',
+                              //           style: TextStyle(
+                              //               fontSize: 14,
+                              //               color: Colors.blue),
+                              //           overflow: TextOverflow.ellipsis,
+                              //           softWrap: true,
+                              //         ),
+                              //         onTap: () {
+                              //           Navigator.push(
+                              //             context,
+                              //             MaterialPageRoute(
+                              //               builder: (context) =>
+                              //                   SeeAllView(
+                              //                 type: 'photos',
+                              //                 title: "Gallery",
+                              //                 photos: crew.gallery,
+                              //               ),
+                              //             ),
+                              //           );
+                              //         },
+                              //       )
+                              //     : Container(),
+                              //   ],
+                              // ),
                               crew.gallery.isNotEmpty
                                   ? SizedBox(height: 10)
                                   : SizedBox(),

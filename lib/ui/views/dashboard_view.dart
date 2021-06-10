@@ -14,6 +14,8 @@ import 'package:mubidibi/ui/views/content_list.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
 
+final ValueNotifier<bool> rebuild = ValueNotifier<bool>(false);
+
 class DashboardView extends StatefulWidget {
   final String filter;
 
@@ -35,9 +37,9 @@ class _DashboardViewState extends State<DashboardView>
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   List<Movie> movies;
+  List<Movie> favorites = [];
   List<Crew> crew;
   ScrollController _movieScrollController;
-  ScrollController _crewScrollController;
   var index;
   Animation<double> _animation;
   AnimationController _animationController;
@@ -63,6 +65,19 @@ class _DashboardViewState extends State<DashboardView>
     });
   }
 
+  // function for calling viewmodel's getFavorites method
+  void fetchFavorites() async {
+    if (currentUser != null) {
+      var model = MovieViewModel();
+      favorites = await model.getFavorites(mode: "list");
+
+      setState(() {
+        favorites = favorites;
+        rebuild.value = false;
+      });
+    }
+  }
+
   // function for calling viewmodel's getAllCrew method
   void fetchCrew() async {
     var model = CrewViewModel();
@@ -77,6 +92,7 @@ class _DashboardViewState extends State<DashboardView>
   void initState() {
     currentUser = _authenticationService.currentUser;
     fetchMovies();
+    fetchFavorites();
     fetchCrew();
     fabIcon = Icons.admin_panel_settings;
 
@@ -220,16 +236,63 @@ class _DashboardViewState extends State<DashboardView>
                       child: SizedBox(height: 10),
                     ),
                     currentUser != null
-                        ? SliverToBoxAdapter(
-                            child: ContentList(
-                              key: PageStorageKey('myFavorites'),
-                              title: 'Mga Favorite',
-                              seeAll: 'Tingnan Lahat',
-                              movies: movies,
-                              type: 'favorites',
-                              filter: filter,
-                              showFilter: true,
-                            ),
+                        ? ValueListenableBuilder(
+                            valueListenable: rebuild,
+                            builder: (context, willRebuild, widget) {
+                              if (willRebuild) {
+                                fetchFavorites();
+                              }
+                              return favorites != null && favorites.isNotEmpty
+                                  ? SliverToBoxAdapter(
+                                      child: ContentList(
+                                        key: PageStorageKey('myFavorites'),
+                                        title: 'Mga Favorite',
+                                        seeAll: 'Tingnan Lahat',
+                                        movies: favorites,
+                                        type: 'favorites',
+                                        filter: filter,
+                                        showFilter: true,
+                                      ),
+                                    )
+                                  : SliverToBoxAdapter(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 24.0,
+                                          vertical: 6,
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Mga Favorite',
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontSize: 20.0,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 15,
+                                                vertical: 15,
+                                              ),
+                                              child: Text(
+                                                'Magdagdag ng mga paboritong pelikula.',
+                                                style: TextStyle(
+                                                  color: Colors.black54,
+                                                  fontSize: 16,
+                                                  fontStyle: FontStyle.italic,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                            },
                           )
                         : SliverToBoxAdapter(),
                     SliverToBoxAdapter(

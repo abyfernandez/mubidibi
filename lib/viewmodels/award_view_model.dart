@@ -35,7 +35,7 @@ class AwardViewModel extends BaseModel {
 
   // Function: GET AWARDS for Movie Detail View -- // TO DO: include the awards received by the movie's crew
   Future<List<Award>> getAwards(
-      {@required String movieId, @required String user}) async {
+      {@required int movieId, @required String user}) async {
     setBusy(true);
 
     // send API Request

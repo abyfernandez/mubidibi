@@ -53,7 +53,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         viewToShow: HomeView(),
       );
     case MovieViewRoute:
-      var movieId = settings.arguments as String;
+      var movieId = settings.arguments as int;
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: MovieView(movieId: movieId),
@@ -100,9 +100,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
     case SeeAllViewRoute:
       var movies = settings.arguments as List<Movie>;
+      var favorites = settings.arguments as List<Movie>;
       var crew = settings.arguments as List<Crew>;
-      var photos = settings.arguments as List<MediaFile>;
-      var screenshots = settings.arguments as List<MediaFile>;
       var type = settings.arguments as String;
       var filter = settings.arguments as String;
       var title = settings.arguments as String;
@@ -111,9 +110,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         routeName: settings.name,
         viewToShow: SeeAllView(
           movies: movies,
+          favorites: favorites,
           crew: crew,
-          photos: photos,
-          screenshots: screenshots,
           type: type,
           filter: filter,
           title: title,

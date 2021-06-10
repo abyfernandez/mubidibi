@@ -63,39 +63,6 @@ class FullPhotoScreenState extends State<FullPhotoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // return SingleChildScrollView(
-    //   // height: double.infinity,
-    //   child: Column(
-    //     children: [
-    //       Container(
-    //         height: MediaQuery.of(context).size.height / 4 * 3.5,
-    //         child: PhotoView(
-    //           imageProvider:
-    //               type == "network" ? NetworkImage(url) : FileImage(file),
-    //           backgroundDecoration: BoxDecoration(color: Colors.white),
-    //         ),
-    //       ),
-    //       Container(
-    //           margin: EdgeInsets.all(15),
-    //           decoration: BoxDecoration(
-    //             boxShadow: [
-    //               BoxShadow(
-    //                 color: Color.fromRGBO(240, 240, 240, 1),
-    //                 offset: Offset(0.0, 0.0),
-    //                 blurRadius: 0,
-    //               ),
-    //             ],
-    //           ),
-    //           child: Text(
-    //             description ?? '',
-    //             style: TextStyle(color: Colors.black),
-    //             overflow: TextOverflow.clip,
-    //             softWrap: true,
-    //           ),
-    //         ),
-    //     ],
-    //   ),
-    // );
     return Container(
       child: GestureDetector(
           child: Stack(children: [
@@ -130,8 +97,13 @@ class FullPhotoScreenState extends State<FullPhotoScreen> {
                   child: Container(
                     margin: EdgeInsets.all(5),
                     child: Text(
-                      description ?? '',
-                      style: TextStyle(color: Colors.white),
+                      widget.description ?? 'No description',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontStyle: widget.description != ''
+                            ? FontStyle.normal
+                            : FontStyle.italic,
+                      ),
                       overflow: TextOverflow.clip,
                       softWrap: true,
                     ),

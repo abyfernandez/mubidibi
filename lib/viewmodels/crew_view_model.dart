@@ -44,7 +44,7 @@ class CrewViewModel extends BaseModel {
   }
 
   // Function: GET CREW for Movie Detail View
-  Future<List<List<Crew>>> getCrewForDetails({@required String movieId}) async {
+  Future<List<List<Crew>>> getCrewForDetails({@required int movieId}) async {
     setBusy(true);
 
     final response = await http.post(Config.api + 'crew-for-movie/',
@@ -235,13 +235,13 @@ class CrewViewModel extends BaseModel {
   }
 
   // RESTORE CREW
-  Future<int> restoreCrew({@required String id}) async {
+  Future<int> restoreCrew({@required int id}) async {
     // send API Request
     var response = await http.post(Config.api + "crew/restore/",
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: jsonEncode(<String, String>{"id": id}));
+        body: jsonEncode(<String, dynamic>{"id": id}));
 
     if (response.statusCode == 200) {
       return (json.decode(response.body));

@@ -41,7 +41,22 @@ class AudioFileState extends State<AudioFile> {
       autoPlay: widget.autoplay,
       looping: widget.looping,
       errorBuilder: (context, errorMessage) {
-        return Text('An error occurred.');
+        return Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline_rounded, color: Colors.red),
+              SizedBox(width: 5),
+              Text(
+                'Error loading file',
+                style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16),
+              ),
+            ],
+          ),
+        );
       },
     );
   }

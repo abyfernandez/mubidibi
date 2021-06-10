@@ -172,10 +172,10 @@ class _HomeViewState extends State<HomeView> {
         ),
         child: MyDrawer(),
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
+        elevation: 3,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),

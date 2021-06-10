@@ -1,6 +1,4 @@
-// import 'dart:io';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
@@ -41,6 +39,7 @@ class MovieViewModel extends BaseModel {
               ? "admin"
               : "non-admin",
           "mode": mode,
+          "account_id": currentUser != null ? currentUser.userId : null,
         }));
 
     setBusy(false);
@@ -54,19 +53,22 @@ class MovieViewModel extends BaseModel {
   }
 
   // Function: GET ONE MOVIE
-  Future<Movie> getOneMovie({@required String movieId}) async {
-    var queryParams = {
-      'id': movieId,
-    };
-    setBusy(true);
-
-    var uri =
-        Uri.http(Config.apiNoHTTP, '/mubidibi/movie/$movieId', queryParams);
+  Future<Movie> getOneMovie({@required int movieId}) async {
+    currentUser = _authenticationService.currentUser;
 
     // send API Request
-    final response = await http.get(uri);
+    setBusy(true);
+    var response;
 
-    setBusy(false);
+    // send API Request
+    response = await http.post(Config.api + 'movie/get-one-movie/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          "account_id": currentUser != null ? currentUser.userId : null,
+          "id": movieId
+        }));
 
     if (response.statusCode == 200) {
       return Movie.fromJson(json.decode(response.body));
@@ -246,6 +248,57 @@ class MovieViewModel extends BaseModel {
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(<String, String>{"id": id}));
+
+    if (response.statusCode == 200) {
+      return (json.decode(response.body));
+    }
+    return 0;
+  }
+
+  // Function: GET FAVORITES
+  Future<List<Movie>> getFavorites({@required String mode}) async {
+    currentUser = _authenticationService.currentUser;
+
+    setBusy(true);
+    // add filter when retrieving data from the database ???? (filters)
+    var response;
+
+    // send API Request
+    response = await http.post(Config.api + 'favorite-movies/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          "account_id": currentUser != null ? currentUser.userId : null,
+          "user": currentUser != null && currentUser.isAdmin == true
+              ? "admin"
+              : "non-admin",
+          "mode": mode,
+        }));
+
+    setBusy(false);
+    if (response.statusCode == 200) {
+      return movieFromJson(response.body);
+    } else {
+      throw Exception('Failed to load movies');
+    }
+  }
+
+  // UPDATE FAVORITE MOVIE
+  Future<int> updateFavorites(
+      {@required int movieId, @required String type}) async {
+    currentUser = _authenticationService.currentUser;
+
+    // send API Request
+    var response = await http.post(Config.api + "movies/update-favorites/",
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          "movie_id": movieId,
+          "type": type,
+          "account_id": currentUser != null ? currentUser.userId : null,
+        }));
 
     if (response.statusCode == 200) {
       return (json.decode(response.body));

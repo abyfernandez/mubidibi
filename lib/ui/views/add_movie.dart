@@ -1607,7 +1607,7 @@ class _AddMovieState extends State<AddMovie> {
 
                                       // get movie using id redirect to detail view using response
                                       var movie = await model.getOneMovie(
-                                          movieId: response.toString());
+                                          movieId: response);
 
                                       if (movie != null) {
                                         _saving =
@@ -1619,8 +1619,7 @@ class _AddMovieState extends State<AddMovie> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) => MovieView(
-                                                  movieId:
-                                                      movie.movieId.toString()),
+                                                  movieId: movie.movieId),
                                             ),
                                           );
                                         });

@@ -4,10 +4,12 @@ import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 // import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
+import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:mubidibi/ui/views/see_all_view.dart';
+import 'package:mubidibi/ui/widgets/content_header.dart';
 // import '../../locator.dart';
 
 class ContentList extends StatelessWidget {
@@ -137,14 +139,22 @@ class ContentList extends StatelessWidget {
                       final Movie content = movies[index];
                       return GestureDetector(
                         // Show Movie Details
-                        onTap: () => {
+                        onTap: () async {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => MovieView(
-                                  movieId: movies[index].movieId.toString()),
+                              builder: (_) =>
+                                  MovieView(movieId: movies[index].movieId),
                             ),
-                          ),
+                          ).then((data) {
+                            if (data[0] == true) {
+                              rebuild.value = true;
+                              // if modified movie is the header, change the value too
+                              if (data[2] == movies[index].movieId) {
+                                headerFavorite.value = data[1];
+                              }
+                            }
+                          });
                         },
                         child: Stack(
                           children: [
@@ -159,26 +169,29 @@ class ContentList extends StatelessWidget {
                                   BoxShadow(
                                     color: Colors.black54,
                                     offset: Offset(0.0, 0.0),
-                                    blurRadius: 2.0, // 2
+                                    blurRadius: 0.0, // 2
                                   ),
                                 ],
                                 borderRadius: BorderRadius.circular(5),
                               ),
-                              child: Text(
-                                content.title +
-                                    (content.releaseDate != "" &&
-                                            content.releaseDate != null
-                                        ? (" (" +
-                                            DateFormat('y').format(
-                                                DateTime.parse(
-                                                    content.releaseDate)) +
-                                            ") ")
-                                        : ""),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                              child: Container(
+                                padding: EdgeInsets.all(5),
+                                child: Text(
+                                  content.title +
+                                      (content.releaseDate != "" &&
+                                              content.releaseDate != null
+                                          ? (" (" +
+                                              DateFormat('y').format(
+                                                  DateTime.parse(
+                                                      content.releaseDate)) +
+                                              ") ")
+                                          : ""),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -241,7 +254,7 @@ class ContentList extends StatelessWidget {
                                   BoxShadow(
                                     color: Colors.black54,
                                     offset: Offset(0.0, 0.0),
-                                    blurRadius: 2.0,
+                                    blurRadius: 0.0, // 2
                                   ),
                                 ],
                                 borderRadius: BorderRadius.circular(5),

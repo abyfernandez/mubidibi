@@ -266,30 +266,34 @@ class _SearchViewState extends State<SearchView> {
                                                     BoxShadow(
                                                       color: Colors.black54,
                                                       offset: Offset(0.0, 0.0),
-                                                      blurRadius: 2.0,
+                                                      blurRadius: 0.0,
                                                     ),
                                                   ],
                                                   borderRadius:
                                                       BorderRadius.circular(5),
                                                 ),
-                                                child: Text(
-                                                  movie.title +
-                                                      (movie.releaseDate !=
-                                                                  "" &&
-                                                              movie.releaseDate !=
-                                                                  null
-                                                          ? (" (" +
-                                                              DateFormat('y')
-                                                                  .format(DateTime
-                                                                      .parse(movie
-                                                                          .releaseDate)) +
-                                                              ") ")
-                                                          : ""),
-                                                  textAlign: TextAlign.center,
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.bold,
+                                                child: Container(
+                                                  padding: EdgeInsets.all(5),
+                                                  child: Text(
+                                                    movie.title +
+                                                        (movie.releaseDate !=
+                                                                    "" &&
+                                                                movie.releaseDate !=
+                                                                    null
+                                                            ? (" (" +
+                                                                DateFormat('y')
+                                                                    .format(DateTime
+                                                                        .parse(movie
+                                                                            .releaseDate)) +
+                                                                ") ")
+                                                            : ""),
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -324,27 +328,31 @@ class _SearchViewState extends State<SearchView> {
                                                   padding: EdgeInsets.all(5),
                                                   alignment:
                                                       Alignment.bottomLeft,
-                                                  child: Text(
-                                                    movie.title +
-                                                        (movie.releaseDate !=
-                                                                    "" &&
-                                                                movie.releaseDate !=
-                                                                    null
-                                                            ? (" (" +
-                                                                DateFormat('y')
-                                                                    .format(DateTime
-                                                                        .parse(movie
-                                                                            .releaseDate)) +
-                                                                ") ")
-                                                            : ""),
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 14,
+                                                  child: Container(
+                                                    padding: EdgeInsets.all(5),
+                                                    child: Text(
+                                                      movie.title +
+                                                          (movie.releaseDate !=
+                                                                      "" &&
+                                                                  movie.releaseDate !=
+                                                                      null
+                                                              ? (" (" +
+                                                                  DateFormat(
+                                                                          'y')
+                                                                      .format(DateTime
+                                                                          .parse(
+                                                                              movie.releaseDate)) +
+                                                                  ") ")
+                                                              : ""),
+                                                      style: TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 14,
+                                                      ),
+                                                      softWrap: true,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      maxLines: 3,
                                                     ),
-                                                    softWrap: true,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    maxLines: 3,
                                                   ),
                                                   decoration: BoxDecoration(
                                                     boxShadow: [
@@ -366,8 +374,7 @@ class _SearchViewState extends State<SearchView> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) => MovieView(
-                                                    movieId: movie.movieId
-                                                        .toString()),
+                                                    movieId: movie.movieId),
                                               ));
                                         },
                                       ),

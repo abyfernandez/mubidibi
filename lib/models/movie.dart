@@ -23,6 +23,7 @@ class Movie {
   final String addedBy;
   final bool isDeleted;
   final List<dynamic> role; // for crew view purposes only
+  final int favoriteId; // for favorites view purposes only
 
   Movie({
     this.movieId,
@@ -39,6 +40,7 @@ class Movie {
     this.addedBy,
     this.isDeleted,
     this.role,
+    this.favoriteId,
   });
 
   factory Movie.fromJson(Map<String, dynamic> json) {
@@ -71,6 +73,7 @@ class Movie {
       addedBy: json['added_by'],
       isDeleted: json['is_deleted'],
       role: json['role'],
+      favoriteId: json['favorite_id'],
     );
   }
 
@@ -88,5 +91,6 @@ class Movie {
         "added_by": addedBy,
         "is_deleted": isDeleted,
         "role": role,
+        'favorite_id': favoriteId,
       };
 }

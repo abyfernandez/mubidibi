@@ -41,6 +41,14 @@ exports.movie = app => {
             movies[i]['audios'] = rows;
           }
 
+          if (req.body.account_id != null) {
+            // check if included in favorite table
+            for (var i = 0; i < movies.length; i++) {
+              var { rows } = await client.query(`select * from favorite where movie_id = ${movies[i].id} and account_id = '${req.body.account_id}'`);
+
+              movies[i]['favorite_id'] = rows && rows.length ? rows[0].id : null;
+            }
+          }
           return movies;
         });
 
@@ -51,14 +59,14 @@ exports.movie = app => {
   });
 
   // GET ONE MOVIE (MOVIE DETAIL VIEW)
-  app.get('/mubidibi/movie/:id', (req, res) => {
+  app.post('/mubidibi/movie/get-one-movie/', (req, res) => {
     app.pg.connect(onConnect)
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err)
 
       var result = await client.query(
-        'SELECT * FROM movie where id = $1', [parseInt(req.params.id)]).then(async (result) => {
+        `SELECT * FROM movie where id = '${req.body.id}'`).then(async (result) => {
           var movie = result.rows[0];
 
           // get posters  
@@ -81,6 +89,11 @@ exports.movie = app => {
           var { rows } = await client.query(`select * from quote where movie_id = ${movie.id}`);
           movie['quotes'] = rows;
 
+          // favorite_id 
+          if (req.body.account_id != null) {
+            var { rows } = await client.query(`select id from favorite where movie_id = ${movie.id} and account_id = '${req.body.account_id}'`);
+            movie['favorite_id'] = rows && rows.length ? rows[0].id : null;
+          }
           return movie;
         });
       console.log(result);
@@ -732,7 +745,71 @@ exports.movie = app => {
         }
       )
     }
-  })
+  });
+
+  // GET FAVORITES
+  app.post('/mubidibi/favorite-movies/', async (req, res) => {
+    app.pg.connect(onConnect)
+
+    async function onConnect(err, client, release) {
+      if (err) return res.send(err)
+      var query = `SELECT movie.*, favorite.id as favorite_id FROM movie LEFT JOIN favorite ON favorite.movie_id = movie.id WHERE favorite.account_id = '${req.body.account_id}'`;
+
+      // if user is not admin, show only the movies that are not soft-deleted
+      if (req.body.user != "admin" || req.body.mode == "form") {
+        query = query.concat(` and movie.is_deleted = false `);
+      }
+
+      var result = await client.query(
+        query).then(async (result) => {
+          var movies = result.rows;
+
+          // get posters  
+          for (var i = 0; i < movies.length; i++) {
+            var { rows } = await client.query(`select * from movie_media where movie_id = ${movies[i].id} and type = 'poster'`);
+            movies[i]['posters'] = rows;
+          }
+
+          return movies;
+        });
+
+      release();
+      if (result) res.send(JSON.stringify(result));
+      else res.send(err);
+    }
+  });
+
+  // UPDATE FAVORITES
+  app.post('/mubidibi/movies/update-favorites/', (req, res) => {
+    app.pg.connect(onConnect);
+
+    function onConnect(err, client, release) {
+      if (err) return res.send(err);
+
+      if (req.body.type == 'delete') {
+        client.query(`delete from favorite where movie_id = ${req.body.movie_id} and account_id = '${req.body.account_id}'`,
+          function onResult(err, result) {
+            console.log("delete: ", result);
+            release();
+            res.send(err || JSON.stringify(!result.rows.length ? req.body.movie_id : 0));
+          }
+        );
+      } else if (req.body.type == 'add') {
+        client.query(`insert into favorite (movie_id, account_id) values (${req.body.movie_id}, '${req.body.account_id}') returning id`,
+          function onResult(err, result) {
+            console.log('add: ', result);
+
+            release();
+            res.send(err || JSON.stringify(result.rows[0].id));
+          }
+        );
+      }
+      else {
+        release();
+        res.send(err || 0);
+      }
+    }
+  });
 }
 
 

@@ -6,12 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
-import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
-import 'package:mubidibi/ui/views/full_photo.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
-import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -20,9 +17,8 @@ import 'package:mubidibi/globals.dart' as Config;
 
 class SeeAllView extends StatefulWidget {
   final List<Movie> movies;
+  final List<Movie> favorites;
   final List<Crew> crew;
-  final List<MediaFile> photos;
-  final List<MediaFile> screenshots;
   final String type;
   final String filter;
   final bool showFilter;
@@ -31,9 +27,8 @@ class SeeAllView extends StatefulWidget {
   SeeAllView({
     Key key,
     this.movies,
+    this.favorites,
     this.crew,
-    this.photos,
-    this.screenshots,
     this.type,
     this.filter,
     this.showFilter = false,
@@ -42,14 +37,13 @@ class SeeAllView extends StatefulWidget {
 
   @override
   _SeeAllViewState createState() => _SeeAllViewState(
-      movies, crew, photos, screenshots, type, filter, showFilter, title);
+      movies, crew, favorites, type, filter, showFilter, title);
 }
 
 class _SeeAllViewState extends State<SeeAllView> {
   final List<Movie> movies;
+  final List<Movie> favorites;
   final List<Crew> crew;
-  final List<MediaFile> photos;
-  final List<MediaFile> screenshots;
   final String type;
   final String
       filter; // variable for when user came from the genre dropdown in the homepage. this will later be added to the list of filters
@@ -65,15 +59,17 @@ class _SeeAllViewState extends State<SeeAllView> {
 
   List filtered = []; // filtered films
 
-  _SeeAllViewState(this.movies, this.crew, this.photos, this.screenshots,
-      this.type, this.filter, this.showFilter, this.title);
+  _SeeAllViewState(this.movies, this.crew, this.favorites, this.type,
+      this.filter, this.showFilter, this.title);
 
   @override
   void initState() {
     // TO DO: MOVIES FOR FAVORITES
     if (filter != null) filters.add(filter);
-    if (type == "movies" || type == 'favorites')
+    if (type == "movies")
       fetchMovies();
+    else if (type == "favorites")
+      fetchFavorites();
     else if (type == "crew") fetchCrew();
     super.initState();
   }
@@ -95,11 +91,38 @@ class _SeeAllViewState extends State<SeeAllView> {
                     child: SafeArea(child: showContent(context))))));
   }
 
-  // function for calling viewmodel's getAllCrew method
+  // function for calling viewmodel's getAllMovies method
   void fetchMovies() async {
     if (movies == null) {
       var model = MovieViewModel();
       films = await model.getAllMovies(mode: "list");
+
+      // fetch genre from API
+      final response = await http.get(Config.api + 'genres/');
+
+      if (response.statusCode == 200) {
+        genres = List<String>.from(
+            json.decode(response.body).map((x) => x['genre']));
+      }
+
+      setState(() {
+        filtered = films;
+        applyFilter(filters);
+      });
+    } else {
+      setState(() {
+        films = movies;
+        filtered = films;
+        applyFilter(filters);
+      });
+    }
+  }
+
+  // function for calling viewmodel's getFavorites method
+  void fetchFavorites() async {
+    if (movies == null) {
+      var model = MovieViewModel();
+      films = await model.getFavorites(mode: "list");
 
       // fetch genre from API
       final response = await http.get(Config.api + 'genres/');
@@ -188,9 +211,13 @@ class _SeeAllViewState extends State<SeeAllView> {
                           if (query.isNotEmpty) {
                             var lowercaseQuery = query.toLowerCase();
                             return genres.where((item) {
-                              return item
-                                  .toLowerCase()
-                                  .contains(query.toLowerCase());
+                              return !filters
+                                      .map((d) => d)
+                                      .toList()
+                                      .contains(item) &&
+                                  item
+                                      .toLowerCase()
+                                      .contains(query.toLowerCase());
                             }).toList(growable: false)
                               ..sort((a, b) => a
                                   .toLowerCase()
@@ -198,10 +225,11 @@ class _SeeAllViewState extends State<SeeAllView> {
                                   .compareTo(
                                       b.toLowerCase().indexOf(lowercaseQuery)));
                           }
-                          return genres;
+                          return [];
                         },
                         onChanged: (data) {
-                          filters = data;
+                          var newList = List<String>.from(data);
+                          filters = newList;
                           applyFilter(filters);
                         },
                         chipBuilder: (context, state, c) {
@@ -249,21 +277,24 @@ class _SeeAllViewState extends State<SeeAllView> {
                                         ],
                                         borderRadius: BorderRadius.circular(5),
                                       ),
-                                      child: Text(
-                                        movie.title +
-                                            (movie.releaseDate != "" &&
-                                                    movie.releaseDate != null
-                                                ? (" (" +
-                                                    DateFormat('y').format(
-                                                        DateTime.parse(movie
-                                                            .releaseDate)) +
-                                                    ") ")
-                                                : ""),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                      child: Container(
+                                        padding: EdgeInsets.all(2),
+                                        child: Text(
+                                          movie.title +
+                                              (movie.releaseDate != "" &&
+                                                      movie.releaseDate != null
+                                                  ? (" (" +
+                                                      DateFormat('y').format(
+                                                          DateTime.parse(movie
+                                                              .releaseDate)) +
+                                                      ") ")
+                                                  : ""),
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -276,9 +307,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                                         borderRadius: BorderRadius.circular(5),
                                         image: DecorationImage(
                                           image: CachedNetworkImageProvider(
-                                            movie.poster != null &&
-                                                    movie.poster.length != 0
-                                                ? movie.poster[0].url
+                                            movie.posters != null &&
+                                                    movie.posters.length != 0
+                                                ? movie.posters[0].url
                                                 : Config.imgNotFound,
                                           ),
                                           fit: BoxFit.cover,
@@ -292,8 +323,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => MovieView(
-                                          movieId: movie.movieId.toString()),
+                                      builder: (_) =>
+                                          MovieView(movieId: movie.movieId),
                                     ));
                               },
                             ),
@@ -337,9 +368,13 @@ class _SeeAllViewState extends State<SeeAllView> {
                           if (query.isNotEmpty) {
                             var lowercaseQuery = query.toLowerCase();
                             return genres.where((item) {
-                              return item
-                                  .toLowerCase()
-                                  .contains(query.toLowerCase());
+                              return !filters
+                                      .map((d) => d)
+                                      .toList()
+                                      .contains(item) &&
+                                  item
+                                      .toLowerCase()
+                                      .contains(query.toLowerCase());
                             }).toList(growable: false)
                               ..sort((a, b) => a
                                   .toLowerCase()
@@ -350,7 +385,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                           return genres;
                         },
                         onChanged: (data) {
-                          filters = data;
+                          var newList = List<String>.from(data);
+                          filters = newList;
                           applyFilter(filters);
                         },
                         chipBuilder: (context, state, c) {
@@ -398,21 +434,24 @@ class _SeeAllViewState extends State<SeeAllView> {
                                         ],
                                         borderRadius: BorderRadius.circular(5),
                                       ),
-                                      child: Text(
-                                        movie.title +
-                                            (movie.releaseDate != "" &&
-                                                    movie.releaseDate != null
-                                                ? (" (" +
-                                                    DateFormat('y').format(
-                                                        DateTime.parse(movie
-                                                            .releaseDate)) +
-                                                    ") ")
-                                                : ""),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
+                                      child: Container(
+                                        padding: EdgeInsets.all(2),
+                                        child: Text(
+                                          movie.title +
+                                              (movie.releaseDate != "" &&
+                                                      movie.releaseDate != null
+                                                  ? (" (" +
+                                                      DateFormat('y').format(
+                                                          DateTime.parse(movie
+                                                              .releaseDate)) +
+                                                      ") ")
+                                                  : ""),
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -425,9 +464,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                                         borderRadius: BorderRadius.circular(5),
                                         image: DecorationImage(
                                           image: CachedNetworkImageProvider(
-                                            movie.poster != null &&
-                                                    movie.poster.length != 0
-                                                ? movie.poster[0].url
+                                            movie.posters != null &&
+                                                    movie.posters.length != 0
+                                                ? movie.posters[0].url
                                                 : Config.imgNotFound,
                                           ),
                                           fit: BoxFit.cover,
@@ -441,8 +480,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => MovieView(
-                                          movieId: movie.movieId.toString()),
+                                      builder: (_) =>
+                                          MovieView(movieId: movie.movieId),
                                     ));
                               },
                             ),
@@ -486,9 +525,13 @@ class _SeeAllViewState extends State<SeeAllView> {
                           if (query.isNotEmpty) {
                             var lowercaseQuery = query.toLowerCase();
                             return roles.where((item) {
-                              return item
-                                  .toLowerCase()
-                                  .contains(query.toLowerCase());
+                              return !filters
+                                      .map((d) => d)
+                                      .toList()
+                                      .contains(item) &&
+                                  item
+                                      .toLowerCase()
+                                      .contains(query.toLowerCase());
                             }).toList(growable: false)
                               ..sort((a, b) => a
                                   .toLowerCase()
@@ -499,7 +542,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                           return roles;
                         },
                         onChanged: (data) {
-                          filters = data;
+                          var newList = List<String>.from(data);
+                          filters = newList;
                           applyFilter(filters);
                         },
                         chipBuilder: (context, state, c) {
@@ -540,8 +584,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                                       borderRadius: BorderRadius.circular(5),
                                       image: DecorationImage(
                                         image: CachedNetworkImageProvider(
-                                          crew.displayPic != null
-                                              ? crew.displayPic
+                                          crew.displayPic != null &&
+                                                  crew.displayPic.url != null
+                                              ? crew.displayPic.url
                                               : Config.userNotFound,
                                         ),
                                         fit: BoxFit.cover,
@@ -556,16 +601,17 @@ class _SeeAllViewState extends State<SeeAllView> {
                                       padding: EdgeInsets.all(5),
                                       alignment: Alignment.bottomLeft,
                                       child: Text(
-                                        crew.firstName +
-                                            (crew.middleName != null
-                                                ? " " + crew.middleName
-                                                : "") +
-                                            (crew.lastName != null
-                                                ? " " + crew.lastName
-                                                : "") +
-                                            (crew.suffix != null
-                                                ? " " + crew.suffix
-                                                : ""),
+                                        crew.name,
+                                        // crew.firstName +
+                                        //     (crew.middleName != null
+                                        //         ? " " + crew.middleName
+                                        //         : "") +
+                                        //     (crew.lastName != null
+                                        //         ? " " + crew.lastName
+                                        //         : "") +
+                                        //     (crew.suffix != null
+                                        //         ? " " + crew.suffix
+                                        //         : ""),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
@@ -605,112 +651,6 @@ class _SeeAllViewState extends State<SeeAllView> {
                         )
                       ],
               ),
-            ],
-          ),
-        );
-        break;
-      case "photos":
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 10),
-              Wrap(
-                  children: photos.length != 0
-                      ? photos
-                          .map(
-                            (p) => GestureDetector(
-                              child: Container(
-                                height: 210.0,
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  height: 200.0,
-                                  width: 120.0,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5),
-                                    image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                        p.url != null
-                                            ? p.url
-                                            : Config.imgNotFound,
-                                      ),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => FullPhotoT(
-                                          url: p.url,
-                                          description: p.description,
-                                          type: 'network'),
-                                    ));
-                              },
-                            ),
-                          )
-                          .toList()
-                      : [
-                          Center(
-                            child: Text("No content found."),
-                          ),
-                        ]),
-            ],
-          ),
-        );
-        break;
-      case "screenshots":
-        return SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 10),
-              Wrap(
-                  children: screenshots.length != 0
-                      ? screenshots
-                          .map(
-                            (p) => GestureDetector(
-                              child: Container(
-                                height: 210.0,
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(
-                                      horizontal: 8.0),
-                                  height: 200.0,
-                                  width: 120.0,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5),
-                                    image: DecorationImage(
-                                      image: CachedNetworkImageProvider(
-                                        p.url != null
-                                            ? p.url
-                                            : Config.imgNotFound,
-                                      ),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => FullPhotoT(
-                                          url: p.url,
-                                          description: p.description,
-                                          type: 'network'),
-                                    ));
-                              },
-                            ),
-                          )
-                          .toList()
-                      : [
-                          Center(
-                            child: Text("No content found."),
-                          ),
-                        ]),
             ],
           ),
         );

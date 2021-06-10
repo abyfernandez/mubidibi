@@ -5,6 +5,7 @@ import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/globals.dart' as Config;
+import 'package:mubidibi/ui/views/login_view.dart';
 
 class MyDrawer extends StatelessWidget {
   final NavigationService _navigationService = locator<NavigationService>();
@@ -19,6 +20,7 @@ class MyDrawer extends StatelessWidget {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
+          shadowColor: Colors.transparent,
           iconTheme: IconThemeData(
               // color: Colors.black, //change your color here
               ),
@@ -91,7 +93,7 @@ class MyDrawer extends StatelessWidget {
                 //     // TO DO: Create page for App Info
                 //   },
                 // ),
-                // Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
+                Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
                 currentUser != null
                     ? ListTile(
                         leading: Icon(
@@ -132,7 +134,12 @@ class MyDrawer extends StatelessWidget {
                               fontWeight: FontWeight.w300, fontSize: 16),
                         ),
                         onTap: () {
-                          _navigationService.navigateTo(LoginViewRoute);
+                          // _navigationService.navigateTo(LoginViewRoute);
+                          Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (BuildContext context) =>
+                                      LoginView()));
                         },
                       ),
                 Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
