@@ -34,7 +34,7 @@ exports.award = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = `SELECT award.name, to_json(award.category), award.created_at, award.description, award.added_by, award.is_deleted, m.id, m.award_id, m.movie_id, m.type, m.year from award left join movie_award as m on m.award_id = award.id where movie_id = ${req.body.movie_id}`;
+      var query = `SELECT award.name, to_json(award.category), award.event, award.created_at, award.description, award.added_by, award.is_deleted, m.id, m.award_id, m.movie_id, to_json(m.type), m.year from award left join movie_award as m on m.award_id = award.id where movie_id = ${req.body.movie_id}`;
       if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
 
       client.query(
@@ -54,7 +54,7 @@ exports.award = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = `SELECT award.*, c.type, c.year from award left join crew_award as c on c.award_id = award.id where crew_id = ${req.body.crew_id}`;
+      var query = `SELECT award.*, to_json(c.type), c.year from award left join crew_award as c on c.award_id = award.id where crew_id = ${req.body.crew_id}`;
       if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
 
       client.query(
@@ -91,6 +91,7 @@ exports.award = app => {
 
     // catch apostrophes to avoid errors when inserting data
     var name = req.body.name.replace(/'/g, "''");
+    var event = req.body.event.replace(/'/g, "''");
     var description = req.body.description != "" ? req.body.description.replace(/'/g, "''") : null;
 
     // build query
@@ -99,6 +100,7 @@ exports.award = app => {
     // add award
     query = `select add_award (
           '${name}', 
+          '${event}',
           `;
     // check first if category array is empty or not
     if (req.body.category.length && req.body.category != null) {
@@ -109,8 +111,9 @@ exports.award = app => {
           query = query.concat(',')
         }
       });
-      query = query.concat(`], 
+      query = query.concat(`]
       `)
+      query = query.concat(`::award_category[],`)
     } else {
       query = query.concat(`null, 
       `);
@@ -127,6 +130,7 @@ exports.award = app => {
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
+      console.log(query);
       var award = await client.query(query);
 
       release();
@@ -140,10 +144,11 @@ exports.award = app => {
 
     // catch apostrophes to avoid errors when inserting data
     var name = req.body.name.replace(/'/g, "''");
+    var event = req.body.event.replace(/'/g, "''");
     var description = req.body.description != "" ? req.body.description.replace(/'/g, "''") : null;
 
     // build query
-    var query = `update award set name = '${name}', description = `;
+    var query = `update award set name = '${name}', event = '${event}', description = `;
     // description
     if (description != null) query = query.concat(`'${description}', `);
     else query = query.concat(`null, `);

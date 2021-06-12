@@ -242,7 +242,7 @@ class _MovieViewState extends State<MovieView>
                 icon: Icons.edit_outlined,
                 titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                 onPress: () async {
-                  final value = await Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => AddMovie(
@@ -254,7 +254,11 @@ class _MovieViewState extends State<MovieView>
                       ),
                     ),
                   );
-                  setState(() {});
+                  setState(() {
+                    fetchMovie();
+                    crew = fetchCrew();
+                    fetchAwards();
+                  });
 
                   _animationController.reverse();
                   setState(() {
@@ -306,13 +310,16 @@ class _MovieViewState extends State<MovieView>
                             _saving = true;
 
                             Timer(const Duration(milliseconds: 2000), () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      MovieView(movieId: movie.movieId),
-                                ),
-                              );
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) =>
+                              //         MovieView(movieId: movie.movieId),
+                              //   ),
+                              // );
+                              fetchMovie();
+                              crew = fetchCrew();
+                              fetchAwards();
                             });
                           } else {
                             _saving = false;
@@ -362,15 +369,18 @@ class _MovieViewState extends State<MovieView>
                                 Colors.green));
 
                             Timer(const Duration(milliseconds: 2000), () {
-                              // redirect to homepage
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MovieView(
-                                    movieId: movie.movieId,
-                                  ),
-                                ),
-                              );
+                              // // redirect to homepage
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => MovieView(
+                              //       movieId: movie.movieId,
+                              //     ),
+                              //   ),
+                              // );
+                              fetchMovie();
+                              crew = fetchCrew();
+                              fetchAwards();
                             });
                           } else {
                             _saving = false;
@@ -1094,6 +1104,57 @@ class _MovieViewState extends State<MovieView>
                   awards != null && awards.length != 0
                       ? SizedBox(height: 25)
                       : SizedBox(),
+                  // Mga Sumikat na Linya
+                  movie.quotes != null && movie.quotes.length != 0
+                      ? Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Text("Mga Sumikat na Linya",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              )),
+                        )
+                      : SizedBox(),
+                  movie.quotes != null && movie.quotes.length != 0
+                      ? Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Column(
+                            children: movie.quotes.map((quote) {
+                              return ListTile(
+                                title: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    new Icon(Icons.fiber_manual_record,
+                                        size: 16),
+                                    SizedBox(
+                                      width: 5,
+                                    ),
+                                    Flexible(
+                                      child: Text("'" + quote.line + "'",
+                                          style: TextStyle(fontSize: 16),
+                                          softWrap: true,
+                                          overflow: TextOverflow.clip),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Container(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 20.0),
+                                  child: Text(quote.role,
+                                      style: TextStyle(
+                                          fontStyle: FontStyle.italic,
+                                          fontSize: 16),
+                                      softWrap: true,
+                                      overflow: TextOverflow.clip),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        )
+                      : SizedBox(),
+                  movie.quotes != null && movie.quotes.length != 0
+                      ? SizedBox(height: 25)
+                      : SizedBox(),
                   // Trailers
                   movie.trailers != null && movie.trailers.length != 0
                       ? Padding(
@@ -1549,7 +1610,8 @@ class _MovieViewState extends State<MovieView>
                                                     VideoPlayerController
                                                         .network(p.url),
                                                 looping: false,
-                                                autoplay: false),
+                                                autoplay: false,
+                                                type: 'simple'),
                                           ),
                                           Positioned(
                                             top: 5,

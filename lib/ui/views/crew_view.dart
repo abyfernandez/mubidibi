@@ -1,15 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
-// import 'dart:convert';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:mubidibi/ui/shared/video_file.dart';
+import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:video_player/video_player.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
-// import 'package:flutter/foundation.dart';
-// import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -29,7 +26,6 @@ import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:provider_architecture/viewmodel_provider.dart';
 import 'package:mubidibi/globals.dart' as Config;
-import 'full_photo.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/timezone.dart';
@@ -61,7 +57,7 @@ class _CrewViewState extends State<CrewView>
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   List<Award> awards;
   List<Award> awardOptions;
-
+  List favData;
   // Video Player / Carousel variables
   int _gallerySlider = 0;
   final CarouselController _galleryController = CarouselController();
@@ -94,6 +90,11 @@ class _CrewViewState extends State<CrewView>
       awards = c;
       awardOptions = tempAwards;
     });
+  }
+
+  Future<bool> onBackPress() async {
+    Navigator.pop(context, favData);
+    return Future.value(false);
   }
 
   @override
@@ -140,14 +141,26 @@ class _CrewViewState extends State<CrewView>
           children: crewMovies.isNotEmpty
               ? crewMovies.map((movie) {
                   return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
                               MovieView(movieId: movie.movieId),
                         ),
-                      );
+                      ).then((data) {
+                        setState(() {
+                          fetchCrew();
+                          fetchAwards();
+                          favData = data;
+                        });
+                        if (data[0] == true) {
+                          rebuild.value = true;
+                          // headerFavorite.value = headerId == data[2]
+                          //     ? data[1]
+                          //     : headerFavorite.value;
+                        }
+                      });
                     },
                     child: Stack(
                       children: [
@@ -366,10 +379,16 @@ class _CrewViewState extends State<CrewView>
         appBar: AppBar(
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
+          leading: GestureDetector(
+            child: Icon(Icons.arrow_back),
+            onTap: () async {
+              FocusScope.of(context).unfocus();
+              Navigator.pop(context, favData);
+            },
+          ),
         ),
         extendBodyBehindAppBar: true,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        // TO DO: hide button when scrolling ???
         floatingActionButton: Visibility(
           visible: currentUser != null
               ? currentUser.isAdmin
@@ -400,6 +419,8 @@ class _CrewViewState extends State<CrewView>
                     ),
                   );
                   setState(() {
+                    fetchCrew();
+                    fetchAwards();
                     fabIcon = fabIcon == Icons.settings
                         ? Icons.close
                         : Icons.settings;
@@ -446,13 +467,15 @@ class _CrewViewState extends State<CrewView>
                             Timer(const Duration(milliseconds: 2000), () {
                               _saving = false;
 
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      CrewView(crewId: crew.crewId.toString()),
-                                ),
-                              );
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) =>
+                              //         CrewView(crewId: crew.crewId.toString()),
+                              //   ),
+                              // );
+                              fetchCrew();
+                              fetchAwards();
                             });
                           } else {
                             _saving = false;
@@ -503,14 +526,16 @@ class _CrewViewState extends State<CrewView>
                             Timer(const Duration(milliseconds: 2000), () {
                               _saving = false;
                               // redirect to homepage
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CrewView(
-                                    crewId: crew.crewId.toString(),
-                                  ),
-                                ),
-                              );
+                              // Navigator.pushReplacement(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => CrewView(
+                              //       crewId: crew.crewId.toString(),
+                              //     ),
+                              //   ),
+                              // );
+                              fetchCrew();
+                              fetchAwards();
                             });
                           } else {
                             _saving = false;
@@ -547,500 +572,556 @@ class _CrewViewState extends State<CrewView>
             backGroundColor: Colors.lightBlue,
           ),
         ),
-        body: ModalProgressHUD(
-          inAsyncCall: _saving,
-          child: ListView(
-            shrinkWrap: true,
-            children: <Widget>[
-              SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: Container(
-                      margin: EdgeInsets.only(left: 20, right: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Container(
-                            child: Text(
-                              crew.name,
-                              softWrap: true,
-                              overflow: TextOverflow.clip,
-                              style: TextStyle(
-                                fontSize: 25,
-                                fontFamily: 'Poppins',
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                          // display type (crew types)
-                          displayTypes(),
-                          SizedBox(height: 10),
-                          Wrap(
-                            direction: Axis.vertical,
-                            children: [
-                              Text(
-                                "Born:   " +
-                                    (crew.birthday != null
-                                        ? DateFormat("MMM. d, y", "fil").format(
-                                            TZDateTime.from(
-                                                DateTime.parse(crew.birthday),
-                                                tz.getLocation('Asia/Manila')))
-                                        : '-'),
-                                style: TextStyle(fontSize: 16),
+        body: WillPopScope(
+          onWillPop: onBackPress,
+          child: ModalProgressHUD(
+            inAsyncCall: _saving,
+            child: ListView(
+              shrinkWrap: true,
+              children: <Widget>[
+                SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: EdgeInsets.only(left: 20, right: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Container(
+                              child: Text(
+                                crew.name,
                                 softWrap: true,
-                                overflow: TextOverflow.fade,
-                              ),
-                              crew.isAlive == false
-                                  ? Text(
-                                      'Died:   ' +
-                                          (crew.deathdate != null
-                                              ? DateFormat("MMM. d, y", "fil")
-                                                  .format(TZDateTime.from(
-                                                      DateTime.parse(
-                                                          crew.deathdate),
-                                                      tz.getLocation(
-                                                          'Asia/Manila')))
-                                              : '-'),
-                                      style: TextStyle(fontSize: 16),
-                                      softWrap: true,
-                                      overflow: TextOverflow.fade)
-                                  : Container(),
-                            ],
-                          ),
-                          Text(
-                            "Birthplace:   " +
-                                (crew.birthplace != null
-                                    ? crew.birthplace
-                                    : '-'),
-                            style: TextStyle(fontSize: 16),
-                            softWrap: true,
-                            overflow: TextOverflow.fade,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
-                    height: 200,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: GestureDetector(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(25),
-                        child: CachedNetworkImage(
-                          placeholder: (context, url) => Container(
-                            child: Container(
-                              alignment: Alignment.center,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    Theme.of(context).accentColor),
-                              ),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Material(
-                            child: Image.network(
-                              Config.userNotFound,
-                              height: 200,
-                              width: 150,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
-                            ),
-                          ),
-                          imageUrl: crew.displayPic?.url ?? Config.userNotFound,
-                          width: 150,
-                          height: 200,
-                          alignment: Alignment.center,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FullPhotoT(
-                                url:
-                                    crew.displayPic?.url ?? Config.userNotFound,
-                                description: crew.displayPic.description,
-                                type: 'network'),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              currentUser != null && currentUser.isAdmin == true
-                  ? crew.isDeleted
-                      ? Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 15),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.error_outline, color: Colors.red),
-                              SizedBox(width: 5),
-                              Expanded(
-                                child: Text(
-                                  'This item is currently hidden. Restore in settings.',
-                                  style: TextStyle(
-                                      color: Colors.red, fontSize: 16),
-                                  softWrap: true,
-                                  overflow: TextOverflow.clip,
+                                overflow: TextOverflow.clip,
+                                style: TextStyle(
+                                  fontSize: 25,
+                                  fontFamily: 'Poppins',
+                                  color: Colors.black,
                                 ),
                               ),
-                            ],
-                          ),
-                        )
-                      : SizedBox()
-                  : SizedBox(),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Description",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                            ),
+                            // display type (crew types)
+                            displayTypes(),
+                            SizedBox(height: 10),
+                            Wrap(
+                              direction: Axis.vertical,
+                              children: [
+                                Text(
+                                  "Born:   " +
+                                      (crew.birthday != null
+                                          ? DateFormat("MMM. d, y", "fil")
+                                              .format(TZDateTime.from(
+                                                  DateTime.parse(crew.birthday),
+                                                  tz.getLocation(
+                                                      'Asia/Manila')))
+                                          : '-'),
+                                  style: TextStyle(fontSize: 16),
+                                  softWrap: true,
+                                  overflow: TextOverflow.fade,
+                                ),
+                                crew.isAlive == false
+                                    ? Text(
+                                        'Died:   ' +
+                                            (crew.deathdate != null
+                                                ? DateFormat("MMM. d, y", "fil")
+                                                    .format(TZDateTime.from(
+                                                        DateTime.parse(
+                                                            crew.deathdate),
+                                                        tz.getLocation(
+                                                            'Asia/Manila')))
+                                                : '-'),
+                                        style: TextStyle(fontSize: 16),
+                                        softWrap: true,
+                                        overflow: TextOverflow.fade)
+                                    : Container(),
+                              ],
+                            ),
+                            Text(
+                              "Birthplace:   " +
+                                  (crew.birthplace != null
+                                      ? crew.birthplace
+                                      : '-'),
+                              style: TextStyle(fontSize: 16),
+                              softWrap: true,
+                              overflow: TextOverflow.fade,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    SizedBox(height: 20),
-                    crew.description != null
-                        ? Text(
-                            "     " + crew.description,
-                            style: TextStyle(fontSize: 16),
-                            textAlign: TextAlign.justify,
-                          )
-                        : Center(
-                            child: Text(
-                              'No description found.',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                                color: Colors.grey,
+                    Container(
+                      margin: EdgeInsets.symmetric(horizontal: 10),
+                      height: 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: GestureDetector(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(25),
+                          child: CachedNetworkImage(
+                            placeholder: (context, url) => Container(
+                              child: Container(
+                                alignment: Alignment.center,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).accentColor),
+                                ),
                               ),
                             ),
+                            errorWidget: (context, url, error) => Material(
+                              child: Image.network(
+                                Config.userNotFound,
+                                height: 200,
+                                width: 150,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.center,
+                              ),
+                            ),
+                            imageUrl:
+                                crew.displayPic?.url ?? Config.userNotFound,
+                            width: 150,
+                            height: 200,
+                            alignment: Alignment.center,
+                            fit: BoxFit.cover,
                           ),
-                    SizedBox(height: 20),
-                    crew.movies.isNotEmpty
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              crew.movies[0].length != 0
-                                  ? Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                "Mga Pelikula bilang Direktor",
-                                                style: TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                                overflow: TextOverflow.clip,
-                                                softWrap: true,
-                                              ),
-                                            ),
-                                            crew.movies[0].length >= 4
-                                                ? Container(
-                                                    child: GestureDetector(
-                                                      child: Text(
-                                                        'Tingnan Lahat',
-                                                        style: TextStyle(
-                                                            fontSize: 14,
-                                                            color: Colors.blue),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        softWrap: true,
-                                                      ),
-                                                      onTap: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder:
-                                                                (context) =>
-                                                                    SeeAllView(
-                                                              movies: crew
-                                                                  .movies[0],
-                                                              type: 'movies',
-                                                              title:
-                                                                  "Mga Pelikula Bilang Direktor",
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  )
-                                                : Container(),
-                                          ],
-                                        ),
-                                        SizedBox(height: 10),
-                                        displayMovies(crew.movies[0])
-                                      ],
-                                    )
-                                  : SizedBox(),
-                              crew.movies[1].length != 0
-                                  ? SizedBox(height: 20)
-                                  : SizedBox(),
-                              crew.movies[1].length != 0
-                                  ? Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                "Mga Pelikula bilang Manunulat",
-                                                style: TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                                overflow: TextOverflow.clip,
-                                                softWrap: true,
-                                              ),
-                                            ),
-                                            crew.movies[1].length >= 4
-                                                ? Container(
-                                                    child: GestureDetector(
-                                                      child: Text(
-                                                        'Tingnan Lahat',
-                                                        style: TextStyle(
-                                                            fontSize: 14,
-                                                            color: Colors.blue),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        softWrap: true,
-                                                      ),
-                                                      onTap: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder:
-                                                                (context) =>
-                                                                    SeeAllView(
-                                                              movies: crew
-                                                                  .movies[1],
-                                                              type: 'movies',
-                                                              title:
-                                                                  "Mga Pelikula Bilang Manunulat",
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  )
-                                                : Container(),
-                                          ],
-                                        ),
-                                        SizedBox(height: 10),
-                                        displayMovies(crew.movies[1])
-                                      ],
-                                    )
-                                  : SizedBox(),
-                              crew.movies[2].length != 0
-                                  ? SizedBox(height: 20)
-                                  : SizedBox(),
-                              crew.movies[2].length != 0
-                                  ? Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                "Mga Pelikula bilang Aktor",
-                                                style: TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
-                                            ),
-                                            crew.movies[2].length >= 4
-                                                ? Container(
-                                                    child: GestureDetector(
-                                                      child: Text(
-                                                        'Tingnan Lahat',
-                                                        style: TextStyle(
-                                                            fontSize: 14,
-                                                            color: Colors.blue),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        softWrap: true,
-                                                      ),
-                                                      onTap: () {
-                                                        Navigator.push(
-                                                          context,
-                                                          MaterialPageRoute(
-                                                            builder:
-                                                                (context) =>
-                                                                    SeeAllView(
-                                                              movies: crew
-                                                                  .movies[2],
-                                                              type: 'movies',
-                                                              title:
-                                                                  "Mga Pelikula Bilang Aktor",
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                    ),
-                                                  )
-                                                : Container(),
-                                          ],
-                                        ),
-                                        SizedBox(height: 10),
-                                        displayMovies(crew.movies[2])
-                                      ],
-                                    )
-                                  : SizedBox(),
-                            ],
-                          )
-                        : SizedBox(),
-                    awards != null && awards.length != 0
-                        ? SizedBox(height: 20)
-                        : SizedBox(),
-                    // Mga Award
-                    // Mga Award
-                    awards != null && awards.length != 0
-                        ? Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20.0),
-                            child: Text("Mga Award",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                )),
-                          )
-                        : SizedBox(),
-                    awards != null && awards.length != 0
-                        ? Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 20.0),
-                            child: Column(
-                              children: awards.map((award) {
-                                return ListTile(
-                                  title: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      new Icon(Icons.fiber_manual_record,
-                                          size: 16),
-                                      SizedBox(
-                                        width: 5,
-                                      ),
-                                      Flexible(
-                                        child: Text(
-                                            award.name +
-                                                (award.year != null
-                                                    ? " (" + award.year + ") "
-                                                    : ""),
-                                            style: TextStyle(fontSize: 16),
-                                            softWrap: true,
-                                            overflow: TextOverflow.clip),
-                                      ),
-                                    ],
-                                  ),
-                                  subtitle: award.type != null
-                                      ? Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 20.0),
-                                          child: Text(
-                                              award.type == "nominated"
-                                                  ? "Nominado"
-                                                  : "Panalo",
-                                              style: TextStyle(
-                                                  fontStyle: FontStyle.italic,
-                                                  fontSize: 16),
-                                              softWrap: true,
-                                              overflow: TextOverflow.clip),
-                                        )
-                                      : SizedBox(),
-                                );
-                              }).toList(),
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FullPhotoT(
+                                  url: crew.displayPic?.url ??
+                                      Config.userNotFound,
+                                  description: crew?.displayPic?.description,
+                                  type: 'network'),
                             ),
-                          )
-                        : SizedBox(),
-                    awards != null && awards.length != 0
-                        ? SizedBox(height: 25)
-                        : SizedBox(),
-                    crew.gallery.isNotEmpty ? SizedBox(height: 25) : SizedBox(),
-                    crew.gallery.isNotEmpty
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Row(
-                              //   mainAxisAlignment:
-                              //       MainAxisAlignment.spaceBetween,
-                              //   children: [
-                              Text(
-                                "Gallery",
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
-                              // crew.gallery.length >= 4
-                              //     ? GestureDetector(
-                              //         child: Text(
-                              //           'Tingnan Lahat',
-                              //           style: TextStyle(
-                              //               fontSize: 14,
-                              //               color: Colors.blue),
-                              //           overflow: TextOverflow.ellipsis,
-                              //           softWrap: true,
-                              //         ),
-                              //         onTap: () {
-                              //           Navigator.push(
-                              //             context,
-                              //             MaterialPageRoute(
-                              //               builder: (context) =>
-                              //                   SeeAllView(
-                              //                 type: 'photos',
-                              //                 title: "Gallery",
-                              //                 photos: crew.gallery,
-                              //               ),
-                              //             ),
-                              //           );
-                              //         },
-                              //       )
-                              //     : Container(),
-                              //   ],
-                              // ),
-                              crew.gallery.isNotEmpty
-                                  ? SizedBox(height: 10)
-                                  : SizedBox(),
-                              displayGallery(),
-                              SizedBox(height: 20)
-                            ],
-                          )
-                        : Container(),
+                          );
+                        },
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                SizedBox(height: 10),
+                currentUser != null && currentUser.isAdmin == true
+                    ? crew.isDeleted
+                        ? Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 15),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red),
+                                SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    'This item is currently hidden. Restore in settings.',
+                                    style: TextStyle(
+                                        color: Colors.red, fontSize: 16),
+                                    softWrap: true,
+                                    overflow: TextOverflow.clip,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : SizedBox()
+                    : SizedBox(),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Description",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      crew.description != null
+                          ? Text(
+                              "     " + crew.description,
+                              style: TextStyle(fontSize: 16),
+                              textAlign: TextAlign.justify,
+                            )
+                          : Center(
+                              child: Text(
+                                'No description found.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ),
+                      SizedBox(height: 20),
+                      crew.movies.isNotEmpty
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                crew.movies[0].length != 0
+                                    ? Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  "Mga Pelikula bilang Direktor",
+                                                  style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                  overflow: TextOverflow.clip,
+                                                  softWrap: true,
+                                                ),
+                                              ),
+                                              crew.movies[0].length >= 4
+                                                  ? Container(
+                                                      child: GestureDetector(
+                                                        child: Text(
+                                                          'Tingnan Lahat',
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.blue),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          softWrap: true,
+                                                        ),
+                                                        onTap: () {
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      SeeAllView(
+                                                                movies: crew
+                                                                    .movies[0],
+                                                                type: 'movies',
+                                                                title:
+                                                                    "Mga Pelikula Bilang Direktor",
+                                                              ),
+                                                            ),
+                                                          ).then((data) {
+                                                            setState(() {
+                                                              favData = data;
+                                                            });
+                                                            if (data[0] ==
+                                                                true) {
+                                                              rebuild.value =
+                                                                  true;
+                                                              // headerFavorite
+                                                              //     .value = headerId ==
+                                                              //         data[2]
+                                                              //     ? data[1]
+                                                              //     : headerFavorite
+                                                              //         .value;
+                                                            }
+                                                          });
+                                                        },
+                                                      ),
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          displayMovies(crew.movies[0])
+                                        ],
+                                      )
+                                    : SizedBox(),
+                                crew.movies[1].length != 0
+                                    ? SizedBox(height: 20)
+                                    : SizedBox(),
+                                crew.movies[1].length != 0
+                                    ? Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  "Mga Pelikula bilang Manunulat",
+                                                  style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                  overflow: TextOverflow.clip,
+                                                  softWrap: true,
+                                                ),
+                                              ),
+                                              crew.movies[1].length >= 4
+                                                  ? Container(
+                                                      child: GestureDetector(
+                                                        child: Text(
+                                                          'Tingnan Lahat',
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.blue),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          softWrap: true,
+                                                        ),
+                                                        onTap: () {
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      SeeAllView(
+                                                                movies: crew
+                                                                    .movies[1],
+                                                                type: 'movies',
+                                                                title:
+                                                                    "Mga Pelikula Bilang Manunulat",
+                                                              ),
+                                                            ),
+                                                          ).then((data) {
+                                                            setState(() {
+                                                              favData = data;
+                                                            });
+                                                            if (data[0] ==
+                                                                true) {
+                                                              rebuild.value =
+                                                                  true;
+                                                              // headerFavorite
+                                                              //     .value = headerId ==
+                                                              //         data[2]
+                                                              //     ? data[1]
+                                                              //     : headerFavorite
+                                                              //         .value;
+                                                            }
+                                                          });
+                                                        },
+                                                      ),
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          displayMovies(crew.movies[1])
+                                        ],
+                                      )
+                                    : SizedBox(),
+                                crew.movies[2].length != 0
+                                    ? SizedBox(height: 20)
+                                    : SizedBox(),
+                                crew.movies[2].length != 0
+                                    ? Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  "Mga Pelikula bilang Aktor",
+                                                  style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ),
+                                              crew.movies[2].length >= 4
+                                                  ? Container(
+                                                      child: GestureDetector(
+                                                        child: Text(
+                                                          'Tingnan Lahat',
+                                                          style: TextStyle(
+                                                              fontSize: 14,
+                                                              color:
+                                                                  Colors.blue),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          softWrap: true,
+                                                        ),
+                                                        onTap: () {
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (context) =>
+                                                                      SeeAllView(
+                                                                movies: crew
+                                                                    .movies[2],
+                                                                type: 'movies',
+                                                                title:
+                                                                    "Mga Pelikula Bilang Aktor",
+                                                              ),
+                                                            ),
+                                                          ).then((data) {
+                                                            setState(() {
+                                                              favData = data;
+                                                            });
+                                                            if (data[0] ==
+                                                                true) {
+                                                              rebuild.value =
+                                                                  true;
+                                                              // headerFavorite
+                                                              //     .value = headerId ==
+                                                              //         data[2]
+                                                              //     ? data[1]
+                                                              //     : headerFavorite
+                                                              //         .value;
+                                                            }
+                                                          });
+                                                        },
+                                                      ),
+                                                    )
+                                                  : Container(),
+                                            ],
+                                          ),
+                                          SizedBox(height: 10),
+                                          displayMovies(crew.movies[2])
+                                        ],
+                                      )
+                                    : SizedBox(),
+                              ],
+                            )
+                          : SizedBox(),
+                      awards != null && awards.length != 0
+                          ? SizedBox(height: 20)
+                          : SizedBox(),
+                      // Mga Award
+                      // Mga Award
+                      awards != null && awards.length != 0
+                          ? Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20.0),
+                              child: Text("Mga Award",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  )),
+                            )
+                          : SizedBox(),
+                      awards != null && awards.length != 0
+                          ? Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20.0),
+                              child: Column(
+                                children: awards.map((award) {
+                                  return ListTile(
+                                    title: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        new Icon(Icons.fiber_manual_record,
+                                            size: 16),
+                                        SizedBox(
+                                          width: 5,
+                                        ),
+                                        Flexible(
+                                          child: Text(
+                                              award.name +
+                                                  (award.year != null
+                                                      ? " (" + award.year + ") "
+                                                      : ""),
+                                              style: TextStyle(fontSize: 16),
+                                              softWrap: true,
+                                              overflow: TextOverflow.clip),
+                                        ),
+                                      ],
+                                    ),
+                                    subtitle: award.type != null
+                                        ? Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 20.0),
+                                            child: Text(
+                                                award.type == "nominated"
+                                                    ? "Nominado"
+                                                    : "Panalo",
+                                                style: TextStyle(
+                                                    fontStyle: FontStyle.italic,
+                                                    fontSize: 16),
+                                                softWrap: true,
+                                                overflow: TextOverflow.clip),
+                                          )
+                                        : SizedBox(),
+                                  );
+                                }).toList(),
+                              ),
+                            )
+                          : SizedBox(),
+                      awards != null && awards.length != 0
+                          ? SizedBox(height: 25)
+                          : SizedBox(),
+                      crew.gallery.isNotEmpty
+                          ? SizedBox(height: 25)
+                          : SizedBox(),
+                      crew.gallery.isNotEmpty
+                          ? Column(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                Text(
+                                  "Gallery",
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                // crew.gallery.length >= 4
+                                //     ? GestureDetector(
+                                //         child: Text(
+                                //           'Tingnan Lahat',
+                                //           style: TextStyle(
+                                //               fontSize: 14,
+                                //               color: Colors.blue),
+                                //           overflow: TextOverflow.ellipsis,
+                                //           softWrap: true,
+                                //         ),
+                                //         onTap: () {
+                                //           Navigator.push(
+                                //             context,
+                                //             MaterialPageRoute(
+                                //               builder: (context) =>
+                                //                   SeeAllView(
+                                //                 type: 'photos',
+                                //                 title: "Gallery",
+                                //                 photos: crew.gallery,
+                                //               ),
+                                //             ),
+                                //           );
+                                //         },
+                                //       )
+                                //     : Container(),
+                                //   ],
+                                // ),
+                                crew.gallery.isNotEmpty
+                                    ? SizedBox(height: 10)
+                                    : SizedBox(),
+                                displayGallery(),
+                                SizedBox(height: 20)
+                              ],
+                            )
+                          : Container(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -10,8 +10,6 @@ class VideoFile extends StatefulWidget {
   final String type; // simple, detailed
   final String description;
 
-  bool isVisible = true;
-
   VideoFile({
     @required this.videoPlayerController,
     this.looping,
@@ -29,6 +27,8 @@ class VideoFile extends StatefulWidget {
 
 class VideoFileState extends State<VideoFile> {
   ChewieController _chewieController;
+
+  bool isVisible = true;
 
   @override
   void initState() {
@@ -108,7 +108,7 @@ class VideoFileState extends State<VideoFile> {
                           maintainSize: true,
                           maintainAnimation: true,
                           maintainState: true,
-                          visible: widget.isVisible,
+                          visible: isVisible,
                           child: Container(
                             padding: EdgeInsets.all(5),
                             decoration: BoxDecoration(
@@ -142,7 +142,7 @@ class VideoFileState extends State<VideoFile> {
                 ),
                 onTap: () {
                   setState(() {
-                    widget.isVisible = !widget.isVisible;
+                    isVisible = !isVisible;
                   });
                 }),
           );

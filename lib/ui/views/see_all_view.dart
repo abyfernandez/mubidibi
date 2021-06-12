@@ -8,7 +8,9 @@ import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
+import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
+import 'package:mubidibi/ui/widgets/content_header.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -58,20 +60,24 @@ class _SeeAllViewState extends State<SeeAllView> {
   List<String> roles = ['Direktor', 'Manunulat', 'Aktor'];
 
   List filtered = []; // filtered films
-
+  List favData = [];
   _SeeAllViewState(this.movies, this.crew, this.favorites, this.type,
       this.filter, this.showFilter, this.title);
 
+  Future<bool> onBackPress() async {
+    Navigator.pop(context, favData);
+    return Future.value(false);
+  }
+
   @override
   void initState() {
-    // TO DO: MOVIES FOR FAVORITES
-    if (filter != null) filters.add(filter);
+    super.initState();
+    if (filter != null && filter != "") filters.add(filter);
     if (type == "movies")
       fetchMovies();
     else if (type == "favorites")
       fetchFavorites();
     else if (type == "crew") fetchCrew();
-    super.initState();
   }
 
   @override
@@ -82,13 +88,22 @@ class _SeeAllViewState extends State<SeeAllView> {
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
           title: Text('${title[0].toUpperCase()}${title.substring(1)}'),
+          leading: GestureDetector(
+            child: Icon(Icons.arrow_back),
+            onTap: () async {
+              FocusScope.of(context).unfocus();
+              Navigator.pop(context, favData);
+            },
+          ),
         ),
-        body: AnnotatedRegion<SystemUiOverlayStyle>(
-            value: SystemUiOverlayStyle.light,
-            child: GestureDetector(
-                onTap: () => FocusScope.of(context).unfocus(),
-                child: SingleChildScrollView(
-                    child: SafeArea(child: showContent(context))))));
+        body: WillPopScope(
+            onWillPop: onBackPress,
+            child: AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.light,
+                child: GestureDetector(
+                    onTap: () => FocusScope.of(context).unfocus(),
+                    child: SingleChildScrollView(
+                        child: SafeArea(child: showContent(context)))))));
   }
 
   // function for calling viewmodel's getAllMovies method
@@ -167,11 +182,13 @@ class _SeeAllViewState extends State<SeeAllView> {
   void applyFilter(List<String> groupBy) {
     if (type == 'movies' || type == "favorites") {
       filtered = films
-          .where((item) => item.genre.toSet().containsAll(groupBy))
+          .where((item) =>
+              item.genre != null && item.genre.toSet().containsAll(groupBy))
           .toList();
     } else if (type == 'crew') {
       filtered = personalidad
-          .where((item) => item.type.toSet().containsAll(groupBy))
+          .where((item) =>
+              item.type != null && item.type.toSet().containsAll(groupBy))
           .toList();
     }
 
@@ -325,7 +342,20 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     MaterialPageRoute(
                                       builder: (_) =>
                                           MovieView(movieId: movie.movieId),
-                                    ));
+                                    )).then((data) {
+                                  setState(() {
+                                    print('see all: $favData');
+                                    favData = data;
+                                  });
+                                  if (data[0] == true) {
+                                    rebuild.value = true;
+                                    headerFavorite.value = headerId == data[2]
+                                        ? data[1]
+                                        : headerFavorite.value;
+                                    if (type == "movies") fetchMovies();
+                                    if (type == "favorites") fetchFavorites();
+                                  }
+                                });
                               },
                             ),
                           )
@@ -382,7 +412,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                   .compareTo(
                                       b.toLowerCase().indexOf(lowercaseQuery)));
                           }
-                          return genres;
+                          return [];
                         },
                         onChanged: (data) {
                           var newList = List<String>.from(data);
@@ -482,7 +512,19 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     MaterialPageRoute(
                                       builder: (_) =>
                                           MovieView(movieId: movie.movieId),
-                                    ));
+                                    )).then((data) {
+                                  setState(() {
+                                    favData = data;
+                                  });
+                                  if (data[0] == true) {
+                                    rebuild.value = true;
+                                    headerFavorite.value = headerId == data[2]
+                                        ? data[1]
+                                        : headerFavorite.value;
+                                    if (type == "movies") fetchMovies();
+                                    if (type == "favorites") fetchFavorites();
+                                  }
+                                });
                               },
                             ),
                           )
@@ -539,7 +581,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                   .compareTo(
                                       b.toLowerCase().indexOf(lowercaseQuery)));
                           }
-                          return roles;
+                          return [];
                         },
                         onChanged: (data) {
                           var newList = List<String>.from(data);
@@ -602,16 +644,6 @@ class _SeeAllViewState extends State<SeeAllView> {
                                       alignment: Alignment.bottomLeft,
                                       child: Text(
                                         crew.name,
-                                        // crew.firstName +
-                                        //     (crew.middleName != null
-                                        //         ? " " + crew.middleName
-                                        //         : "") +
-                                        //     (crew.lastName != null
-                                        //         ? " " + crew.lastName
-                                        //         : "") +
-                                        //     (crew.suffix != null
-                                        //         ? " " + crew.suffix
-                                        //         : ""),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 14,
@@ -640,7 +672,19 @@ class _SeeAllViewState extends State<SeeAllView> {
                                   MaterialPageRoute(
                                     builder: (_) => CrewView(
                                         crewId: crew.crewId.toString()),
-                                  ));
+                                  )).then((data) {
+                                setState(() {
+                                  favData = data;
+                                });
+                                if (data[0] == true) {
+                                  rebuild.value = true;
+                                  headerFavorite.value = headerId == data[2]
+                                      ? data[1]
+                                      : headerFavorite.value;
+                                  if (type == "movies") fetchMovies();
+                                  if (type == "favorites") fetchFavorites();
+                                }
+                              });
                             },
                           ),
                         )

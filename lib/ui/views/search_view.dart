@@ -25,7 +25,7 @@ class SearchView extends StatefulWidget {
 
 class _SearchViewState extends State<SearchView> {
   // final NavigationService _navigationService = locator<NavigationService>();
-  final searchController = TextEditingController();
+  final searchController = new TextEditingController();
 
   List<Movie> movieQueryResult = [];
   List<Crew> crewQueryResult = [];
@@ -49,6 +49,12 @@ class _SearchViewState extends State<SearchView> {
     fetchMovies();
     fetchCrew();
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -214,6 +220,7 @@ class _SearchViewState extends State<SearchView> {
                                             ? noResult = true
                                             : noResult = false;
                                       } else {
+                                        searchController.clear();
                                         movieQueryResult = [];
                                         crewQueryResult = [];
                                       }
@@ -228,7 +235,7 @@ class _SearchViewState extends State<SearchView> {
                             ? GestureDetector(
                                 onTap: () {
                                   setState(() {
-                                    searchController.text = "";
+                                    searchController.clear();
                                     movieQueryResult = [];
                                     crewQueryResult = [];
                                     noResult = false;
@@ -369,13 +376,18 @@ class _SearchViewState extends State<SearchView> {
                                             ],
                                           ),
                                         ),
-                                        onTap: () {
-                                          Navigator.push(
+                                        onTap: () async {
+                                          await Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) => MovieView(
                                                     movieId: movie.movieId),
                                               ));
+                                          setState(() {
+                                            searchController.clear();
+                                            movieQueryResult = [];
+                                            crewQueryResult = [];
+                                          });
                                         },
                                       ),
                                     )
@@ -464,14 +476,19 @@ class _SearchViewState extends State<SearchView> {
                                             ],
                                           ),
                                         ),
-                                        onTap: () {
-                                          Navigator.push(
+                                        onTap: () async {
+                                          await Navigator.push(
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) => CrewView(
                                                   crewId: c.crewId.toString(),
                                                 ),
                                               ));
+                                          setState(() {
+                                            searchController.clear();
+                                            movieQueryResult = [];
+                                            crewQueryResult = [];
+                                          });
                                         },
                                       ),
                                     )

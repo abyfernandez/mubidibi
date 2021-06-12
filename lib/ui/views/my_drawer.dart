@@ -21,14 +21,14 @@ class MyDrawer extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
-          iconTheme: IconThemeData(
-              // color: Colors.black, //change your color here
-              ),
+          // iconTheme: IconThemeData(
+          //     color: Colors.black, //change your color here
+          //     ),
           leading: GestureDetector(
               child: Icon(Icons.arrow_back),
-              onTap: () async {
+              onTap: () {
                 FocusScope.of(context).unfocus();
-                await _navigationService.pop();
+                _navigationService.pop();
               }),
         ),
         body: Container(

@@ -6,9 +6,8 @@ class Line {
   String line;
   String role;
   bool saved;
-  bool edit;
 
-  Line({this.id, this.movieId, this.line, this.role, this.saved, this.edit});
+  Line({this.id, this.movieId, this.line, this.role, this.saved});
 
   factory Line.fromJson(Map<String, dynamic> json) {
     return Line(
@@ -24,6 +23,5 @@ class Line {
         "movie_id": movieId,
         "quotation": line,
         "role": role,
-        "edit": edit
       };
 }

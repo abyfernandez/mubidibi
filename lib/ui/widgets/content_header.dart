@@ -14,6 +14,7 @@ import 'package:mubidibi/ui/views/dashboard_view.dart';
 import '../../locator.dart';
 
 ValueNotifier<bool> headerFavorite = ValueNotifier<bool>(false);
+int headerId = 0;
 
 class ContentHeader extends StatefulWidget {
   final Movie featuredContent;
@@ -30,8 +31,6 @@ class ContentHeader extends StatefulWidget {
 class _ContentHeaderState extends State<ContentHeader> {
   final Movie featuredContent;
 
-  // bool favorite;
-
   _ContentHeaderState(this.featuredContent);
 
   bool isFavorite() {
@@ -40,15 +39,12 @@ class _ContentHeaderState extends State<ContentHeader> {
 
   @override
   void initState() {
-    // favorite =
-    //     featuredContent.favoriteId != null && featuredContent.favoriteId != 0
-    //         ? true
-    //         : false;
+    super.initState();
+    headerId = featuredContent.movieId;
     headerFavorite.value =
         featuredContent.favoriteId != null && featuredContent.favoriteId != 0
             ? true
             : false;
-    super.initState();
   }
 
   @override

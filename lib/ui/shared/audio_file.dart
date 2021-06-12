@@ -10,8 +10,6 @@ class AudioFile extends StatefulWidget {
   final String type; // simple, detailed
   final String description;
 
-  bool isVisible = true;
-
   AudioFile({
     @required this.videoPlayerController,
     this.looping,
@@ -22,13 +20,13 @@ class AudioFile extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<StatefulWidget> createState() {
-    return AudioFileState();
-  }
+  AudioFileState createState() => AudioFileState();
 }
 
 class AudioFileState extends State<AudioFile> {
   ChewieAudioController _chewieController;
+
+  bool isVisible = true;
 
   @override
   void initState() {
@@ -122,7 +120,7 @@ class AudioFileState extends State<AudioFile> {
                           maintainSize: true,
                           maintainAnimation: true,
                           maintainState: true,
-                          visible: widget.isVisible,
+                          visible: isVisible,
                           child: Container(
                             padding: EdgeInsets.all(5),
                             decoration: BoxDecoration(
@@ -156,7 +154,7 @@ class AudioFileState extends State<AudioFile> {
                 ),
                 onTap: () {
                   setState(() {
-                    widget.isVisible = !widget.isVisible;
+                    isVisible = !isVisible;
                   });
                 }),
           );

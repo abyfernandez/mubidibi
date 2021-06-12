@@ -76,9 +76,15 @@ class ContentList extends StatelessWidget {
                                               title: 'Mga Personalidad',
                                               showFilter: true),
                                 ),
-                              );
+                              ).then((data) {
+                                if (data[0] == true) {
+                                  rebuild.value = true;
+                                  // headerFavorite.value = headerId == data[2]
+                                  //     ? data[1]
+                                  //     : headerFavorite.value;
+                                }
+                              });
                             },
-                            // child: Icon(Icons.arrow_forward_ios_outlined),
                             child: Text(
                               seeAll,
                               style: const TextStyle(
@@ -111,7 +117,14 @@ class ContentList extends StatelessWidget {
                                               showFilter: true,
                                             ),
                                 ),
-                              );
+                              ).then((data) {
+                                if (data[0] == true) {
+                                  rebuild.value = true;
+                                  // headerFavorite.value = headerId == data[2]
+                                  //     ? data[1]
+                                  //     : headerFavorite.value;
+                                }
+                              });
                             },
                             child: Text(
                               seeAll,
@@ -149,10 +162,9 @@ class ContentList extends StatelessWidget {
                           ).then((data) {
                             if (data[0] == true) {
                               rebuild.value = true;
-                              // if modified movie is the header, change the value too
-                              if (data[2] == movies[index].movieId) {
-                                headerFavorite.value = data[1];
-                              }
+                              // headerFavorite.value = headerId == data[2]
+                              //     ? data[1]
+                              //     : headerFavorite.value;
                             }
                           });
                         },
@@ -239,7 +251,14 @@ class ContentList extends StatelessWidget {
                               builder: (_) => CrewView(
                                   crewId: crew[index].crewId.toString()),
                             ),
-                          ),
+                          ).then((data) {
+                            if (data[0] == true) {
+                              rebuild.value = true;
+                              // headerFavorite.value = headerId == data[2]
+                              //     ? data[1]
+                              //     : headerFavorite.value;
+                            }
+                          })
                         },
                         child: Stack(
                           children: [

@@ -97,6 +97,7 @@ class AwardViewModel extends BaseModel {
   Future<int> addAward({
     @required awardId,
     @required name,
+    @required event,
     @required description,
     @required category,
     @required addedBy,
@@ -115,6 +116,7 @@ class AwardViewModel extends BaseModel {
         body: jsonEncode(<String, dynamic>{
           'award_id': awardId,
           'name': name,
+          'event': event,
           'description': description,
           'category': category,
           'added_by': addedBy,
@@ -130,6 +132,7 @@ class AwardViewModel extends BaseModel {
         body: jsonEncode(<String, dynamic>{
           'award_id': awardId,
           'name': name,
+          'event': event,
           'description': description,
           'category': category,
           'added_by': addedBy,

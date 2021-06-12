@@ -119,29 +119,14 @@ class _DashboardViewState extends State<DashboardView>
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
         extendBodyBehindAppBar: true,
+        endDrawerEnableOpenDragGesture: false,
+        drawerEdgeDragWidth: 0,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         floatingActionButton: Visibility(
           visible: currentUser != null ? currentUser.isAdmin : false,
           child: FloatingActionBubble(
             // Menu items
             items: <Bubble>[
-              // Floating action menu item
-              Bubble(
-                title: "Award",
-                iconColor: Colors.white,
-                bubbleColor: Colors.lightBlue,
-                icon: Icons.add,
-                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
-                onPress: () async {
-                  _animationController.reverse();
-                  await _navigationService.navigateTo(AddAwardRoute);
-                  setState(() {
-                    fabIcon = fabIcon == Icons.admin_panel_settings
-                        ? Icons.close
-                        : Icons.admin_panel_settings;
-                  });
-                },
-              ),
               // Floating action menu item
               Bubble(
                 title: "Pelikula",
@@ -169,6 +154,24 @@ class _DashboardViewState extends State<DashboardView>
                 onPress: () async {
                   _animationController.reverse();
                   await _navigationService.navigateTo(AddCrewRoute);
+                  setState(() {
+                    fabIcon = fabIcon == Icons.admin_panel_settings
+                        ? Icons.close
+                        : Icons.admin_panel_settings;
+                  });
+                },
+              ),
+
+              // Floating action menu item
+              Bubble(
+                title: "Mga Award",
+                iconColor: Colors.white,
+                bubbleColor: Colors.lightBlue,
+                icon: Icons.emoji_events_outlined,
+                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                onPress: () async {
+                  _animationController.reverse();
+                  await _navigationService.navigateTo(AddAwardRoute);
                   setState(() {
                     fabIcon = fabIcon == Icons.admin_panel_settings
                         ? Icons.close
@@ -241,6 +244,7 @@ class _DashboardViewState extends State<DashboardView>
                             builder: (context, willRebuild, widget) {
                               if (willRebuild) {
                                 fetchFavorites();
+                                fetchMovies();
                               }
                               return favorites != null && favorites.isNotEmpty
                                   ? SliverToBoxAdapter(
@@ -266,12 +270,15 @@ class _DashboardViewState extends State<DashboardView>
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              'Mga Favorite',
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontSize: 20.0,
-                                                fontWeight: FontWeight.bold,
+                                            Container(
+                                              padding: EdgeInsets.only(top: 20),
+                                              child: Text(
+                                                'Mga Favorite',
+                                                style: const TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 20.0,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                             Padding(
@@ -283,7 +290,7 @@ class _DashboardViewState extends State<DashboardView>
                                                 'Magdagdag ng mga paboritong pelikula.',
                                                 style: TextStyle(
                                                   color: Colors.black54,
-                                                  fontSize: 16,
+                                                  fontSize: 14,
                                                   fontStyle: FontStyle.italic,
                                                 ),
                                               ),

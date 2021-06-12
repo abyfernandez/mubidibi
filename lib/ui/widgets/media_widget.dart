@@ -1,7 +1,6 @@
 // MediaWidget class -- dynamic widget for adding photos/videos in crew and movie
 
 import 'dart:io';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -11,8 +10,6 @@ import 'package:mime/mime.dart';
 import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/views/add_movie.dart';
-// import 'package:chewie/chewie.dart';
-// import 'package:video_thumbnail/video_thumbnail.dart';
 import 'package:mubidibi/globals.dart' as Config;
 
 class MediaWidget extends StatefulWidget {
@@ -403,7 +400,7 @@ class MediaWidgetState extends State<MediaWidget> {
                       ? Column(
                           children: [
                             Container(
-                              padding: EdgeInsets.all(10),
+                              // padding: EdgeInsets.all(10),   -- test
                               color: Color.fromRGBO(240, 240, 240, 1),
                               child: Row(
                                 mainAxisAlignment:

@@ -44,11 +44,10 @@ class LineWidgetState extends State<LineWidget> {
     showError =
         widget.item.role != null && widget.item.line != null ? false : true;
     showRoleError = showRoleErrorT();
-    widget.item.saved = widget.item.saved == null ? false : widget.item.saved;
+    widget.item.saved = widget.item.id == null ? false : true;
 
     if (widget.item.role != null) {
       // var chosen = rolesFilter.value.singleWhere((a) => a == widget.item.role);
-
       // if (chosen != null) tempRole = [chosen];
       tempRole = [widget.item.role];
     }

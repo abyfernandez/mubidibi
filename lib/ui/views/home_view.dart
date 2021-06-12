@@ -172,6 +172,8 @@ class _HomeViewState extends State<HomeView> {
         ),
         child: MyDrawer(),
       ),
+      endDrawerEnableOpenDragGesture: false,
+      drawerEdgeDragWidth: 0.0,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,

@@ -11,6 +11,7 @@ class Award {
   int awardId;
   final int movieId;
   String name;
+  String event;
   List<String> category; // movie, actor
   String year;
   String type; //  nominated, won
@@ -25,6 +26,7 @@ class Award {
     this.awardId,
     this.movieId,
     this.name,
+    this.event,
     this.category,
     this.year,
     this.type,
@@ -41,6 +43,7 @@ class Award {
         awardId: json['award_id'],
         movieId: json['movie_id'],
         name: json['name'],
+        event: json['event'],
         category: json["category"] == null
             ? []
             : List<String>.from(json["category"].map((x) => x)),
@@ -56,6 +59,7 @@ class Award {
         "award_id": awardId,
         "movie_id": movieId,
         "name": name,
+        "event": event,
         "category": category,
         "year": year,
         "type": type,

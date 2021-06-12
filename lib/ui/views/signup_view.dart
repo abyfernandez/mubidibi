@@ -163,6 +163,11 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
                               isButtonDisabled();
                             });
                           },
+                          enterPressed: isButtonDisabled()
+                              ? null
+                              : () {
+                                  _goToSecondPage(context);
+                                },
                         ),
                         Container(
                           alignment: Alignment.centerRight,

@@ -38,9 +38,12 @@ class AwardWidgetState extends State<AwardWidget> {
             widget.item.type.trim() != ""
         ? false
         : true;
-    widget.item.saved = widget.item.saved == null && widget.item.awardId == null
+
+    widget.item.saved = widget.item.saved == null && widget.item.movieId == null
         ? false
-        : widget.item.saved;
+        : widget.item.saved == null && widget.item.movieId != null
+            ? true
+            : false;
 
     if (widget.item.awardId != null) {
       // var award = widget.awardOptions
@@ -104,7 +107,7 @@ class AwardWidgetState extends State<AwardWidget> {
                       var newList = List<Award>.from(data);
                       if (newList.length != 0) {
                         setState(() {
-                          widget.item.awardId = newList[0].awardId;
+                          widget.item.awardId = newList[0].id;
                           widget.item.name = newList[0].name;
                           widget.item.description = newList[0].description;
                           showError = widget.item.awardId != null &&
@@ -225,13 +228,15 @@ class AwardWidgetState extends State<AwardWidget> {
                             DropdownMenuItem(
                                 child: Text("Panalo"), value: "panalo"),
                           ],
-                          hint: Text('Type'),
+                          hint: Text('Type *'),
                           elevation: 0,
                           isDense: false,
                           underline: Container(),
                           onChanged: (val) {
                             setState(() {
                               widget.item.type = val;
+                              print(widget.item.awardId);
+                              print(widget.item.type);
                               showError = widget.item.awardId != null &&
                                       (widget.item.type != null &&
                                           widget.item.type.trim() != "")
@@ -262,7 +267,8 @@ class AwardWidgetState extends State<AwardWidget> {
                     color: Colors.white,
                     onPressed: () {
                       FocusScope.of(context).unfocus();
-                      if (widget.item.awardId != null &&
+                      if (_formKey.currentState.validate() &&
+                          widget.item.awardId != null &&
                           (widget.item.type != null &&
                               widget.item.type.trim() != '')) {
                         setState(() {

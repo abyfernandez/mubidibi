@@ -236,6 +236,8 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: get image using image picker for movie poster
   getPosters() async {
+    FocusScope.of(context).unfocus();
+
     // get posters, filter for duplicates, and iterate through them and add to list view builder for gallery
 
     // (1) Get Photo/s and/or videos
@@ -389,6 +391,8 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: adds MediaWidget in the ListView builder for Gallery
   addtoGallery() async {
+    FocusScope.of(context).unfocus();
+
     // get media, filter for duplicates, and iterate through them and add to list view builder for gallery
 
     // (1) Get Photo/s and/or videos
@@ -593,6 +597,8 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: get videos for trailers
   getTrailers() async {
+    FocusScope.of(context).unfocus();
+
     // get file, filter for duplicates, and iterate through them and add to list view builder for trailer
 
     // (1) Get Photo/s and/or videos
@@ -713,6 +719,8 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: get audios
   getAudios() async {
+    FocusScope.of(context).unfocus();
+
     // get file, filter for duplicates, and iterate through them and add to list view builder for trailer
 
     // (1) Get Photo/s and/or videos
@@ -911,6 +919,8 @@ class _AddMovieState extends State<AddMovie> {
         crew: new Crew(),
         crewList: crewList,
         open: ValueNotifier<bool>(true),
+        prevId: ValueNotifier<int>(0),
+        updateLineList: updateLineList,
       ));
     });
   }
@@ -994,6 +1004,8 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: adds AwardWidget in the ListView builder
   addAward() {
+    FocusScope.of(context).unfocus();
+
     setState(() {
       awardList.add(AwardWidget(
         awardOptions: awardOptions,
@@ -1019,6 +1031,10 @@ class _AddMovieState extends State<AddMovie> {
         ? lineList
             .where((line) =>
                 line.item.saved == true &&
+                line.item.line != null &&
+                line.item.line.trim() != "" &&
+                line.item.role != null &&
+                line.item.role.trim() != "" &&
                 rolesFilter.value.contains(line.item.role))
             .toList()
         : [];
@@ -1058,7 +1074,7 @@ class _AddMovieState extends State<AddMovie> {
                                 width: 5,
                               ),
                               Expanded(
-                                child: Text(f.item.line,
+                                child: Text("'" + f.item.line + "'",
                                     style: TextStyle(fontSize: 16),
                                     softWrap: true,
                                     overflow: TextOverflow.clip),
@@ -1091,22 +1107,50 @@ class _AddMovieState extends State<AddMovie> {
 
   // Function: adds LineWidget in the ListView builder
   addLine() {
+    FocusScope.of(context).unfocus();
+
     // extract the roles from the filteredActors list and flatten into a 1-dimensional array
 
     var rolesOptions =
         filteredActors.map((a) => a.crew.role).expand((i) => i).toList();
 
-    // setState(() {
-    // update the values in rolesFilter
-    rolesFilter = ValueNotifier<List>([]);
-    rolesOptions.forEach((r) {
-      if (rolesFilter.value.contains(r) == false) rolesFilter.value.add(r);
-      // });
+    setState(() {
+      // update the values in rolesFilter
+      rolesFilter = ValueNotifier<List>([]);
+      rolesOptions.forEach((r) {
+        if (rolesFilter.value.contains(r) == false) rolesFilter.value.add(r);
+      });
 
       lineList.add(LineWidget(
         item: new Line(),
         open: ValueNotifier<bool>(true),
       ));
+    });
+  }
+
+  void updateLineList(String roleToDelete) {
+    // updates listview tree according to existence of roles
+    // var index = lineList.indexWhere((a) => a.item.role == roleToDelete);
+
+    // setState(() {
+    //   if (index != -1) {
+    //     var lineId = lineList[index].item.id;
+    //     lineList.removeAt(index);
+    //     // for edit: delete item from DB
+    //     if (!linesToDelete.contains(lineId)) {
+    //       linesToDelete.add(lineId);
+    //     }
+    //   }
+    // });
+
+    lineList.toList(growable: false).forEach((line) {
+      if (line.item.role == roleToDelete &&
+          !rolesFilter.value.contains(roleToDelete)) {
+        if (line.item.id != null && !linesToDelete.contains(line.item.id)) {
+          linesToDelete.add(line.item.id);
+        }
+        lineList.remove(line);
+      }
     });
   }
 
@@ -1163,10 +1207,13 @@ class _AddMovieState extends State<AddMovie> {
         var aktors = crewEdit != null ? crewEdit[2] : [];
 
         for (var i = 0; i < aktors.length; i++) {
+          actorsFilter.add(aktors[i].crewId);
           actorList.add(ActorWidget(
             crew: aktors[i],
             crewList: movieCrewList,
             open: ValueNotifier<bool>(false),
+            updateLineList: updateLineList,
+            prevId: ValueNotifier<int>(0),
           ));
         }
 
@@ -1183,14 +1230,9 @@ class _AddMovieState extends State<AddMovie> {
 
         // Mga Sumikat Na Linya
         var quotations = movie?.quotes != null ? movie?.quotes : [];
-
         filteredActors = actorList
             .where((actor) =>
-                actor.crew.saved == true ||
-                (actor.crew.crewId != null &&
-                    actor.crew.role.isNotEmpty &&
-                    actor.crew.saved ==
-                        null)) // actor.crew.saved == null is for the items that came from edit
+                actor.crew.crewId != null && actor.crew.role.isNotEmpty)
             .toList();
 
         var rolesOptions =
@@ -1202,6 +1244,7 @@ class _AddMovieState extends State<AddMovie> {
           if (rolesFilter.value.contains(r) == false) rolesFilter.value.add(r);
         });
 
+        // on edit, remove the roles that are no longer associated with the actors and save the id in the linesToDelete list
         for (var i = 0; i < quotations.length; i++) {
           lineList.add(LineWidget(
             item: quotations[i],
@@ -1329,11 +1372,13 @@ class _AddMovieState extends State<AddMovie> {
                                   setState(() => currentStep = step);
                                 }
                               },
-                              onStepCancel: () => {
+                              onStepCancel: () {
+                                FocusScope.of(context).unfocus();
                                 if (currentStep != 0)
-                                  setState(() => --currentStep)
+                                  setState(() => --currentStep);
                               }, // else do nothing
                               onStepContinue: () async {
+                                FocusScope.of(context).unfocus();
                                 if (currentStep + 1 != stepperTitle.length) {
                                   // do not allow user to continue to next step if inputs aren't filled out yet
                                   switch (currentStep) {
@@ -1377,6 +1422,7 @@ class _AddMovieState extends State<AddMovie> {
                                 } else {
                                   // Review
                                   // last step
+
                                   var confirm = await _dialogService
                                       .showConfirmationDialog(
                                           title: "Confirm Details",
@@ -1431,12 +1477,16 @@ class _AddMovieState extends State<AddMovie> {
                                     // Actors
                                     List<Crew> actorsToSave = [];
                                     if (filteredActors.isNotEmpty) {
+                                      // actors that are not from the original actors list + actors updated (with existing id)
                                       actorsToSave = filteredActors
                                           .map((a) => a.crew)
                                           .toList();
 
+                                      // remove the ids included in the actorsToDelete list.
+                                      // the remaining items in the actorsToSave list will be the new and updated items
                                       actorsToSave.removeWhere((a) =>
-                                          actorsToDelete.contains(a.crewId));
+                                          a.id != null &&
+                                          actorsToDelete.contains(a.id));
                                     }
 
                                     // Awards
@@ -1615,14 +1665,16 @@ class _AddMovieState extends State<AddMovie> {
                                         Timer(
                                             const Duration(milliseconds: 2000),
                                             () {
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => MovieView(
-                                                  movieId: movie.movieId),
-                                            ),
-                                          );
+                                          // Navigator.pushReplacement(
+                                          //   context,
+                                          //   MaterialPageRoute(
+                                          //     builder: (context) => MovieView(
+                                          //         movieId: movie.movieId),
+                                          //   ),
+                                          // );
+                                           Navigator.pop(context, []);
                                         });
+                                        
                                       }
                                     } else {
                                       _saving =
@@ -1878,10 +1930,17 @@ class _AddMovieState extends State<AddMovie> {
                                   key: ObjectKey(c),
                                   label: Text(c),
                                   onDeleted: () {
+                                    var genreLC = c.toLowerCase();
                                     if (movie != null &&
-                                        movie.genre.contains(c)) {
+                                        movie.genre
+                                            .map((g) => g.toLowerCase())
+                                            .toList()
+                                            .contains(genreLC)) {
                                       // for edit: delete item from DB
-                                      if (genresToDelete.contains(c) == false) {
+                                      if (!genresToDelete
+                                          .map((g) => g.toLowerCase())
+                                          .toList()
+                                          .contains(genreLC)) {
                                         genresToDelete.add(c);
                                       }
                                     }
@@ -1893,10 +1952,18 @@ class _AddMovieState extends State<AddMovie> {
                               },
                               suggestionBuilder: (context, state, c) {
                                 return ListTile(
-                                  key: ObjectKey(c),
-                                  title: Text(c),
-                                  onTap: () => state.selectSuggestion(c),
-                                );
+                                    key: ObjectKey(c),
+                                    title: Text(c),
+                                    onTap: () {
+                                      var genreLC = c.toLowerCase();
+                                      if (genresToDelete
+                                          .map((g) => g.toLowerCase())
+                                          .toList()
+                                          .contains(genreLC)) {
+                                        genresToDelete.remove(c);
+                                      }
+                                      return state.selectSuggestion(c);
+                                    });
                               },
                             ),
                           ),
@@ -2037,7 +2104,6 @@ class _AddMovieState extends State<AddMovie> {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
                                               // update poster list by removing the image that is previously saved and recorded
-
                                               if (trailerList[i].item.file !=
                                                   null) {
                                                 List imagePaths = trailers
@@ -2360,10 +2426,14 @@ class _AddMovieState extends State<AddMovie> {
                   },
                   suggestionBuilder: (context, state, c) {
                     return ListTile(
-                      key: ObjectKey(c),
-                      title: Text(c.name),
-                      onTap: () => state.selectSuggestion(c),
-                    );
+                        key: ObjectKey(c),
+                        title: Text(c.name),
+                        onTap: () {
+                          if (directorsToDelete.contains(c.crewId)) {
+                            directorsToDelete.remove(c.crewId);
+                          }
+                          return state.selectSuggestion(c);
+                        });
                   },
                 ),
               ),
@@ -2395,8 +2465,8 @@ class _AddMovieState extends State<AddMovie> {
                     if (query.isNotEmpty) {
                       var lowercaseQuery = query.toLowerCase();
                       return crewList.where((item) {
-                        return !directors
-                                .map((d) => d.crewId)
+                        return !writers
+                                .map((w) => w.crewId)
                                 .toList()
                                 .contains(item.crewId) &&
                             item.name
@@ -2437,10 +2507,14 @@ class _AddMovieState extends State<AddMovie> {
                   },
                   suggestionBuilder: (context, state, c) {
                     return ListTile(
-                      key: ObjectKey(c),
-                      title: Text(c.name),
-                      onTap: () => state.selectSuggestion(c),
-                    );
+                        key: ObjectKey(c),
+                        title: Text(c.name),
+                        onTap: () {
+                          if (writersToDelete.contains(c.crewId)) {
+                            writersToDelete.remove(c.crewId);
+                          }
+                          return state.selectSuggestion(c);
+                        });
                   },
                 ),
               ),
@@ -2490,41 +2564,82 @@ class _AddMovieState extends State<AddMovie> {
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
-                                              if (actorList[i].crew.crewId !=
-                                                  null) {
+                                              if (actorList[i].crew.role !=
+                                                      null &&
+                                                  actorList[i]
+                                                      .crew
+                                                      .role
+                                                      .isNotEmpty) {
                                                 // updates listview tree according to existence of roles
-                                                lineList.removeWhere((a) =>
-                                                    rolesFilter.value.contains(
-                                                        a.item.role) &&
-                                                    actorList[i]
-                                                        .crew
-                                                        .role
-                                                        .contains(a.item.role));
+                                                lineList
+                                                    .toList(growable: false)
+                                                    .forEach((line) {
+                                                  if (actorList[i].crew.role !=
+                                                          null &&
+                                                      actorList[i]
+                                                          .crew
+                                                          .role
+                                                          .isNotEmpty &&
+                                                      actorList[i]
+                                                          .crew
+                                                          .role
+                                                          .contains(
+                                                              line.item.role)) {
+                                                    if (line.item.id != null &&
+                                                        !linesToDelete.contains(
+                                                            line.item.id)) {
+                                                      linesToDelete
+                                                          .add(line.item.id);
+                                                    }
+                                                    lineList.remove(line);
+                                                  }
+                                                });
 
                                                 rolesFilter.value.remove(
                                                     actorList[i].crew.role);
+                                              } // -- added
 
-                                                actorsFilter.remove(
-                                                    actorList[i].crew.crewId);
-                                                if (crewEdit != null &&
-                                                    crewEdit[2]
-                                                        .map((c) => c.crewId)
-                                                        .toList()
-                                                        .contains(actorList[i]
-                                                            .crew
-                                                            .crewId)) {
-                                                  // for edit: delete item from DB
-                                                  if (actorsToDelete.contains(
-                                                          actorList[i]
+                                              actorsFilter.remove(
+                                                  actorList[i].crew.crewId);
+
+                                              // if the id of the item to be deleted in ui exists in crewEdit, this means existing na sya
+                                              // previously saved in the database
+                                              // remove from DB by adding to the actorsToDelete list
+                                              // for edit: delete item from DB
+                                              if (actorList[i].crew.id !=
+                                                      null &&
+                                                  !actorsToDelete.contains(
+                                                      actorList[i].crew.id) &&
+                                                  (crewEdit != null &&
+                                                      crewEdit[2]
+                                                          .map((c) => c
+                                                              .id) // from c.crewId
+                                                          .toList()
+                                                          .contains(actorList[i]
                                                               .crew
-                                                              .crewId) ==
-                                                      false) {
-                                                    actorsToDelete.add(
-                                                        actorList[i]
-                                                            .crew
-                                                            .crewId);
-                                                  }
-                                                }
+                                                              .id))) {
+                                                actorsToDelete
+                                                    .add(actorList[i].crew.id);
+                                              } else if (actorList[i]
+                                                          .prevId
+                                                          .value !=
+                                                      null &&
+                                                  actorList[i].prevId.value !=
+                                                      0 &&
+                                                  !actorsToDelete.contains(
+                                                      actorList[i]
+                                                          .prevId
+                                                          .value) &&
+                                                  (crewEdit != null &&
+                                                      crewEdit[2]
+                                                          .map((c) => c
+                                                              .id) // from c.crewId
+                                                          .toList()
+                                                          .contains(actorList[i]
+                                                              .prevId
+                                                              .value))) {
+                                                actorsToDelete.add(
+                                                    actorList[i].prevId.value);
                                               }
                                               actorList.removeAt(i);
                                             });
@@ -2697,66 +2812,54 @@ class _AddMovieState extends State<AddMovie> {
                         )
                       : SizedBox(),
             ),
-            ValueListenableBuilder(
-                valueListenable: rolesFilter,
-                builder: (context, val, widget) {
-                  return ListView.builder(
-                      itemCount: lineList.length,
-                      shrinkWrap: true,
-                      itemBuilder: (BuildContext context, int i) {
-                        // updates listview tree according to existence of roles
-                        if (!val.contains(lineList[i].item.role)) {
-                          lineList.removeAt(i);
-                        }
-                        return ValueListenableBuilder(
-                            valueListenable: lineList[i].open,
-                            builder: (context, value, widget) {
-                              return Stack(
-                                children: [
-                                  lineList[i],
-                                  value == true
-                                      ? Positioned(
-                                          bottom: 0,
-                                          right: 0,
-                                          child: Container(
-                                            child: OutlineButton(
-                                              padding: EdgeInsets.all(0),
-                                              color: Colors.white,
-                                              onPressed: () {
-                                                FocusScope.of(context)
-                                                    .unfocus();
-                                                setState(() {
-                                                  if (lineList[i].item.id !=
-                                                          null &&
-                                                      movie != null &&
-                                                      movie.quotes
-                                                          .map((q) => q.id)
-                                                          .toList()
-                                                          .contains(lineList[i]
-                                                              .item
-                                                              .id)) {
-                                                    // for edit: delete item from DB
-                                                    if (linesToDelete.contains(
-                                                            lineList[i]
-                                                                .item
-                                                                .id) ==
-                                                        false) {
-                                                      linesToDelete.add(
-                                                          lineList[i].item.id);
-                                                    }
-                                                  }
-                                                  lineList.removeAt(i);
-                                                });
-                                              },
-                                              child: Text('Tanggalin'),
-                                            ),
-                                            alignment: Alignment.centerRight,
-                                          ),
-                                        )
-                                      : SizedBox(),
-                                ],
-                              );
-                            });
+            ListView.builder(
+                itemCount: lineList.length,
+                shrinkWrap: true,
+                itemBuilder: (BuildContext context, int i) {
+                  return ValueListenableBuilder(
+                      valueListenable: lineList[i].open,
+                      builder: (context, value, widget) {
+                        return Stack(
+                          children: [
+                            lineList[i],
+                            value == true
+                                ? Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      child: OutlineButton(
+                                        padding: EdgeInsets.all(0),
+                                        color: Colors.white,
+                                        onPressed: () {
+                                          FocusScope.of(context).unfocus();
+                                          setState(() {
+                                            // if the id of the item to be deleted in ui exists in crewEdit, this means existing na sya
+                                            // previously saved in the database
+                                            // remove from DB by adding to the linesToDelete list
+                                            // for edit: delete item from DB
+                                            if (lineList[i].item.id != null &&
+                                                movie != null &&
+                                                movie.quotes
+                                                    .map((q) => q.id)
+                                                    .toList()
+                                                    .contains(
+                                                        lineList[i].item.id) &&
+                                                !linesToDelete.contains(
+                                                    lineList[i].item.id)) {
+                                              linesToDelete
+                                                  .add(lineList[i].item.id);
+                                            }
+                                            lineList.removeAt(i);
+                                          });
+                                        },
+                                        child: Text('Tanggalin'),
+                                      ),
+                                      alignment: Alignment.centerRight,
+                                    ),
+                                  )
+                                : SizedBox(),
+                          ],
+                        );
                       });
                 }),
             SizedBox(
@@ -2766,8 +2869,7 @@ class _AddMovieState extends State<AddMovie> {
               width: 140,
               child: lineList.isNotEmpty
                   ? FlatButton(
-                      // color: Color.fromRGBO(240, 240, 240, 1),
-                      color: Colors.green,
+                      color: Color.fromRGBO(240, 240, 240, 1),
                       onPressed: addLine,
                       child: Row(
                         children: [
@@ -2813,6 +2915,32 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               ),
               SizedBox(height: 15),
+              filmGenres.length != 0
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Text("Mga Genre: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          )),
+                    )
+                  : SizedBox(),
+              filmGenres.length != 0
+                  ? Container(
+                      alignment: Alignment.topLeft,
+                      child: Wrap(
+                          children: filmGenres
+                              .map<Widget>((str) => Container(
+                                    margin: EdgeInsets.only(right: 3),
+                                    child: Chip(
+                                      label: Text(str),
+                                      backgroundColor: Colors.blue[100],
+                                    ),
+                                  ))
+                              .toList()),
+                    )
+                  : SizedBox(),
+              filmGenres.length != 0 ? SizedBox(height: 15) : SizedBox(),
               _date != null
                   ? Container(
                       alignment: Alignment.topLeft,
@@ -2936,32 +3064,6 @@ class _AddMovieState extends State<AddMovie> {
                     )
                   : SizedBox(),
               displayActors(),
-              filmGenres.length != 0
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Mga Genre: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              filmGenres.length != 0
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Wrap(
-                          children: filmGenres
-                              .map<Widget>((str) => Container(
-                                    margin: EdgeInsets.only(right: 3),
-                                    child: Chip(
-                                      label: Text(str),
-                                      backgroundColor: Colors.blue[100],
-                                    ),
-                                  ))
-                              .toList()),
-                    )
-                  : SizedBox(),
-              filmGenres.length != 0 ? SizedBox(height: 15) : SizedBox(),
               displayAwards(),
               displayLines(),
             ],
@@ -2978,12 +3080,16 @@ class ActorWidget extends StatefulWidget {
   final List<Crew> crewList;
   final Crew crew;
   final open;
+  final Function updateLineList;
+  final ValueNotifier<int> prevId;
 
   const ActorWidget({
     Key key,
     this.crew,
     this.crewList,
     this.open,
+    this.updateLineList,
+    this.prevId,
   }) : super(key: key);
 
   @override
@@ -3006,7 +3112,9 @@ class ActorWidgetState extends State<ActorWidget> {
         : true;
     widget.crew.saved = widget.crew.saved == null && widget.crew.crewId == null
         ? false
-        : widget.crew.saved;
+        : widget.crew.saved == null && widget.crew.id != null
+            ? true
+            : widget.crew.saved;
     if (widget.crew.crewId != null) {
       // var actor =
       //     widget.crewList.singleWhere((a) => a.crewId == widget.crew.crewId);
@@ -3063,12 +3171,13 @@ class ActorWidgetState extends State<ActorWidget> {
                           .compareTo(
                               b.name.toLowerCase().indexOf(lowercaseQuery)));
                   }
-                  return filteredList;
+                  return [];
                 },
                 onChanged: (data) {
                   var newList = List<Crew>.from(data);
                   if (newList.length != 0) {
                     setState(() {
+                      // widget.crew.id is intentionally left out
                       widget.crew.crewId = newList[0].crewId;
                       widget.crew.firstName = newList[0].firstName;
                       widget.crew.middleName = newList[0].middleName;
@@ -3112,11 +3221,13 @@ class ActorWidgetState extends State<ActorWidget> {
                   return InputChip(
                     key: ObjectKey(c),
                     label: Text(c != null ? c.name : ""),
-                    onDeleted: () => {
+                    onDeleted: () {
                       setState(() {
                         actorsFilter.remove(c.crewId);
-                      }),
-                      state.deleteChip(c),
+                        widget.prevId.value = c.crewId;
+                        print(widget.prevId.value);
+                      });
+                      return state.deleteChip(c);
                     },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
@@ -3184,12 +3295,13 @@ class ActorWidgetState extends State<ActorWidget> {
                     label: Text(c),
                     onDeleted: () {
                       setState(() {
-                        if (rolesFilter.value.contains(c) == true) {
+                        if (rolesFilter.value.contains(c)) {
                           rolesFilter.value.remove(
                               c); // removes the deleted role from the role masterlist
                         }
+                        widget.updateLineList(c);
                       });
-                      state.deleteChip(c);
+                      return state.deleteChip(c);
                     },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
@@ -3224,7 +3336,7 @@ class ActorWidgetState extends State<ActorWidget> {
 
                       // save roles in roles masterlist
                       widget.crew.role.forEach((a) {
-                        if (rolesFilter.value.contains(a) == false)
+                        if (!rolesFilter.value.contains(a))
                           rolesFilter.value.add(a);
                       });
                     });

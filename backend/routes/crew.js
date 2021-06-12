@@ -183,7 +183,6 @@ exports.crew = app => {
           for (var i = 0; i < movies_acted.rows.length; i++) {
             var { rows } = await client.query(`select role from movie_actor where movie_id = ${movies_acted.rows[i].id} and actor_id = ${crew.id}`);
 
-            console.log(rows[0].role);
             movies_acted.rows[i]['role'] = rows[0].role;
           }
 
@@ -322,8 +321,6 @@ exports.crew = app => {
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      console.log(query);
-
       var result = await client.query(query).then((result) => {
         const id = result.rows[0].add_crew;
 
@@ -336,69 +333,59 @@ exports.crew = app => {
         }
 
         // gallery
-        if (gallery.length != 0) {
-          for (var i = 0; i < gallery.length; i++) {
-            var desc = crewData.gallery_desc[i] != null ? crewData.gallery_desc[i].replace(/'/g, "''") : null;
-            var query = `insert into crew_media (crew_id, url, description, type) values (${id}, '${gallery[i]}', `;
-            if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
-            else query = query.concat(`null, 'gallery')`);
+        for (var i = 0; i < gallery.length; i++) {
+          var desc = crewData.gallery_desc[i] != null ? crewData.gallery_desc[i].replace(/'/g, "''") : null;
+          var query = `insert into crew_media (crew_id, url, description, type) values (${id}, '${gallery[i]}', `;
+          if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
+          else query = query.concat(`null, 'gallery')`);
 
-            client.query(query);
-          }
+          client.query(query);
         }
 
         // add movies as director
-        if (crewData.directors.length != 0) {
-          crewData.directors.forEach((d) => {
-            client.query(`call add_movie_director (
+        crewData.directors.forEach((d) => {
+          client.query(`call add_movie_director (
               ${d},
               ${id}
             )`);
-          });
-        }
+        });
 
         // add movies as writer
-        if (crewData.writers.length != 0) {
-          crewData.writers.forEach((w) => {
-            client.query(`call add_movie_writer (
+        crewData.writers.forEach((w) => {
+          client.query(`call add_movie_writer (
               ${w},
               ${id}
             )`)
-          });
-        }
+        });
 
         // add actors
-        if (crewData.actors.length != 0) {
-          crewData.actors.forEach((a, index) => {
-            var actorQuery = `call add_movie_actor (
-              ${a.id},
+        crewData.actors.forEach((a, index) => {
+          var actorQuery = `call add_movie_actor (
+              ${a.movie_id},
               ${id},
               `;
 
-            if (a.role.length) {
-              actorQuery = actorQuery.concat(`array [`);
-              a.role.forEach(role => {
-                actorQuery = actorQuery.concat(`'`, role, `'`)
-                if (role != a.role[a.role.length - 1]) {
-                  actorQuery = actorQuery.concat(',')
-                }
-              });
-              actorQuery = actorQuery.concat(`])`)
-            } else {
-              actorQuery = actorQuery.concat(`null)`);
-            }
-            console.log(actorQuery);
-            client.query(actorQuery);
-          });
-        }
+          if (a.role.length) {
+            actorQuery = actorQuery.concat(`array [`);
+            a.role.forEach(role => {
+              actorQuery = actorQuery.concat(`'`, role, `'`)
+              if (role != a.role[a.role.length - 1]) {
+                actorQuery = actorQuery.concat(',')
+              }
+            });
+            actorQuery = actorQuery.concat(`])`)
+          } else {
+            actorQuery = actorQuery.concat(`null)`);
+          }
+          client.query(actorQuery);
+        });
 
         // awards
-        if (crewData.awards.length != 0) {
-          crewData.awards.forEach((award, index) => {
-            var awardQuery = `insert into crew_award (crew_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
-            client.query(awardQuery);
-          });
-        }
+        crewData.awards.forEach((award, index) => {
+          var awardQuery = `insert into crew_award (crew_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
+          client.query(awardQuery);
+        });
+
         return result;
 
       });
@@ -562,8 +549,6 @@ exports.crew = app => {
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      console.log(query);
-
       var result = await client.query(query, [parseInt(req.params.id)]
       ).then((result) => {
         const id = result.rows[0].id;
@@ -577,15 +562,13 @@ exports.crew = app => {
         }
 
         // gallery
-        if (gallery.length != 0) {
-          for (var i = 0; i < gallery.length; i++) {
-            var desc = crewData.gallery_desc[i] != null ? crewData.gallery_desc[i].replace(/'/g, "''") : null;
-            var query = `insert into crew_media (crew_id, url, description, type) values (${id}, '${gallery[i]}', `;
-            if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
-            else query = query.concat(`null, 'gallery')`);
+        for (var i = 0; i < gallery.length; i++) {
+          var desc = crewData.gallery_desc[i] != null ? crewData.gallery_desc[i].replace(/'/g, "''") : null;
+          var query = `insert into crew_media (crew_id, url, description, type) values (${id}, '${gallery[i]}', `;
+          if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
+          else query = query.concat(`null, 'gallery')`);
 
-            client.query(query);
-          }
+          client.query(query);
         }
 
         // Delete Media from DB 
@@ -596,101 +579,86 @@ exports.crew = app => {
         }
 
         // gallery
-        if (crewData.gallery_to_delete.length != 0) {
-          for (var i = 0; i < crewData.gallery_to_delete.length; i++)
-            client.query(`delete from crew_media where id = $1`, [crewData.gallery_to_delete[i]]);
-        }
+        for (var i = 0; i < crewData.gallery_to_delete.length; i++)
+          client.query(`delete from crew_media where id = $1`, [crewData.gallery_to_delete[i]]);
 
         // Update Personalities
 
+        // delete movie directors
+        crewData.directors_to_delete.forEach((d, index) => {
+          client.query(`delete from movie_director where director_id = ${id} and movie_id=${d}`);
+        });
+
         // add movies as director
-        if (crewData.directors.length != 0) {
-          crewData.directors.forEach((d) => {
-            client.query(`call add_movie_director (
+        crewData.directors.forEach((d) => {
+          client.query(`call add_movie_director (
               ${d},
               ${id}
             )`);
-          });
-        }
+        });
 
-
-        // delete movie directors
-        if (crewData.directors_to_delete.length != 0) {
-          crewData.directors_to_delete.forEach((d, index) => {
-            client.query(`delete from movie_director where director_id = ${id} and movie_id=${d}`);
-          });
-        }
+        // delete movie writers
+        crewData.writers_to_delete.forEach((w, index) => {
+          client.query(`delete from movie_writer where writer_id = ${id} and movie_id=${w}`);
+        });
 
         // add movies as writer
-        if (crewData.writers.length != 0) {
-          crewData.writers.forEach((w) => {
-            client.query(`call add_movie_writer (
+        crewData.writers.forEach((w) => {
+          client.query(`call add_movie_writer (
               ${w},
               ${id}
             )`)
-          });
-        }
+        });
 
-        // delete movie writers
-        if (crewData.writers_to_delete.length != 0) {
-          crewData.writers_to_delete.forEach((w, index) => {
-            client.query(`delete from movie_writer where writer_id = ${id} and movie_id=${w}`);
-          });
-        }
-
-        // add/update/delete movie actors
         console.log(crewData);
 
-        if (crewData.actors.length != 0) {
-          crewData.actors.forEach((actor, index) => {
-            if (crewData.actors_to_delete.includes(actor.id)) {
-              // delete
-              client.query(`delete from movie_actor where actor_id = ${id} and movie_id= ${actor.id}`);
-            } else if (crewData.og_act.includes(actor.id) && !crewData.actors_to_delete.includes(actor.id)) {
-              // update
-              var actorQuery = `update movie_actor set movie_id = ${actor.id}, role = `;
-              if (actor.role.length) {
-                actorQuery = actorQuery.concat(`array [`);
-                actor.role.forEach(role => {
-                  actorQuery = actorQuery.concat(`'`, role, `'`)
-                  if (role != actor.role[actor.role.length - 1]) {
-                    actorQuery = actorQuery.concat(',')
-                  }
-                });
-                actorQuery = actorQuery.concat(`] `)
-              } else {
-                actorQuery = actorQuery.concat(`null `);
-              }
-              actorQuery = actorQuery.concat(`where movie_id = ${actor.id} and actor_id = ${id}`);
-              console.log("actorQuery: ", actorQuery)
+        // add/update/delete movie actors
+        crewData.actors_to_delete.forEach((actor) => {
+          // delete
+          client.query(`delete from movie_actor where actor_id = ${id} and movie_id= ${actor}`);
+        });
 
-              client.query(actorQuery);
-
-            } else if (!crewData.og_act.includes(actor.id)) {
-              // add
-              var actorQuery = `call add_movie_actor (
-                ${actor.movie_id},
-                ${id},
-                `;
-
-              console.log("ROLES: ", actor.role);
-              if (actor.role.length) {
-                actorQuery = actorQuery.concat(`array [`);
-                actor.role.forEach(role => {
-                  actorQuery = actorQuery.concat(`'`, role, `'`)
-                  if (role != actor.role[actor.role.length - 1]) {
-                    actorQuery = actorQuery.concat(',')
-                  }
-                });
-                actorQuery = actorQuery.concat(`])`)
-              } else {
-                actorQuery = actorQuery.concat(`null)`);
-              }
-              console.log("actorQuery: ", actorQuery)
-              client.query(actorQuery);
+        crewData.actors.forEach((actor) => {
+          // update, since id is existing
+          if (actor.id != null) {
+            // update
+            var actorQuery = `update movie_actor set movie_id = ${actor.movie_id}, role = `;
+            if (actor.role.length) {
+              actorQuery = actorQuery.concat(`array [`);
+              actor.role.forEach(role => {
+                actorQuery = actorQuery.concat(`'`, role, `'`)
+                if (role != actor.role[actor.role.length - 1]) {
+                  actorQuery = actorQuery.concat(',')
+                }
+              });
+              actorQuery = actorQuery.concat(`] `)
+            } else {
+              actorQuery = actorQuery.concat(`null `);
             }
-          });
-        }
+            actorQuery = actorQuery.concat(`where movie_id = ${actor.id} and actor_id = ${id}`);
+            client.query(actorQuery);
+          } else {
+            // add, since id does not exist
+            var actorQuery = `call add_movie_actor (
+              ${actor.movie_id},
+              ${id},
+              `;
+
+            if (actor.role.length) {
+              actorQuery = actorQuery.concat(`array [`);
+              actor.role.forEach(role => {
+                actorQuery = actorQuery.concat(`'`, role, `'`)
+                if (role != actor.role[actor.role.length - 1]) {
+                  actorQuery = actorQuery.concat(',')
+                }
+              });
+              actorQuery = actorQuery.concat(`])`)
+            } else {
+              actorQuery = actorQuery.concat(`null)`);
+            }
+            client.query(actorQuery);
+          }
+        });
 
         // add/update/delete awards
         if (crewData.awards.length != 0) {
@@ -701,8 +669,6 @@ exports.crew = app => {
             } else if (crewData.og_awards.includes(award.id) && !crewData.awards_to_delete.includes(award.id)) {
               // update
               client.query(`update crew_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`)
-              console.log('award query: ', `update crew_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`);
-
             } else if (!crewData.og_awards.includes(award.id)) {
               // add
               var awardQuery = `insert into crew_award (crew_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;

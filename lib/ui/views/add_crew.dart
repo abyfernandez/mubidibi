@@ -224,12 +224,16 @@ class _AddCrewState extends State<AddCrew> {
   }
 
   addMovieActor() {
+    FocusScope.of(context).unfocus();
+
     setState(() {
       // add Movie Actor widget to the list
       movieActorList.add(MovieActorWidget(
-          movieOptions: movieOptions,
-          movieActor: new MovieActor(),
-          open: ValueNotifier<bool>(true)));
+        movieOptions: movieOptions,
+        movieActor: new MovieActor(),
+        open: ValueNotifier<bool>(true),
+        prevId: ValueNotifier<int>(0),
+      ));
     });
   }
 
@@ -686,16 +690,19 @@ class _AddCrewState extends State<AddCrew> {
             : [];
 
         for (var i = 0; i < aktors.length; i++) {
+          movieActorsFilter.add(aktors[i].movieId);
           // add Movie Actor widget to the list
           movieActorList.add(MovieActorWidget(
-              movieOptions: movieOpts,
-              movieActor: MovieActor(
-                id: aktors[i].movieId,
-                movieId: aktors[i].movieId,
-                movieTitle: aktors[i].title,
-                role: aktors[i].role,
-              ),
-              open: ValueNotifier<bool>(false)));
+            movieOptions: movieOpts,
+            movieActor: MovieActor(
+              id: aktors[i].movieId,
+              movieId: aktors[i].movieId,
+              movieTitle: aktors[i].title,
+              role: aktors[i].role,
+            ),
+            open: ValueNotifier<bool>(false),
+            prevId: ValueNotifier<int>(0),
+          ));
         }
 
         // Mga Award
@@ -909,6 +916,7 @@ class _AddCrewState extends State<AddCrew> {
                                           .toList();
 
                                       movieActorsToSave.removeWhere((a) =>
+                                          a.id != null &&
                                           movieActorsToDelete.contains(a.id));
                                     }
 
@@ -1011,14 +1019,15 @@ class _AddCrewState extends State<AddCrew> {
                                         Timer(
                                             const Duration(milliseconds: 2000),
                                             () {
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => CrewView(
-                                                  crewId: crewRes.crewId
-                                                      .toString()),
-                                            ),
-                                          );
+                                          // Navigator.pushReplacement(
+                                          //   context,
+                                          //   MaterialPageRoute(
+                                          //     builder: (context) => CrewView(
+                                          //         crewId: crewRes.crewId
+                                          //             .toString()),
+                                          //   ),
+                                          // );
+                                          Navigator.pop(context, []);
                                         });
                                       }
                                     } else {
@@ -1432,8 +1441,7 @@ class _AddCrewState extends State<AddCrew> {
                               .toList()
                               .contains(c.movieId)) {
                         // for edit: delete item from DB
-                        if (movieDirectorsToDelete.contains(c.movieId) ==
-                            false) {
+                        if (!movieDirectorsToDelete.contains(c.movieId)) {
                           movieDirectorsToDelete.add(c.movieId);
                         }
                       }
@@ -1444,16 +1452,20 @@ class _AddCrewState extends State<AddCrew> {
                 },
                 suggestionBuilder: (context, state, c) {
                   return ListTile(
-                    key: ObjectKey(c),
-                    title: Text(c.title +
-                        (c.releaseDate != "" && c.releaseDate != null
-                            ? (" (" +
-                                DateFormat('y')
-                                    .format(DateTime.parse(c.releaseDate)) +
-                                ") ")
-                            : "")),
-                    onTap: () => state.selectSuggestion(c),
-                  );
+                      key: ObjectKey(c),
+                      title: Text(c.title +
+                          (c.releaseDate != "" && c.releaseDate != null
+                              ? (" (" +
+                                  DateFormat('y')
+                                      .format(DateTime.parse(c.releaseDate)) +
+                                  ") ")
+                              : "")),
+                      onTap: () {
+                        if (movieDirectorsToDelete.contains(c.movieId)) {
+                          movieDirectorsToDelete.remove(c.movieId);
+                        }
+                        return state.selectSuggestion(c);
+                      });
                 },
               ),
             ),
@@ -1519,7 +1531,7 @@ class _AddCrewState extends State<AddCrew> {
                               .toList()
                               .contains(c.movieId)) {
                         // for edit: delete item from DB
-                        if (movieWritersToDelete.contains(c.movieId) == false) {
+                        if (!movieWritersToDelete.contains(c.movieId)) {
                           movieWritersToDelete.add(c.movieId);
                         }
                       }
@@ -1530,16 +1542,20 @@ class _AddCrewState extends State<AddCrew> {
                 },
                 suggestionBuilder: (context, state, c) {
                   return ListTile(
-                    key: ObjectKey(c),
-                    title: Text(c.title +
-                        (c.releaseDate != "" && c.releaseDate != null
-                            ? (" (" +
-                                DateFormat('y')
-                                    .format(DateTime.parse(c.releaseDate)) +
-                                ") ")
-                            : "")),
-                    onTap: () => state.selectSuggestion(c),
-                  );
+                      key: ObjectKey(c),
+                      title: Text(c.title +
+                          (c.releaseDate != "" && c.releaseDate != null
+                              ? (" (" +
+                                  DateFormat('y')
+                                      .format(DateTime.parse(c.releaseDate)) +
+                                  ") ")
+                              : "")),
+                      onTap: () {
+                        if (movieWritersToDelete.contains(c.movieId)) {
+                          movieWritersToDelete.remove(c.movieId);
+                        }
+                        return state.selectSuggestion(c);
+                      });
                 },
               ),
             ),
@@ -1590,28 +1606,61 @@ class _AddCrewState extends State<AddCrew> {
                                                     .movieActor
                                                     .movieId !=
                                                 null) {
-                                              if (crew != null &&
-                                                  crew.movies != null &&
-                                                  crew.movies.isNotEmpty &&
-                                                  crew.movies[2]
-                                                      .map((c) => c.movieId)
-                                                      .toList()
-                                                      .contains(
-                                                          movieActorList[i]
-                                                              .movieActor
-                                                              .movieId)) {
-                                                // for edit: delete item from DB
-                                                if (movieActorsToDelete
-                                                        .contains(
-                                                            movieActorList[i]
-                                                                .movieActor
-                                                                .movieId) ==
-                                                    false) {
-                                                  movieActorsToDelete.add(
+                                              // delete from filter list
+                                              movieActorsFilter.remove(
+                                                  movieActorList[i]
+                                                      .movieActor
+                                                      .movieId);
+
+                                              // if the id of the item to be deleted in ui exists in crewEdit, this means existing na sya
+                                              // previously saved in the database
+                                              // remove from DB by adding to the actorsToDelete list
+                                              // for edit: delete item from DB
+                                              if (!movieActorsToDelete.contains(
                                                       movieActorList[i]
                                                           .movieActor
-                                                          .movieId);
-                                                }
+                                                          .movieId) &&
+                                                  (crew != null &&
+                                                      crew.movies != null &&
+                                                      crew.movies.isNotEmpty &&
+                                                      crew.movies[2]
+                                                          .map((c) => c.movieId)
+                                                          .toList()
+                                                          .contains(
+                                                              movieActorList[i]
+                                                                  .movieActor
+                                                                  .movieId))) {
+                                                movieActorsToDelete.add(
+                                                    movieActorList[i]
+                                                        .movieActor
+                                                        .movieId);
+                                              }
+                                            } else if (movieActorList[i]
+                                                        .prevId
+                                                        .value !=
+                                                    null &&
+                                                movieActorList[i]
+                                                        .prevId
+                                                        .value !=
+                                                    0) {
+                                              if (!movieActorsToDelete.contains(
+                                                      movieActorList[i]
+                                                          .prevId
+                                                          .value) &&
+                                                  (crew != null &&
+                                                      crew.movies != null &&
+                                                      crew.movies.isNotEmpty &&
+                                                      crew.movies[2]
+                                                          .map((c) => c.movieId)
+                                                          .toList()
+                                                          .contains(
+                                                              movieActorList[i]
+                                                                  .prevId
+                                                                  .value))) {
+                                                movieActorsToDelete.add(
+                                                    movieActorList[i]
+                                                        .prevId
+                                                        .value);
                                               }
                                             }
                                             movieActorList.removeAt(i);
@@ -2334,10 +2383,15 @@ class MovieActorWidget extends StatefulWidget {
   final List<Movie> movieOptions;
   final MovieActor movieActor;
   final open;
+  final ValueNotifier<int> prevId;
 
-  const MovieActorWidget(
-      {Key key, this.movieActor, this.movieOptions, this.open})
-      : super(key: key);
+  const MovieActorWidget({
+    Key key,
+    this.movieActor,
+    this.movieOptions,
+    this.open,
+    this.prevId,
+  }) : super(key: key);
 
   @override
   MovieActorWidgetState createState() => MovieActorWidgetState();
@@ -2353,13 +2407,15 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
   @override
   void initState() {
     widget.movieActor.saved =
-        widget.movieActor.saved == null && widget.movieActor.movieId == null
+        widget.movieActor.saved == null && widget.movieActor.id == null
             ? false
-            : widget.movieActor.saved;
+            : widget.movieActor.saved == null && widget.movieActor.id != null
+                ? true
+                : widget.movieActor.saved;
     if (widget.movieActor.movieId != null) {
+      // to get info on the movie chosen
       var film = widget.movieOptions
           .singleWhere((a) => a.movieId == widget.movieActor.movieId);
-
       if (film != null) {
         movieActorId = [film];
       }
@@ -2422,6 +2478,7 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
 
                   if (newList.length != 0) {
                     setState(() {
+                      // widget.movieActor.id is intentionally left out
                       widget.movieActor.movieId = newList[0].movieId;
                       widget.movieActor.movieTitle = newList[0].title;
                       showError = widget.movieActor.movieId != null &&
@@ -2465,11 +2522,13 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                                     .format(DateTime.parse(c.releaseDate)) +
                                 ") ")
                             : "")),
-                    onDeleted: () => {
+                    onDeleted: () {
                       setState(() {
                         movieActorsFilter.remove(c.movieId);
-                      }),
-                      state.deleteChip(c),
+                        widget.prevId.value = c.movieId;
+                      });
+                      print(widget.prevId.value);
+                      state.deleteChip(c);
                     },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
@@ -2511,7 +2570,7 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                 enabled: true,
                 textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
                 decoration: const InputDecoration(
-                  labelText: 'Role',
+                  labelText: 'Role *',
                   contentPadding: EdgeInsets.all(10),
                 ),
                 findSuggestions: (String query) {
