@@ -114,7 +114,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   bool get _hasReachedMaxChips =>
       widget.maxChips != null && _chips.length >= widget.maxChips;
 
-  // FocusAttachment _focusAttachment;
+  // FocusAttachment _focusAttachment; // test
   FocusNode _focusNode;
 
   RenderBox get renderBox => context.findRenderObject();
@@ -123,7 +123,7 @@ class ChipsInputState<T> extends State<ChipsInput<T>>
   void initState() {
     super.initState();
     _chips.addAll(widget.initialValue);
-    // _focusAttachment = _focusNode.attach(context);
+    // _focusAttachment = _focusNode.attach(context); // test
     _suggestionsBoxController = SuggestionsBoxController(context);
 
     _focusNode = widget.focusNode ?? FocusNode();

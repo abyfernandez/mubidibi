@@ -245,7 +245,7 @@ exports.crew = app => {
 
       var upload = await cloudinary.v2.uploader.upload(fileURI,
         {
-          folder: "folder-name",
+          folder: "crew/" + crewData.name + "/" + crewData.media_type[i],
           resource_type: "auto",
         },
         async function (err, result) {
@@ -553,8 +553,8 @@ exports.crew = app => {
       ).then((result) => {
         const id = result.rows[0].id;
 
-        // display
-        if (display_pic != "" && display != null) {
+        // display pic
+        if (display_pic != "" && display_pic != null) {
           var query = `insert into crew_media (crew_id, url, description, type) values (${id}, '${display_pic}', `;
           if (desc_dp != null) query = query.concat(`'${desc_dp}', 'display_pic')`);
           else query = query.concat(`null, 'display_pic')`);
@@ -568,6 +568,24 @@ exports.crew = app => {
           if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
           else query = query.concat(`null, 'gallery')`);
 
+          client.query(query);
+        }
+
+        // UPDATE MEDIA FROM DB
+
+        // display pic
+        if (crewData.display_pic_to_update != null) {
+          var desc = crewData.display_pic_to_update.description != null ? crewData.display_pic_to_update.description.replace(/'/g, "''") : null;
+          var query = `update crew_media set description = `;
+          desc != null ? query = query.concat(`'${desc}' where id = ${crewData.display_pic_to_update.id}`) : query = query.concat(`null where id = ${movieData.display_pic_to_update.id}`);
+          client.query(query);
+        }
+
+        // gallery
+        for (var i = 0; i < crewData.gallery_to_update.length; i++) {
+          var desc = crewData.gallery_to_update[i].description != null ? crewData.gallery_to_update[i].description.replace(/'/g, "''") : null;
+          var query = `update crew_media set description = `;
+          desc != null ? query = query.concat(`'${desc}' where id = ${crewData.gallery_to_update[i].id}`) : query = query.concat(`null where id = ${movieData.gallery_to_update[i].id}`);
           client.query(query);
         }
 
@@ -661,22 +679,23 @@ exports.crew = app => {
         });
 
         // add/update/delete awards
-        if (crewData.awards.length != 0) {
-          crewData.awards.forEach((award, index) => {
-            if (crewData.awards_to_delete.includes(award.id)) {
-              // delete
-              client.query(`delete from crew_award where id= ${award.id}`);
-            } else if (crewData.og_awards.includes(award.id) && !crewData.awards_to_delete.includes(award.id)) {
-              // update
-              client.query(`update crew_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`)
-            } else if (!crewData.og_awards.includes(award.id)) {
-              // add
-              var awardQuery = `insert into crew_award (crew_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
+        console.log(crewData);
 
-              client.query(awardQuery);
-            }
-          });
-        }
+        crewData.awards_to_delete.forEach((award) => {
+          // delete
+          client.query(`delete from crew_award where id= ${award}`);
+        });
+
+        crewData.awards.forEach((award) => {
+          if (award.award_id != null) {
+            // update, since award id is existing
+            client.query(`update crew_award set award_id = ${award.id}, year = ${award.year}, type = '${award.type}' where id = ${award.award_id}`)
+          } else {
+            // add, since award id is not existing
+            var awardQuery = `insert into crew_award (crew_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
+            client.query(awardQuery);
+          }
+        });
         return result;
       });
       release();

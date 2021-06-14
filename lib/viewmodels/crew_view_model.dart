@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:mime/mime.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:mubidibi/models/award.dart';
+import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/models/movie_actor.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import '../locator.dart';
@@ -125,9 +126,9 @@ class CrewViewModel extends BaseModel {
     List<int> awardsToDelete,
     List<int> galleryToDelete,
     int displayPicToDelete,
-    // original lists for comparison in movie edit
-    List<int> ogAct,
-    List<int> ogAwards,
+    // update description of existing media
+    List<MediaFile> galleryToUpdate,
+    MediaFile displayPicToUpdate,
   }) async {
     setBusy(true);
 
@@ -189,9 +190,9 @@ class CrewViewModel extends BaseModel {
         'awards_to_delete': awardsToDelete,
         'gallery_to_delete': galleryToDelete,
         'display_pic_to_delete': displayPicToDelete,
-        // original lists for comparison in movie update
-        'og_act': ogAct,
-        'og_awards': ogAwards,
+        //update description of existing media
+        'display_pic_to_update': displayPicToUpdate,
+        'gallery_to_update': galleryToUpdate,
       }),
       "files": media,
     });

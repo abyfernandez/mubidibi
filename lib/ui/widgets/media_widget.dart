@@ -16,8 +16,9 @@ class MediaWidget extends StatefulWidget {
   final MediaFile item;
   final open;
   final category; // movie or crew
+  final sKey; // scaffold key from parent widget
 
-  const MediaWidget({Key key, this.item, this.open, this.category})
+  const MediaWidget({Key key, this.item, this.open, this.category, this.sKey})
       : super(key: key);
 
   @override
@@ -38,8 +39,12 @@ class MediaWidgetState extends State<MediaWidget> {
     super.initState();
   }
 
-  bool fileIsNull() {
-    return widget.item.file == null || widget.item.url != null ? true : false;
+  bool mediaIsNull() {
+    // enables/disables description text field
+    // return widget.item.file == null || (widget.item.url != null ? true : false);
+
+    // edited version: allow user to edit the description for existing media
+    return (widget.item.file == null && widget.item.url == null) ? true : false;
   }
 
   // Function: get image using image picker for movie poster
@@ -246,7 +251,8 @@ class MediaWidgetState extends State<MediaWidget> {
                                         : getMovieAudios)
                                 : SizedBox(),
 
-                            // Container for the file/ url -- only show when either exists
+                            // Container for the file/url -- only show when either exists
+                            // Widget stacked on top of the GestureDetector for uploading video/audio files
                             widget.item.file != null || widget.item.url != null
                                 ? Container(
                                     padding: EdgeInsets.all(10),
@@ -261,8 +267,9 @@ class MediaWidgetState extends State<MediaWidget> {
                                                 ? widget.item.file.path
                                                     .split('/')
                                                     .last
-                                                : widget.item
-                                                    .url, // TO DO: change to filename
+                                                : widget.item.url
+                                                    .split('/')
+                                                    .last,
                                             style:
                                                 TextStyle(color: Colors.blue),
                                             overflow: TextOverflow.ellipsis,
@@ -344,7 +351,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                                   }
                                                 },
                                               )
-                                            : SizedBox(), // when the url is not null, dont add a close button
+                                            : SizedBox(), // when the url is not null, don't add a close button
                                       ],
                                     ),
                                   )
@@ -355,18 +362,20 @@ class MediaWidgetState extends State<MediaWidget> {
                         SizedBox(height: 10),
 
                         // Trailer / Audio -- textfield for description
+                        // Takes the width of the screen, since the file/url is above it.
+                        // allows editing of description when media is present
                         Container(
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10)),
                           child: TextFormField(
-                            enabled: !fileIsNull(),
+                            enabled: !mediaIsNull(),
                             focusNode: descriptionNode,
                             initialValue: widget.item.description,
                             textCapitalization: TextCapitalization.sentences,
                             autovalidateMode:
                                 AutovalidateMode.onUserInteraction,
                             style: TextStyle(
-                              color: fileIsNull() == false
+                              color: mediaIsNull() == false
                                   ? Colors.black
                                   : Colors.black38,
                             ),
@@ -388,36 +397,39 @@ class MediaWidgetState extends State<MediaWidget> {
                       ],
                     )
                   :
-                  // For Gallery type -- display of videos
+                  // For Gallery type -- Form for videos
                   widget.item.type == "gallery" &&
                           ((widget.item.file != null &&
                                   lookupMimeType(widget.item.file.path)
                                           .startsWith('video/') ==
                                       true) ||
                               (widget.item.url != null &&
-                                  !widget.item.url.contains('/image/upload/')))
-                      // For Gallery type with Video Formats
+                                  !widget.item.type.contains('/image/upload/')))
+                      // For Gallery type with Video Formats --
                       ? Column(
                           children: [
                             Container(
-                              // padding: EdgeInsets.all(10),   -- test
+                              padding: EdgeInsets.all(10), // -- test
                               color: Color.fromRGBO(240, 240, 240, 1),
                               child: Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
+                                  // file path / url
                                   Expanded(
                                     child: Text(
                                       widget.item.file != null
                                           ? widget.item.file.path
                                               .split('/')
                                               .last
-                                          : widget.item.url,
+                                          : widget.item.url.split('/').last,
                                       style: TextStyle(color: Colors.blue),
                                       overflow: TextOverflow.ellipsis,
                                       softWrap: true,
                                     ),
                                   ),
+
+                                  // close / remove button
                                   widget.item.file != null &&
                                           widget.item.url == null
                                       ? GestureDetector(
@@ -478,16 +490,18 @@ class MediaWidgetState extends State<MediaWidget> {
                                             }
                                           },
                                         )
-                                      : SizedBox(),
+                                      : SizedBox(), // if media is existing (do not add a close button)
                                 ],
                               ),
                             ),
                             SizedBox(height: 10),
+
+                            // Description field for Gallery with video types
                             Container(
                               decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(10)),
                               child: TextFormField(
-                                enabled: !fileIsNull(),
+                                enabled: !mediaIsNull(),
                                 focusNode: descriptionNode,
                                 initialValue: widget.item.description,
                                 textCapitalization:
@@ -495,7 +509,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                 autovalidateMode:
                                     AutovalidateMode.onUserInteraction,
                                 style: TextStyle(
-                                  color: fileIsNull() == false
+                                  color: mediaIsNull() == false
                                       ? Colors.black
                                       : Colors.black38,
                                 ),
@@ -514,18 +528,17 @@ class MediaWidgetState extends State<MediaWidget> {
                                 },
                               ),
                             ),
-                            // : SizedBox()
                           ],
                         )
 
                       // For Gallery Type of image formats // posters
+                      // the area for image upload is beside the description field
                       : (widget.item.type == "gallery" ||
                               widget.item.type == "poster")
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // if file != null
                                 (widget.item.file != null &&
                                             lookupMimeType(
                                                         widget.item.file.path)
@@ -541,6 +554,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                         padding: EdgeInsets.only(left: 10),
                                         child: Stack(
                                           children: [
+                                            // Gesture detector for image
                                             widget.item.url == null &&
                                                     widget.item.file == null
                                                 ? GestureDetector(
@@ -549,7 +563,6 @@ class MediaWidgetState extends State<MediaWidget> {
                                                         ? getCrewMedia
                                                         : getMovieMedia,
                                                     child: Container(
-                                                      // margin: EdgeInsets.only(left: 20),
                                                       height: 100, // 200
                                                       width: 80, // 150
                                                       decoration: BoxDecoration(
@@ -597,6 +610,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                                     ),
                                                   )
                                                 : SizedBox(),
+
                                             // url is present
                                             widget.item.file != null ||
                                                     widget.item.url != null
@@ -666,7 +680,8 @@ class MediaWidgetState extends State<MediaWidget> {
                                                           ),
                                                         ),
                                                       )
-                                                    // show image file
+
+                                                    // else show image file
                                                     : widget.item.file != null
                                                         ? Image.file(
                                                             widget.item.file,
@@ -725,6 +740,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                                           )
                                                 : SizedBox(),
 
+                                            // file exists -- close button
                                             widget.item.file != null &&
                                                     widget.item.url == null
                                                 ? Container(
@@ -758,7 +774,6 @@ class MediaWidgetState extends State<MediaWidget> {
                                                                           .path ==
                                                                       f.path);
                                                             }
-                                                            // imageURI = '';
                                                             widget.item.file =
                                                                 null;
                                                             widget.item
@@ -801,7 +816,6 @@ class MediaWidgetState extends State<MediaWidget> {
                                                                             .path ==
                                                                         f.path);
                                                               }
-                                                              // imageURI = '';
                                                               widget.item.file =
                                                                   null;
                                                               widget.item
@@ -840,7 +854,6 @@ class MediaWidgetState extends State<MediaWidget> {
                                                                         .path ==
                                                                     f.path);
                                                               }
-                                                              // imageURI = '';
                                                               widget.item.file =
                                                                   null;
                                                               widget.item
@@ -880,14 +893,14 @@ class MediaWidgetState extends State<MediaWidget> {
 
                                 SizedBox(width: 15),
 
-                                // textfield for description
+                                // Textfield for Description
                                 Expanded(
                                   child: Container(
                                     decoration: BoxDecoration(
                                         borderRadius:
                                             BorderRadius.circular(10)),
                                     child: TextFormField(
-                                      enabled: !fileIsNull(),
+                                      enabled: !mediaIsNull(),
                                       focusNode: descriptionNode,
                                       initialValue: widget.item.description,
                                       textCapitalization:
@@ -895,7 +908,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                       autovalidateMode:
                                           AutovalidateMode.onUserInteraction,
                                       style: TextStyle(
-                                        color: fileIsNull() == false
+                                        color: mediaIsNull() == false
                                             ? Colors.black
                                             : Colors.black38,
                                       ),
@@ -920,9 +933,17 @@ class MediaWidgetState extends State<MediaWidget> {
                             )
                           : SizedBox(),
 
-              SizedBox(
-                height: 15,
-              ),
+              (widget.item.file != null &&
+                          (lookupMimeType(widget.item.file.path)
+                                      .startsWith('video/') ==
+                                  true ||
+                              lookupMimeType(widget.item.file.path)
+                                      .startsWith('audio/') ==
+                                  true)) ||
+                      (widget.item.url != null &&
+                          !widget.item.url.contains('/image/upload/'))
+                  ? SizedBox(height: 15)
+                  : SizedBox(),
               Container(
                 child: OutlineButton(
                   padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
@@ -948,32 +969,18 @@ class MediaWidgetState extends State<MediaWidget> {
           )
         : Container(
             color: Color.fromRGBO(240, 240, 240, 1),
-            padding:
-                //(widget.item.file != null &&
-                //             (lookupMimeType(widget.item.file.path)
-                //                         .startsWith('video/') ==
-                //                     true ||
-                //                 lookupMimeType(widget.item.file.path)
-                //                         .startsWith('audio/') ==
-                //                     true)) ||
-                //         (widget.item.url != null &&
-                //             !widget.item.url.contains('/image/upload/'))
-                //     ? EdgeInsets.zero
-                // :
-                EdgeInsets.all(10),
-            margin:
-                //(widget.item.file != null &&
-                //             (lookupMimeType(widget.item.file.path)
-                //                         .startsWith('video/') ==
-                //                     true ||
-                //                 lookupMimeType(widget.item.file.path)
-                //                         .startsWith('audio/') ==
-                //                     true)) ||
-                //         (widget.item.url != null &&
-                //             !widget.item.url.contains('/image/upload/'))
-                // ?
-                EdgeInsets.only(bottom: 10, top: 10),
-            // : EdgeInsets.only(bottom: 10),
+            padding: (widget.item.file != null &&
+                        (lookupMimeType(widget.item.file.path)
+                                    .startsWith('video/') ==
+                                true ||
+                            lookupMimeType(widget.item.file.path)
+                                    .startsWith('audio/') ==
+                                true)) ||
+                    (widget.item.url != null &&
+                        !widget.item.url.contains('/image/upload/'))
+                ? EdgeInsets.zero
+                : EdgeInsets.all(10),
+            margin: EdgeInsets.only(bottom: 10, top: 10),
             child: Column(
               children: [
                 (widget.item.file != null &&
@@ -994,7 +1001,7 @@ class MediaWidgetState extends State<MediaWidget> {
                               child: Text(
                                 widget.item.file != null
                                     ? widget.item.file.path.split('/').last
-                                    : widget.item.url,
+                                    : widget.item.url.split('/').last,
                                 style: TextStyle(color: Colors.blue),
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,

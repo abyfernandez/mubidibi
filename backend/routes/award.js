@@ -4,22 +4,25 @@ exports.award = app => {
   app.post('/mubidibi/all-awards/', (req, res) => {
     app.pg.connect(onConnect)
 
+    console.log(req.body);
+
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = "SELECT id, name, to_json(category), description, added_by, created_at, is_deleted from award where";
+      var query = "SELECT id, name, event, to_json(category) as category, description, added_by, created_at, is_deleted from award";
 
       if (req.body.user != 'admin' || req.body.mode == "form") {
-        query = query.concat(" is_deleted = false");
+        query = query.concat(" where is_deleted = false");
 
-        if (req.body.mode == "form") query = query.concat(` and '${req.body.category}' = ANY(category)`);
-      } else {
-        if (req.body.mode == "form") query = query.concat(` '${req.body.category}' = ANY(category)`);
+        if (req.body.mode == "form") query = query.concat(` and category @> array['${req.body.category}']::award_category[]`);
       }
+
+      query = query.concat(` order by name`);
 
       client.query(
         query,
         async function onResult(err, result) {
+          console.log(result.rows);
           release()
           res.send(err || JSON.stringify(result.rows));
         }
@@ -34,7 +37,7 @@ exports.award = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = `SELECT award.name, to_json(award.category), award.event, award.created_at, award.description, award.added_by, award.is_deleted, m.id, m.award_id, m.movie_id, to_json(m.type), m.year from award left join movie_award as m on m.award_id = award.id where movie_id = ${req.body.movie_id}`;
+      var query = `SELECT award.id, award.name, to_json(award.category) as category, award.event, award.created_at, award.description, award.added_by, award.is_deleted, m.id as award_id, m.movie_id, to_json(m.type) as type, m.year from award left join movie_award as m on m.award_id = award.id where movie_id = ${req.body.movie_id}`;
       if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
 
       client.query(
@@ -54,7 +57,7 @@ exports.award = app => {
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      var query = `SELECT award.*, to_json(c.type), c.year from award left join crew_award as c on c.award_id = award.id where crew_id = ${req.body.crew_id}`;
+      var query = `SELECT award.id, award.name, to_json(award.category) as category, award.event, award.created_at, award.description, award.added_by, award.is_deleted, to_json(c.type) as type, c.award_id, c.crew_id, c.year from award left join crew_award as c on c.award_id = award.id where crew_id = ${req.body.crew_id}`;
       if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
 
       client.query(
@@ -162,7 +165,7 @@ exports.award = app => {
           query = query.concat(',')
         }
       });
-      query = query.concat(`] `)
+      query = query.concat(`]::award_category[] `)
     } else {
       query = query.concat(`null `);
     }
@@ -177,4 +180,31 @@ exports.award = app => {
       res.send(err || JSON.stringify(award.rows[0].id));
     }
   });
+
+  // DELETE AWARD
+  app.get('/mubidibi/delete-award/:id', async (req, res) => {
+    app.pg.connect(onConnect); // DB Connection
+
+    async function onConnect(err, client, release) {
+      if (err) return res.send(err);
+      var { rows } = await client.query(`update award set is_deleted = true where id = ${parseInt(req.params.id)} returning id`);
+
+      release();
+      res.send(err || JSON.stringify(rows[0].id));
+    }
+  });
+
+  // RESTORE AWARD
+  app.get('/mubidibi/restore-award/:id', async (req, res) => {
+    app.pg.connect(onConnect); // DB Connection
+
+    async function onConnect(err, client, release) {
+      if (err) return res.send(err);
+      var { rows } = await client.query(`update award set is_deleted = false where id = ${parseInt(req.params.id)} returning id`);
+
+      release();
+      res.send(err || JSON.stringify(rows[0].id));
+    }
+  });
+
 }

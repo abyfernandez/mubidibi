@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
+import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -242,7 +243,7 @@ class _MovieViewState extends State<MovieView>
                 icon: Icons.edit_outlined,
                 titleStyle: TextStyle(fontSize: 16, color: Colors.white),
                 onPress: () async {
-                  await Navigator.push(
+                  await Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => AddMovie(
@@ -936,6 +937,8 @@ class _MovieViewState extends State<MovieView>
                                         TZDateTime.from(
                                             DateTime.parse(movie.releaseDate),
                                             tz.getLocation('Asia/Manila')))
+                                    // ? DateFormat('MMM. d, y', "fil").format(
+                                    //     DateTime.parse(movie.releaseDate))
                                     : '-',
                                 style: TextStyle(
                                   fontSize: 16.0,
@@ -1071,7 +1074,7 @@ class _MovieViewState extends State<MovieView>
                                     ),
                                     Flexible(
                                       child: Text(
-                                          award.name +
+                                          (award.name ?? '') +
                                               (award.year != null
                                                   ? " (" + award.year + ") "
                                                   : ""),
@@ -1184,7 +1187,7 @@ class _MovieViewState extends State<MovieView>
                                   },
                                   enlargeCenterPage: false,
                                   height: 200,
-                                  aspectRatio: 9 / 16,
+                                  aspectRatio: 16 / 9,
                                   viewportFraction: 1,
                                 ),
                                 carouselController: _trailerController,
@@ -1365,21 +1368,24 @@ class _MovieViewState extends State<MovieView>
                               CarouselSlider(
                                 key: ValueKey('gallery'),
                                 options: CarouselOptions(
-                                    enableInfiniteScroll: false,
-                                    onPageChanged: (index, reason) {
-                                      setState(() {
-                                        _gallerySlider = index;
-                                      });
-                                    },
-                                    enlargeCenterPage: false,
-                                    height: 200,
-                                    aspectRatio: 16 / 9,
-                                    viewportFraction: 1),
+                                  enableInfiniteScroll: false,
+                                  onPageChanged: (index, reason) {
+                                    setState(() {
+                                      _gallerySlider = index;
+                                    });
+                                  },
+                                  enlargeCenterPage: false,
+                                  height: 200,
+                                  aspectRatio: 16 / 9,
+                                  viewportFraction: 1,
+                                ),
                                 carouselController: _galleryController,
                                 items: movie.gallery.map((p) {
                                   return Container(
                                     decoration: BoxDecoration(
                                         color: Colors.transparent),
+                                    padding:
+                                        EdgeInsets.only(left: 20, right: 20),
                                     child: Stack(
                                       children: [
                                         p.url.contains('/image/upload/')
@@ -1451,6 +1457,48 @@ class _MovieViewState extends State<MovieView>
                                                     autoplay: false,
                                                     type: "simple"),
                                               ),
+                                        p.url.contains('/video/upload/')
+                                            ? Positioned(
+                                                top: 5,
+                                                right: 10,
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              20)),
+                                                  child: FlatButton(
+                                                    color: Color.fromRGBO(
+                                                        240, 240, 240, 1),
+                                                    child: Row(
+                                                      children: [
+                                                        Icon(
+                                                            Icons.info_outline),
+                                                        SizedBox(width: 5),
+                                                        Text('Info')
+                                                      ],
+                                                    ),
+                                                    onPressed: () {
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (context) => VideoFile(
+                                                              videoPlayerController:
+                                                                  VideoPlayerController
+                                                                      .network(p
+                                                                          .url),
+                                                              looping: false,
+                                                              autoplay: false,
+                                                              type: "detailed",
+                                                              description:
+                                                                  p.description ??
+                                                                      ''),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              )
+                                            : SizedBox(),
                                         // Arrow Buttons
                                         Container(
                                           alignment: Alignment.center,

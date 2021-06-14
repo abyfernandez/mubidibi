@@ -5,6 +5,7 @@ import 'package:mime/mime.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/line.dart';
+import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import '../locator.dart';
 import 'base_model.dart';
@@ -80,7 +81,8 @@ class MovieViewModel extends BaseModel {
   // Function: ADD MOVIE
   Future<int> addMovie({
     @required String title,
-    String synopsis,
+    @required int movieId,
+    @required String synopsis,
     String releaseDate,
     String runtime,
     List<File> posters,
@@ -98,7 +100,6 @@ class MovieViewModel extends BaseModel {
     List<Award> awards,
     List<Line> lines,
     String addedBy,
-    int movieId,
     // for movie edit purposes:
     List<int> directorsToDelete,
     List<int> writersToDelete,
@@ -110,10 +111,11 @@ class MovieViewModel extends BaseModel {
     List<int> galleryToDelete,
     List<int> trailersToDelete,
     List<int> audiosToDelete,
-    // original lists for comparison in movie edit
-    List<int> ogAct,
-    List<int> ogLines,
-    List<int> ogAwards,
+    // Update descriptions of existing media
+    List<MediaFile> postersToUpdate,
+    List<MediaFile> galleryToUpdate,
+    List<MediaFile> trailersToUpdate,
+    List<MediaFile> audiosToUpdate,
   }) async {
     setBusy(true);
 
@@ -195,10 +197,11 @@ class MovieViewModel extends BaseModel {
         'trailers_to_delete': trailersToDelete,
         'audios_to_delete': audiosToDelete,
 
-        // original lists for comparison in movie update
-        'og_act': ogAct,
-        'og_lines': ogLines,
-        'og_awards': ogAwards,
+        // Update descriptions of existing media
+        'posters_to_update': postersToUpdate,
+        'gallery_to_update': galleryToUpdate,
+        'trailers_to_update': trailersToUpdate,
+        'audios_to_update': audiosToUpdate,
       }),
       "files": media,
     });

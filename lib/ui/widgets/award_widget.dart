@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mubidibi/models/award.dart';
+import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
+import 'package:mubidibi/ui/views/add_movie.dart';
 
 // Dynamic AwardWidget (Adding Awards)
 
@@ -10,12 +12,16 @@ class AwardWidget extends StatefulWidget {
   final List<Award> awardOptions;
   final Award item;
   final open;
+  final ValueNotifier<int> prevId;
+  final type;
 
   const AwardWidget({
     Key key,
     this.awardOptions,
     this.item,
     this.open,
+    this.prevId,
+    this.type,
   }) : super(key: key);
 
   @override
@@ -23,33 +29,41 @@ class AwardWidget extends StatefulWidget {
 }
 
 class AwardWidgetState extends State<AwardWidget> {
-  bool showError;
   // FocusNodes
   final typeNode = FocusNode();
   final yearNode = FocusNode();
   List<Award> awardId = [];
 
+  bool showErrorVar = false; // for type dropdown button
+  bool showError = false; // for inputchip
+
   final _formKey = GlobalKey<FormState>();
+
+  bool showTypeError() {
+    return showErrorVar == false
+        ? false
+        : widget.item.type == null || widget.item.type.isEmpty
+            ? true
+            : false;
+  }
+
+  bool showChipError() {
+    return showError == false
+        ? false
+        : widget.item.id == null
+            ? true
+            : false;
+  }
 
   @override
   void initState() {
-    showError = widget.item.awardId != null &&
-            widget.item.type != null &&
-            widget.item.type.trim() != ""
+    widget.item.saved = widget.item.saved == null && widget.item.awardId == null
         ? false
-        : true;
-
-    widget.item.saved = widget.item.saved == null && widget.item.movieId == null
-        ? false
-        : widget.item.saved == null && widget.item.movieId != null
+        : widget.item.saved == null && widget.item.awardId != null
             ? true
             : false;
 
     if (widget.item.awardId != null) {
-      // var award = widget.awardOptions
-      //     .singleWhere((a) => a.awardId == widget.item.awardId);
-
-      // if (award != null) awardId = [award];
       awardId = [widget.item];
     }
     super.initState();
@@ -65,96 +79,175 @@ class AwardWidgetState extends State<AwardWidget> {
                 SizedBox(
                   height: 15,
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: ChipsInput(
-                    initialValue: awardId,
-                    maxChips: 1,
-                    keyboardAppearance: Brightness.dark,
-                    textCapitalization: TextCapitalization.words,
-                    enabled: true,
-                    textStyle:
-                        const TextStyle(fontFamily: 'Poppins', fontSize: 16),
-                    decoration: const InputDecoration(
-                      labelText: 'Pumili ng Award *',
-                      contentPadding: EdgeInsets.all(10),
+                Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                          color: Color.fromRGBO(240, 240, 240, 1),
+                          borderRadius: BorderRadius.circular(5)),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: showChipError()
+                              ? Border(
+                                  bottom: BorderSide(color: Colors.red[600]),
+                                )
+                              : null,
+                        ),
+                        child: ChipsInput(
+                          initialValue: awardId,
+                          maxChips: 1,
+                          keyboardAppearance: Brightness.dark,
+                          textCapitalization: TextCapitalization.words,
+                          enabled: true,
+                          textStyle: const TextStyle(
+                              fontFamily: 'Poppins', fontSize: 16),
+                          decoration: const InputDecoration(
+                            labelText: 'Pumili ng Award *',
+                            contentPadding: EdgeInsets.all(10),
+                          ),
+                          findSuggestions: (String query) {
+                            var filteredList = [];
+                            if (widget.type == "movie") {
+                              filteredList = awardsFilter.length != 0
+                                  ? widget.awardOptions
+                                      .where(
+                                          (r) => !awardsFilter.contains(r.id))
+                                      .toList()
+                                  : widget.awardOptions;
+                            } else if (widget.type == "crew") {
+                              filteredList = crewAwardsFilter.length != 0
+                                  ? widget.awardOptions
+                                      .where((r) =>
+                                          !crewAwardsFilter.contains(r.id))
+                                      .toList()
+                                  : widget.awardOptions;
+                            }
+
+                            if (query.isNotEmpty) {
+                              var lowercaseQuery = query.toLowerCase();
+                              return filteredList.where((item) {
+                                return !awardId
+                                        .map((d) => d.id)
+                                        .toList()
+                                        .contains(item.id) &&
+                                    item.name
+                                        .toLowerCase()
+                                        .contains(query.toLowerCase());
+                              }).toList(growable: false)
+                                ..sort((a, b) => a.name
+                                    .toLowerCase()
+                                    .indexOf(lowercaseQuery)
+                                    .compareTo(b.name
+                                        .toLowerCase()
+                                        .indexOf(lowercaseQuery)));
+                            }
+                            return [];
+                          },
+                          onChanged: (data) {
+                            var newList = List<Award>.from(data);
+                            if (newList.length != 0) {
+                              setState(() {
+                                widget.item.id = newList[0].id;
+                                widget.item.name = newList[0].name;
+                                awardId = [newList[0]];
+                                showError = false;
+
+                                if (widget.type == "movie") {
+                                  if (!awardsFilter.contains(newList[0].id)) {
+                                    awardsFilter.add(newList[0].id);
+                                  }
+                                } else if (widget.type == "crew") {
+                                  if (!crewAwardsFilter
+                                      .contains(newList[0].id)) {
+                                    crewAwardsFilter.add(newList[0].id);
+                                  }
+                                }
+                              });
+                            } else {
+                              setState(() {
+                                widget.item.id = null;
+                                widget.item.name = null;
+                                showError = true;
+                                widget.item.saved = widget.item.id != null &&
+                                        widget.item.type != null &&
+                                        widget.item.type.isNotEmpty &&
+                                        (widget.item.type != null &&
+                                            widget.item.type.trim() != "") &&
+                                        widget.item.saved == true
+                                    ? true
+                                    : false;
+                                awardId = [];
+                              });
+                            }
+                          },
+                          chipBuilder: (context, state, c) {
+                            return InputChip(
+                              key: ObjectKey(c),
+                              label: Text(c.name +
+                                  (c.event != null &&
+                                          c.event.isNotEmpty &&
+                                          c.event.trim() != ""
+                                      ? " (" + c.event + ")"
+                                      : "")),
+                              onDeleted: () {
+                                setState(() {
+                                  widget.type == "movie"
+                                      ? awardsFilter.remove(c.id)
+                                      : crewAwardsFilter.remove(c.id);
+                                  widget.prevId.value = c.id;
+                                });
+                                return state.deleteChip(c);
+                              },
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                            );
+                          },
+                          suggestionBuilder: (context, state, c) {
+                            return ListTile(
+                              key: ObjectKey(c),
+                              title: Text(c.name +
+                                  (c.event != null &&
+                                          c.event.isNotEmpty &&
+                                          c.event.trim() != ""
+                                      ? " (" + c.event + ")"
+                                      : "")),
+                              onTap: () {
+                                if (widget.type == "movie") {
+                                  if (!awardsFilter.contains(c.id)) {
+                                    setState(() {
+                                      awardsFilter.add(c.id);
+                                    });
+                                  }
+                                } else if (widget.type == "crew") {
+                                  if (!crewAwardsFilter.contains(c.id)) {
+                                    setState(() {
+                                      crewAwardsFilter.add(c.id);
+                                    });
+                                  }
+                                }
+
+                                return state.selectSuggestion(c);
+                              },
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                    findSuggestions: (String query) {
-                      if (query.isNotEmpty) {
-                        var lowercaseQuery = query.toLowerCase();
-                        return widget.awardOptions.where((item) {
-                          return !awardId
-                                  .map((d) => d.awardId)
-                                  .toList()
-                                  .contains(item.awardId) &&
-                              item.name
-                                  .toLowerCase()
-                                  .contains(query.toLowerCase());
-                        }).toList(growable: false)
-                          ..sort((a, b) => a.name
-                              .toLowerCase()
-                              .indexOf(lowercaseQuery)
-                              .compareTo(b.name
-                                  .toLowerCase()
-                                  .indexOf(lowercaseQuery)));
-                      }
-                      return [];
-                    },
-                    onChanged: (data) {
-                      var newList = List<Award>.from(data);
-                      if (newList.length != 0) {
-                        setState(() {
-                          widget.item.awardId = newList[0].id;
-                          widget.item.name = newList[0].name;
-                          widget.item.description = newList[0].description;
-                          showError = widget.item.awardId != null &&
-                                  (widget.item.type != null &&
-                                      widget.item.type.trim() != "")
-                              ? false
-                              : true;
-                          awardId = [newList[0]];
-                        });
-                      } else {
-                        setState(() {
-                          widget.item.awardId = null;
-                          widget.item.name = null;
-                          widget.item.description = null;
-                          showError = widget.item.awardId != null &&
-                                  (widget.item.type != null &&
-                                      widget.item.type.trim() != "")
-                              ? false
-                              : true;
-                          widget.item.saved = widget.item.awardId != null &&
-                                  (widget.item.type != null &&
-                                      widget.item.type.trim() != "") &&
-                                  widget.item.saved == true
-                              ? true
-                              : false;
-                          awardId = [];
-                        });
-                      }
-                    },
-                    chipBuilder: (context, state, c) {
-                      return InputChip(
-                        key: ObjectKey(c),
-                        label: Text(c != null ? c.name : ""),
-                        onDeleted: () => {
-                          state.deleteChip(c),
-                        },
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      );
-                    },
-                    suggestionBuilder: (context, state, c) {
-                      return ListTile(
-                        key: ObjectKey(c),
-                        title: Text(c.name),
-                        onTap: () => {state.selectSuggestion(c)},
-                      );
-                    },
-                  ),
+                    showChipError()
+                        ? Container(
+                            padding: EdgeInsets.only(left: 10, top: 10),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Required ang field na ito.',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontStyle: FontStyle.normal,
+                                color: Colors.red[700],
+                              ),
+                            ),
+                          )
+                        : SizedBox()
+                  ],
                 ),
                 SizedBox(
                   height: 15,
@@ -181,18 +274,19 @@ class AwardWidgetState extends State<AwardWidget> {
                             });
                           },
                           decoration: InputDecoration(
-                            labelText: "Taon",
+                            labelText: "Taon *",
                             contentPadding: EdgeInsets.all(10),
                             filled: true,
                             fillColor: Color.fromRGBO(240, 240, 240, 1),
                           ),
                           validator: (value) {
-                            // TO DO: accept only when it matches the range : e.g. 1900 - current year
                             var date = DateFormat("y").format(DateTime.now());
-                            if ((value.length < 4 && value.length > 0) ||
+                            if (value == null ||
+                                value.trim() == "" ||
+                                (value.length < 4 && value.length > 0) ||
                                 (value.length > 4 ||
                                     int.parse(value) > int.parse(date))) {
-                              return 'Mag-enter ng tamang taon.';
+                              return 'Mali ang iyong input';
                             }
                             return null;
                           },
@@ -201,50 +295,67 @@ class AwardWidgetState extends State<AwardWidget> {
                     ),
                     SizedBox(width: 10),
                     Expanded(
-                      child: Container(
-                        padding: EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          border:
-                              Border(bottom: BorderSide(color: Colors.black54)),
-                          color: Color.fromRGBO(240, 240, 240, 1),
-                        ),
-                        child: DropdownButton(
-                          autofocus: false,
-                          focusNode: typeNode,
-                          value: widget.item.type,
-                          items: [
-                            DropdownMenuItem(
-                                child: Text("Pumili ng isa",
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                    color: !showTypeError()
+                                        ? Colors.black38
+                                        : Colors.red[600]),
+                              ),
+                              color: Color.fromRGBO(240, 240, 240, 1),
+                            ),
+                            child: DropdownButton(
+                              autofocus: false,
+                              focusNode: typeNode,
+                              value: widget.item.type,
+                              items: [
+                                DropdownMenuItem(
+                                    child: Text("Pumili ng isa",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontStyle: FontStyle.italic,
+                                          color: Colors.grey,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: true),
+                                    value: ""),
+                                DropdownMenuItem(
+                                    child: Text("Nominado"),
+                                    value: "nominated"),
+                                DropdownMenuItem(
+                                    child: Text("Panalo"), value: "panalo"),
+                              ],
+                              hint: Text('Type *'),
+                              elevation: 0,
+                              isDense: false,
+                              underline: Container(),
+                              onChanged: (val) {
+                                setState(() {
+                                  widget.item.type = val;
+                                  showTypeError();
+                                });
+                              },
+                            ),
+                          ),
+                          showTypeError()
+                              ? Container(
+                                  padding: EdgeInsets.only(left: 10, top: 10),
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    'Required ang field na ito.',
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.grey,
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.normal,
+                                      color: Colors.red[600],
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                    softWrap: true),
-                                value: ""),
-                            DropdownMenuItem(
-                                child: Text("Nominado"), value: "nominated"),
-                            DropdownMenuItem(
-                                child: Text("Panalo"), value: "panalo"),
-                          ],
-                          hint: Text('Type *'),
-                          elevation: 0,
-                          isDense: false,
-                          underline: Container(),
-                          onChanged: (val) {
-                            setState(() {
-                              widget.item.type = val;
-                              print(widget.item.awardId);
-                              print(widget.item.type);
-                              showError = widget.item.awardId != null &&
-                                      (widget.item.type != null &&
-                                          widget.item.type.trim() != "")
-                                  ? false
-                                  : true;
-                            });
-                          },
-                        ),
+                                  ),
+                                )
+                              : SizedBox(),
+                        ],
                       ),
                     ),
                   ],
@@ -252,15 +363,6 @@ class AwardWidgetState extends State<AwardWidget> {
                 SizedBox(
                   height: 15,
                 ),
-                showError == true
-                    ? Container(
-                        alignment: Alignment.centerLeft,
-                        child: Text('Required ang field ng Award at Type.',
-                            style: TextStyle(
-                                color: Colors.red,
-                                fontStyle: FontStyle.italic)))
-                    : SizedBox(),
-                showError == true ? SizedBox(height: 15) : SizedBox(),
                 Container(
                   child: OutlineButton(
                     padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
@@ -268,7 +370,7 @@ class AwardWidgetState extends State<AwardWidget> {
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       if (_formKey.currentState.validate() &&
-                          widget.item.awardId != null &&
+                          widget.item.id != null &&
                           (widget.item.type != null &&
                               widget.item.type.trim() != '')) {
                         setState(() {
@@ -277,8 +379,11 @@ class AwardWidgetState extends State<AwardWidget> {
                         });
                       } else {
                         setState(() {
+                          if (widget.item.id == null) showError = true;
+                          if (widget.item.type == null ||
+                              widget.item.type.trim() == '')
+                            showErrorVar = true;
                           widget.item.saved = false;
-                          showError = true;
                         });
                       }
                     },

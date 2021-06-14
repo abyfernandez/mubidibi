@@ -11,6 +11,7 @@ class AwardViewModel extends BaseModel {
   final List<Award> awards = [];
 
   // Function: GET AWARDS FOR DROPDOWNS AND LIST VIEW
+  // if category is null, both categories will be searched
   Future<List<Award>> getAllAwards(
       {@required String user, @required String mode, String category}) async {
     setBusy(true);
@@ -147,5 +148,39 @@ class AwardViewModel extends BaseModel {
       id = 0;
     }
     return id;
+  }
+
+  // DELETE AWARD
+  Future<int> deleteAward({@required String id}) async {
+    var queryParams = {
+      'id': id,
+    };
+
+    var uri =
+        Uri.http(Config.apiNoHTTP, '/mubidibi/delete-award/$id', queryParams);
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      return (json.decode(response.body));
+    }
+    return 0;
+  }
+
+  // RESTORE AWARD
+  Future<int> restoreAward({@required String id}) async {
+    var queryParams = {
+      'id': id,
+    };
+
+    var uri =
+        Uri.http(Config.apiNoHTTP, '/mubidibi/restore-award/$id', queryParams);
+
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      return (json.decode(response.body));
+    }
+    return 0;
   }
 }

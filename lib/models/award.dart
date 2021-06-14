@@ -7,24 +7,25 @@ String awardToJson(List<Award> data) =>
     json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class Award {
-  int id; // movie_award / crew_award id
-  int awardId;
-  final int movieId;
+  int id; // id from the award table
+  int awardId; // id from the crew_media and movie_media award table
+  final int movieId; // movie_award.movie_id
+  final int crewId; // crew_award.crew_id
   String name;
   String event;
   List<String> category; // movie, actor
   String year;
-  String type; //  nominated, won
+  String type; //  nominated, panalo
   String description;
   final String addedBy;
   bool isDeleted;
   bool saved;
-  bool edit;
 
   Award({
     this.id,
     this.awardId,
     this.movieId,
+    this.crewId,
     this.name,
     this.event,
     this.category,
@@ -34,7 +35,6 @@ class Award {
     this.addedBy,
     this.isDeleted,
     this.saved,
-    this.edit,
   });
 
   factory Award.fromJson(Map<String, dynamic> json) {
@@ -42,6 +42,7 @@ class Award {
         id: json['id'],
         awardId: json['award_id'],
         movieId: json['movie_id'],
+        crewId: json['crew_id'],
         name: json['name'],
         event: json['event'],
         category: json["category"] == null
@@ -58,6 +59,7 @@ class Award {
         "id": id,
         "award_id": awardId,
         "movie_id": movieId,
+        "crew_id": crewId,
         "name": name,
         "event": event,
         "category": category,
@@ -66,6 +68,5 @@ class Award {
         "description": description,
         "added_by": addedBy,
         "is_deleted": isDeleted,
-        "edit": edit,
       };
 }

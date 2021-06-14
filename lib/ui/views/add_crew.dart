@@ -18,7 +18,6 @@ import 'package:mubidibi/models/movie_actor.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
-import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/widgets/award_widget.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
@@ -38,6 +37,8 @@ import 'package:timezone/timezone.dart';
 
 // Global Variables for dynamic Widgets
 List<int> movieActorsFilter = []; // movies
+List<int> crewAwardsFilter = []; // awards
+
 List gallery = [];
 
 class AddCrew extends StatefulWidget {
@@ -148,8 +149,8 @@ class _AddCrewState extends State<AddCrew> {
   final NavigationService _navigationService = locator<NavigationService>();
   final DialogService _dialogService = locator<DialogService>();
 
-  bool fileIsNull() {
-    return imageFile == null || (displayPic != null && displayPic != "")
+  bool mediaIsNull() {
+    return imageFile == null && (displayPic == null || displayPic == '')
         ? true
         : false;
   }
@@ -253,9 +254,11 @@ class _AddCrewState extends State<AddCrew> {
       if (_datePicker != null && _datePicker != _birthday) {
         setState(() {
           _birthday = _datePicker;
-          birthdayController.text = DateFormat("MMM. d, y", "fil").format(
-                  TZDateTime.from(_birthday, tz.getLocation('Asia/Manila'))) ??
-              '';
+          birthdayController.text =
+              // DateFormat("MMM. d, y", "fil").format(
+              //         TZDateTime.from(_birthday, tz.getLocation('Asia/Manila'))) ??
+              //     '';
+              DateFormat("MMM. d, y", "fil").format(_birthday) ?? '';
         });
       }
     } else {
@@ -272,9 +275,11 @@ class _AddCrewState extends State<AddCrew> {
       if (_datePicker != null && _datePicker != _deathdate) {
         setState(() {
           _deathdate = _datePicker;
-          deathdateController.text = DateFormat("MMM. d, y", "fil").format(
-                  TZDateTime.from(_deathdate, tz.getLocation('Asia/Manila'))) ??
-              '';
+          deathdateController.text =
+              // DateFormat("MMM. d, y", "fil").format(
+              //         TZDateTime.from(_deathdate, tz.getLocation('Asia/Manila'))) ??
+              // '';
+              DateFormat("MMM. d, y", "fil").format(_deathdate) ?? '';
         });
       }
     }
@@ -302,9 +307,12 @@ class _AddCrewState extends State<AddCrew> {
     setState(() {
       // add award widget to list
       awardList.add(AwardWidget(
-          awardOptions: awardOptions,
-          item: new Award(),
-          open: ValueNotifier<bool>(true)));
+        awardOptions: awardOptions,
+        item: new Award(),
+        open: ValueNotifier<bool>(true),
+        prevId: ValueNotifier<int>(0),
+        type: "crew",
+      ));
     });
   }
 
@@ -599,6 +607,7 @@ class _AddCrewState extends State<AddCrew> {
         movieActorsFilter =
             []; // clears list para pag binalikan sya empty na ulit
         gallery = [];
+        crewAwardsFilter = [];
       });
       await _navigationService.pop();
     }
@@ -631,6 +640,7 @@ class _AddCrewState extends State<AddCrew> {
 
     // clear lists
     movieActorsFilter = [];
+    crewAwardsFilter = [];
     gallery = [];
 
     super.initState();
@@ -651,21 +661,30 @@ class _AddCrewState extends State<AddCrew> {
         middleNameController.text = crew?.middleName ?? "";
         lastNameController.text = crew?.lastName ?? "";
         suffixController.text = crew?.suffix ?? "";
-        _birthday =
-            crew?.birthday != null ? DateTime.parse(crew?.birthday) : null;
+        _birthday = crew?.birthday != null
+            ? DateTime.parse(crew?.birthday).add(Duration(days: 1))
+            : null;
+
         birthdayController.text = crew?.birthday != null
-            ? DateFormat("MMM. d, y", "fil").format(
-                TZDateTime.from(_birthday, tz.getLocation('Asia/Manila')))
+            // ? DateFormat("MMM. d, y", "fil").format(
+            //     TZDateTime.from(_birthday, tz.getLocation('Asia/Manila')))
+            // : '';
+            ? DateFormat("MMM. d, y", "fil").format(_birthday)
             : '';
+
         birthplaceController.text = crew?.birthplace ?? "";
         isAlive = crew?.isAlive ?? true;
 
-        _deathdate =
-            crew?.deathdate != null ? DateTime.parse(crew?.deathdate) : null;
+        _deathdate = crew?.deathdate != null
+            ? DateTime.parse(crew?.deathdate).add(Duration(days: 1))
+            : null;
         deathdateController.text = crew?.deathdate != null
-            ? DateFormat("MMM. d, y", "fil").format(
-                TZDateTime.from(_deathdate, tz.getLocation('Asia/Manila')))
+            // ? DateFormat("MMM. d, y", "fil").format(
+            //     TZDateTime.from(_deathdate, tz.getLocation('Asia/Manila')))
+            // : '';
+            ? DateFormat("MMM. d, y", "fil").format(_deathdate)
             : '';
+
         descriptionController.text = crew?.description ?? "";
 
         // Mga Pelikula
@@ -709,10 +728,13 @@ class _AddCrewState extends State<AddCrew> {
         var temp = crewAwards != null ? crewAwards : [];
 
         for (var i = 0; i < temp.length; i++) {
+          crewAwardsFilter.add(temp[i].id);
           awardList.add(AwardWidget(
             awardOptions: awardOpts,
             item: temp[i],
             open: ValueNotifier<bool>(false),
+            prevId: ValueNotifier<int>(0),
+            type: "crew",
           ));
         }
 
@@ -747,6 +769,7 @@ class _AddCrewState extends State<AddCrew> {
               if (response.confirmed == true) {
                 setState(() {
                   movieActorsFilter = [];
+                  crewAwardsFilter = [];
                   gallery = [];
                 });
                 _navigationService.pop();
@@ -851,6 +874,9 @@ class _AddCrewState extends State<AddCrew> {
                                 } else {
                                   // last step
                                   FocusScope.of(context).unfocus();
+
+                                  print('DATE: ${_birthday.toUtc()}');
+
                                   var confirm = await _dialogService
                                       .showConfirmationDialog(
                                           title: "Confirm Details",
@@ -947,18 +973,28 @@ class _AddCrewState extends State<AddCrew> {
                                           .toList();
                                     }
 
+                                    List<MediaFile> galleryToUpdate = [];
+                                    if (crew != null &&
+                                        crew.gallery != null &&
+                                        crew.gallery.isNotEmpty) {
+                                      crew.gallery.forEach((p) {
+                                        if (!galleryToDelete.contains(p.id))
+                                          galleryToUpdate.add(p);
+                                      });
+                                    }
+
                                     final response = await model.addCrew(
                                       firstName: firstNameController.text,
                                       middleName: middleNameController.text,
                                       lastName: lastNameController.text,
                                       suffix: suffixController.text,
                                       birthday: _birthday != null
-                                          ? _birthday.toString()
+                                          ? _birthday.toUtc().toString()
                                           : '',
                                       birthplace: birthplaceController.text,
                                       isAlive: isAlive,
                                       deathdate: _deathdate != null
-                                          ? _deathdate.toString()
+                                          ? _deathdate.toUtc().toString()
                                           : '',
                                       description: descriptionController.text,
                                       displayPic: imageFile,
@@ -966,6 +1002,7 @@ class _AddCrewState extends State<AddCrew> {
                                       mimetype: mimetype,
                                       addedBy: currentUser.userId,
                                       crewId: crewId,
+
                                       // for edit purposes
                                       gallery: galleryToSave,
                                       galleryDesc: galleryDesc,
@@ -979,19 +1016,13 @@ class _AddCrewState extends State<AddCrew> {
                                       actors: movieActorsToSave,
                                       awards: awardsToSave,
                                       awardsToDelete: awardsToDelete,
-                                      // original lists for comparison in update
-                                      ogAct: crew != null &&
-                                              crew.movies != null &&
-                                              crew.movies[2] != null &&
-                                              crew.movies[2].isNotEmpty
-                                          ? crew.movies[2]
-                                              .map((a) => a.movieId)
-                                              .toList()
-                                          : [],
-                                      ogAwards: crewAwards != null &&
-                                              crewAwards.isNotEmpty
-                                          ? crewAwards.map((a) => a.id).toList()
-                                          : [],
+                                      // update description of existing media
+                                      galleryToUpdate: galleryToUpdate,
+                                      displayPicToUpdate: crew != null &&
+                                              crew.displayPic != null &&
+                                              crew.displayPic.id != null
+                                          ? crew.displayPic
+                                          : null,
                                     );
 
                                     // when response is returned, stop showing circular progress indicator
@@ -1566,29 +1597,30 @@ class _AddCrewState extends State<AddCrew> {
               height: 10,
             ),
             Container(
-              width: 140,
-              child: movieActorList.isEmpty
-                  ? FlatButton(
-                      // focusNode: addActorNode,
-                      color: Color.fromRGBO(240, 240, 240, 1),
-                      onPressed: addMovieActor,
-                      child: Row(
-                        children: [
-                          Icon(Icons.person_add_alt_1_outlined),
-                          Text(" Dagdagan")
-                        ],
-                      ),
-                    )
-                  : null,
-            ),
+                width: 140,
+                child: FlatButton(
+                  // focusNode: addActorNode,
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  onPressed: addMovieActor,
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_add_alt_1_outlined),
+                      Text(" Dagdagan")
+                    ],
+                  ),
+                )
+                // : null,
+                ),
             ListView.builder(
                 itemCount: movieActorList.length,
                 shrinkWrap: true,
+                reverse: true,
                 itemBuilder: (BuildContext context, int i) {
                   return ValueListenableBuilder(
                       valueListenable: movieActorList[i].open,
                       builder: (context, value, widget) {
                         return Stack(
+                          key: ObjectKey(movieActorList[i]),
                           children: [
                             movieActorList[i],
                             value == true
@@ -1679,25 +1711,25 @@ class _AddCrewState extends State<AddCrew> {
             SizedBox(
               height: 10,
             ),
-            Container(
-              width: 140,
-              child: movieActorList.isNotEmpty
-                  ? FlatButton(
-                      // focusNode: addActorNode,
-                      color: Color.fromRGBO(240, 240, 240, 1),
-                      onPressed: addMovieActor,
-                      child: Row(
-                        children: [
-                          Icon(Icons.person_add_alt_1_outlined),
-                          Text(" Dagdagan")
-                        ],
-                      ),
-                    )
-                  : null,
-            ),
-            SizedBox(
-              height: 10,
-            ),
+            // Container(
+            //   width: 140,
+            //   child: movieActorList.isNotEmpty
+            //       ? FlatButton(
+            //           // focusNode: addActorNode,
+            //           color: Color.fromRGBO(240, 240, 240, 1),
+            //           onPressed: addMovieActor,
+            //           child: Row(
+            //             children: [
+            //               Icon(Icons.person_add_alt_1_outlined),
+            //               Text(" Dagdagan")
+            //             ],
+            //           ),
+            //         )
+            //       : null,
+            // ),
+            // SizedBox(
+            //   height: 10,
+            // ),
           ]),
         );
       case 2: // Photos
@@ -1846,14 +1878,15 @@ class _AddCrewState extends State<AddCrew> {
                       decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10)),
                       child: TextFormField(
-                        enabled: !fileIsNull(),
+                        enabled: !mediaIsNull(),
                         focusNode: descriptionDPNode,
                         controller: descriptionDPController,
                         textCapitalization: TextCapitalization.sentences,
                         autovalidateMode: AutovalidateMode.onUserInteraction,
                         style: TextStyle(
-                          color:
-                              imageFile != null ? Colors.black : Colors.black38,
+                          color: mediaIsNull() == false
+                              ? Colors.black
+                              : Colors.black38,
                         ),
                         maxLines: null,
                         decoration: InputDecoration(
@@ -1875,14 +1908,29 @@ class _AddCrewState extends State<AddCrew> {
               SizedBox(
                 height: 15,
               ),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    // focusNode: addActorNode,
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addtoGallery,
+                    child: Row(
+                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
+                    ),
+                  )),
+              SizedBox(
+                height: 15,
+              ),
               ListView.builder(
                   itemCount: galleryList.length,
                   shrinkWrap: true,
+                  reverse: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: galleryList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(galleryList[i]),
                             children: [
                               galleryList[i],
                               value == true
@@ -1944,21 +1992,21 @@ class _AddCrewState extends State<AddCrew> {
                           );
                         });
                   }),
-              galleryList.isNotEmpty
-                  ? SizedBox(
-                      height: 10,
-                    )
-                  : SizedBox(),
-              Container(
-                  width: 140,
-                  child: FlatButton(
-                    // focusNode: addActorNode,
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: addtoGallery,
-                    child: Row(
-                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
-                    ),
-                  )),
+              // galleryList.isNotEmpty
+              //     ? SizedBox(
+              //         height: 10,
+              //       )
+              //     : SizedBox(),
+              // Container(
+              //     width: 140,
+              //     child: FlatButton(
+              //       // focusNode: addActorNode,
+              //       color: Color.fromRGBO(240, 240, 240, 1),
+              //       onPressed: addtoGallery,
+              //       child: Row(
+              //         children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
+              //       ),
+              //     )),
               SizedBox(
                 height: 10,
               ),
@@ -1972,29 +2020,30 @@ class _AddCrewState extends State<AddCrew> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 140,
-                child: awardList.isEmpty
-                    ? FlatButton(
-                        // focusNode: addActorNode,
-                        color: Color.fromRGBO(240, 240, 240, 1),
-                        onPressed: addAward,
-                        child: Row(
-                          children: [
-                            Icon(Icons.emoji_events_outlined),
-                            Text(" Dagdagan")
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
+                  width: 140,
+                  child: FlatButton(
+                    // focusNode: addActorNode,
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addAward,
+                    child: Row(
+                      children: [
+                        Icon(Icons.emoji_events_outlined),
+                        Text(" Dagdagan")
+                      ],
+                    ),
+                  )
+                  // : null,
+                  ),
               ListView.builder(
                   itemCount: awardList.length,
                   shrinkWrap: true,
+                  reverse: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: awardList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(awardList[i]),
                             children: [
                               awardList[i],
                               value == true
@@ -2007,21 +2056,50 @@ class _AddCrewState extends State<AddCrew> {
                                           color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
+
                                             setState(() {
-                                              if (crewAwards != null &&
-                                                  crewAwards
-                                                      .map((a) => a.id)
-                                                      .contains(awardList[i]
-                                                          .item
-                                                          .id)) {
-                                                // for edit: delete item from DB
-                                                if (awardsToDelete.contains(
-                                                        awardList[i].item.id) ==
-                                                    false) {
-                                                  awardsToDelete.add(
-                                                      awardList[i].item.id);
+                                              crewAwardsFilter
+                                                  .remove(awardList[i].item.id);
+
+                                              if (awardList[i].item.id !=
+                                                  null) {
+                                                if (crewAwards != null &&
+                                                    crewAwards
+                                                        .map((a) => a.id)
+                                                        .contains(awardList[i]
+                                                            .item
+                                                            .id)) {
+                                                  // for edit: delete item from DB
+                                                  if (awardsToDelete.contains(
+                                                          awardList[i]
+                                                              .item
+                                                              .id) ==
+                                                      false) {
+                                                    awardsToDelete.add(
+                                                        awardList[i].item.id);
+                                                  }
                                                 }
+                                              } else if (awardList[i]
+                                                          .prevId
+                                                          .value !=
+                                                      null &&
+                                                  awardList[i].prevId.value !=
+                                                      0 &&
+                                                  !awardsToDelete.contains(
+                                                      awardList[i]
+                                                          .prevId
+                                                          .value) &&
+                                                  (crewAwards != null &&
+                                                      crewAwards
+                                                          .map((c) => c.awardId)
+                                                          .toList()
+                                                          .contains(awardList[i]
+                                                              .prevId
+                                                              .value))) {
+                                                awardsToDelete.add(
+                                                    awardList[i].prevId.value);
                                               }
+
                                               awardList.removeAt(i);
                                             });
                                           },
@@ -2035,25 +2113,25 @@ class _AddCrewState extends State<AddCrew> {
                           );
                         });
                   }),
-              SizedBox(
-                height: 10,
-              ),
-              Container(
-                width: 140,
-                child: awardList.isNotEmpty
-                    ? FlatButton(
-                        // focusNode: addActorNode,
-                        color: Color.fromRGBO(240, 240, 240, 1),
-                        onPressed: addAward,
-                        child: Row(
-                          children: [
-                            Icon(Icons.emoji_events_outlined),
-                            Text(" Dagdagan")
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
+              // SizedBox(
+              //   height: 10,
+              // ),
+              // Container(
+              //   width: 140,
+              //   child: awardList.isNotEmpty
+              //       ? FlatButton(
+              //           // focusNode: addActorNode,
+              //           color: Color.fromRGBO(240, 240, 240, 1),
+              //           onPressed: addAward,
+              //           child: Row(
+              //             children: [
+              //               Icon(Icons.emoji_events_outlined),
+              //               Text(" Dagdagan")
+              //             ],
+              //           ),
+              //         )
+              //       : null,
+              // ),
               SizedBox(
                 height: 10,
               ),
@@ -2062,315 +2140,322 @@ class _AddCrewState extends State<AddCrew> {
         );
       case 4: // review
         return Container(
+          height: 450,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
             color: Color.fromRGBO(240, 240, 240, 1),
           ),
           padding: EdgeInsets.all(10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  "Name: ",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    "Name: ",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  firstNameController.text +
-                      (middleNameController.text.trim() != ""
-                          ? " " + middleNameController.text
-                          : "") +
-                      " " +
-                      lastNameController.text +
-                      (suffixController.text.trim() != ""
-                          ? " " + suffixController.text
-                          : ""),
-                  style: TextStyle(
-                    fontSize: 16,
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    firstNameController.text +
+                        (middleNameController.text.trim() != ""
+                            ? " " + middleNameController.text
+                            : "") +
+                        " " +
+                        lastNameController.text +
+                        (suffixController.text.trim() != ""
+                            ? " " + suffixController.text
+                            : ""),
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.clip,
+                    softWrap: true,
                   ),
-                  overflow: TextOverflow.clip,
-                  softWrap: true,
                 ),
-              ),
-              _birthday != null ? SizedBox(height: 10) : SizedBox(),
-              _birthday != null
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        "Birthday: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    )
-                  : SizedBox(),
-              _birthday != null
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        _birthday == null
-                            ? ''
-                            : DateFormat("MMM. d, y", "fil").format(
-                                TZDateTime.from(
-                                    _birthday, tz.getLocation('Asia/Manila'))),
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ))
-                  : SizedBox(),
-              birthplaceController.text.trim() != ""
-                  ? SizedBox(height: 10)
-                  : SizedBox(),
-              birthplaceController.text.trim() != ""
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        "Birthplace: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    )
-                  : SizedBox(),
-              birthplaceController.text.trim() != ""
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        birthplaceController.text,
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                        overflow: TextOverflow.clip,
-                        softWrap: true,
-                      ))
-                  : SizedBox(),
-              isAlive == false ? SizedBox(height: 10) : SizedBox(),
-              isAlive == false
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Died: ",
+                _birthday != null ? SizedBox(height: 10) : SizedBox(),
+                _birthday != null
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          "Birthday: ",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              isAlive == false
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                          _deathdate == null
-                              ? 'Walang record'
-                              : DateFormat("MMM. d, y", "fil").format(
-                                  TZDateTime.from(_birthday,
-                                      tz.getLocation('Asia/Manila'))),
-                          style: TextStyle(
-                            fontStyle: _deathdate == null
-                                ? FontStyle.italic
-                                : FontStyle.normal,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              descriptionController.text.trim() != ""
-                  ? SizedBox(height: 15)
-                  : SizedBox(),
-              descriptionController.text.trim() != ""
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        "Description: ",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    )
-                  : SizedBox(),
-              descriptionController.text.trim() != ""
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        descriptionController.text.trim() != ""
-                            ? descriptionController.text
-                            : "",
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                        overflow: TextOverflow.clip,
-                        softWrap: true,
-                      ),
-                    )
-                  : SizedBox(),
-              movieDirector.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-              movieDirector.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Mga Pelikula Bilang Direktor: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              movieDirector.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Column(
-                          children: movieDirector.map<Widget>((film) {
-                        return new Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            new Icon(Icons.fiber_manual_record, size: 16),
-                            SizedBox(
-                              width: 5,
-                            ),
-                            new Expanded(
-                              child: Text(
-                                film.title,
-                                style: TextStyle(fontSize: 16),
-                                overflow: TextOverflow.clip,
-                                softWrap: true,
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList()),
-                    )
-                  : SizedBox(),
-              movieWriter.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-              movieWriter.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Mga Pelikula Bilang Manunulat: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              movieWriter.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Column(
-                          children: movieWriter.map<Widget>((film) {
-                        return new Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            new Icon(Icons.fiber_manual_record, size: 16),
-                            SizedBox(
-                              width: 5,
-                            ),
-                            new Expanded(
-                              child: Text(
-                                film.title,
-                                style: TextStyle(fontSize: 16),
-                                overflow: TextOverflow.clip,
-                                softWrap: true,
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList()),
-                    )
-                  : SizedBox(),
-              displayMovieActors(),
-              imageFile != null || (displayPic != null && displayPic != "")
-                  ? SizedBox(height: 10)
-                  : SizedBox(),
-              imageFile != null || (displayPic != null && displayPic != "")
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Display Photo: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              imageFile != null || (displayPic != null && displayPic != "")
-                  ? SizedBox(height: 10)
-                  : SizedBox(),
-              imageFile != null || (displayPic != null && displayPic != "")
-                  ? Container(
-                      margin: EdgeInsets.only(bottom: 10),
-                      color: Colors.white,
-                      padding: EdgeInsets.all(10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          GestureDetector(
-                              child: Container(
-                                alignment: Alignment.centerLeft,
-                                height: 100,
-                                width: 80,
-                                child: imageFile != null
-                                    ? Image.file(
-                                        imageFile,
-                                        width: 80,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : displayPic != null && displayPic != ""
-                                        ? Image.network(
-                                            displayPic,
-                                            width: 80,
-                                            height: 100,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : SizedBox(),
-                              ),
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => imageFile != null
-                                          ? FullPhotoT(
-                                              type: 'path', file: imageFile)
-                                          : FullPhotoT(
-                                              type: 'network',
-                                              url: displayPic)),
-                                );
-                              }),
-                          SizedBox(width: 15),
-                          Expanded(
-                            child: Text(
-                                descriptionDPController.text.trim() != ""
-                                    ? descriptionDPController.text
-                                    : "Walang description",
-                                style: TextStyle(
-                                    color:
-                                        descriptionDPController.text.trim() ==
-                                                ""
-                                            ? Colors.black38
-                                            : Colors.black,
-                                    fontStyle:
-                                        descriptionDPController.text.trim() ==
-                                                ""
-                                            ? FontStyle.italic
-                                            : FontStyle.normal)),
                           ),
-                        ],
-                      ),
-                    )
-                  : SizedBox(),
-              SizedBox(height: 15),
-              displayGallery(),
-              SizedBox(height: 15),
-              displayAwards(),
-              // SizedBox(height: 15),
-            ],
+                        ),
+                      )
+                    : SizedBox(),
+                _birthday != null
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          _birthday == null
+                              ? ''
+                              // : DateFormat("MMM. d, y", "fil").format(
+                              //     TZDateTime.from(_birthday,
+                              //         tz.getLocation('Asia/Manila'))),
+                              : DateFormat("MMM. d, y", "fil")
+                                  .format(_birthday),
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ))
+                    : SizedBox(),
+                birthplaceController.text.trim() != ""
+                    ? SizedBox(height: 10)
+                    : SizedBox(),
+                birthplaceController.text.trim() != ""
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          "Birthplace: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
+                birthplaceController.text.trim() != ""
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          birthplaceController.text,
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                          overflow: TextOverflow.clip,
+                          softWrap: true,
+                        ))
+                    : SizedBox(),
+                isAlive == false ? SizedBox(height: 10) : SizedBox(),
+                isAlive == false
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Died: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                isAlive == false
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                            _deathdate == null
+                                ? 'Walang record'
+                                // : DateFormat("MMM. d, y", "fil").format(
+                                //     TZDateTime.from(_birthday,
+                                //         tz.getLocation('Asia/Manila'))),
+                                : DateFormat("MMM. d, y", "fil")
+                                    .format(_deathdate),
+                            style: TextStyle(
+                              fontStyle: _deathdate == null
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                descriptionController.text.trim() != ""
+                    ? SizedBox(height: 15)
+                    : SizedBox(),
+                descriptionController.text.trim() != ""
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          "Description: ",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      )
+                    : SizedBox(),
+                descriptionController.text.trim() != ""
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          descriptionController.text.trim() != ""
+                              ? descriptionController.text
+                              : "",
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                          overflow: TextOverflow.clip,
+                          softWrap: true,
+                        ),
+                      )
+                    : SizedBox(),
+                movieDirector.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                movieDirector.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Mga Pelikula Bilang Direktor: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                movieDirector.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Column(
+                            children: movieDirector.map<Widget>((film) {
+                          return new Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              new Icon(Icons.fiber_manual_record, size: 16),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              new Expanded(
+                                child: Text(
+                                  film.title,
+                                  style: TextStyle(fontSize: 16),
+                                  overflow: TextOverflow.clip,
+                                  softWrap: true,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList()),
+                      )
+                    : SizedBox(),
+                movieWriter.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                movieWriter.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Mga Pelikula Bilang Manunulat: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                movieWriter.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Column(
+                            children: movieWriter.map<Widget>((film) {
+                          return new Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              new Icon(Icons.fiber_manual_record, size: 16),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              new Expanded(
+                                child: Text(
+                                  film.title,
+                                  style: TextStyle(fontSize: 16),
+                                  overflow: TextOverflow.clip,
+                                  softWrap: true,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList()),
+                      )
+                    : SizedBox(),
+                displayMovieActors(),
+                imageFile != null || (displayPic != null && displayPic != "")
+                    ? SizedBox(height: 10)
+                    : SizedBox(),
+                imageFile != null || (displayPic != null && displayPic != "")
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Display Photo: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                imageFile != null || (displayPic != null && displayPic != "")
+                    ? SizedBox(height: 10)
+                    : SizedBox(),
+                imageFile != null || (displayPic != null && displayPic != "")
+                    ? Container(
+                        margin: EdgeInsets.only(bottom: 10),
+                        color: Colors.white,
+                        padding: EdgeInsets.all(10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                                child: Container(
+                                  alignment: Alignment.centerLeft,
+                                  height: 100,
+                                  width: 80,
+                                  child: imageFile != null
+                                      ? Image.file(
+                                          imageFile,
+                                          width: 80,
+                                          height: 100,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : displayPic != null && displayPic != ""
+                                          ? Image.network(
+                                              displayPic,
+                                              width: 80,
+                                              height: 100,
+                                              fit: BoxFit.cover,
+                                            )
+                                          : SizedBox(),
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => imageFile != null
+                                            ? FullPhotoT(
+                                                type: 'path', file: imageFile)
+                                            : FullPhotoT(
+                                                type: 'network',
+                                                url: displayPic)),
+                                  );
+                                }),
+                            SizedBox(width: 15),
+                            Expanded(
+                              child: Text(
+                                  descriptionDPController.text.trim() != ""
+                                      ? descriptionDPController.text
+                                      : "Walang description",
+                                  style: TextStyle(
+                                      color:
+                                          descriptionDPController.text.trim() ==
+                                                  ""
+                                              ? Colors.black38
+                                              : Colors.black,
+                                      fontStyle:
+                                          descriptionDPController.text.trim() ==
+                                                  ""
+                                              ? FontStyle.italic
+                                              : FontStyle.normal)),
+                            ),
+                          ],
+                        ),
+                      )
+                    : SizedBox(),
+                SizedBox(height: 15),
+                displayGallery(),
+                SizedBox(height: 15),
+                displayAwards(),
+                // SizedBox(height: 15),
+              ],
+            ),
           ),
         );
     }
@@ -2527,7 +2612,6 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                         movieActorsFilter.remove(c.movieId);
                         widget.prevId.value = c.movieId;
                       });
-                      print(widget.prevId.value);
                       state.deleteChip(c);
                     },
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

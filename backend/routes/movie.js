@@ -13,6 +13,8 @@ exports.movie = app => {
         query = query.concat(` WHERE is_deleted = false `);
       }
 
+      query = query.concat(` order by id`);
+
       var result = await client.query(
         query).then(async (result) => {
           var movies = result.rows;
@@ -133,6 +135,7 @@ exports.movie = app => {
 
         } else {
           var buffer = await pic.toBuffer();
+          console.log(pic.file);
           mediaBuffer.push(buffer);
           mediaMimeType.push(pic.mimetype);
         }
@@ -150,8 +153,8 @@ exports.movie = app => {
 
       var upload = await cloudinary.v2.uploader.upload(fileURI,
         {
-          folder: "folder-name",
-          // resource_type: mediaMimeType[i].split('/')[0] == "audio" ? "raw" : mediaMimeType[i].split('/')[0],
+          folder: "movies/" + movieData.title + "/" + movieData.media_type[i],
+          use_filename: true,
           resource_type: "auto",
         },
         async function (err, result) {
@@ -240,8 +243,6 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${posters[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'poster')`);
           else query = query.concat(`null, 'poster')`);
-          console.log(query);
-
           client.query(query);
         }
 
@@ -251,8 +252,6 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${gallery[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
           else query = query.concat(`null, 'gallery')`);
-          console.log(query);
-
           client.query(query);
         }
 
@@ -262,8 +261,6 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${trailers[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'trailer')`);
           else query = query.concat(`null, 'trailer')`);
-          console.log(query);
-
           client.query(query);
         }
 
@@ -273,8 +270,6 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${audios[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'audio')`);
           else query = query.concat(`null, 'audio')`);
-          console.log(query);
-
           client.query(query);
         }
 
@@ -322,10 +317,8 @@ exports.movie = app => {
         });
 
         // awards
-        movieData.awards.forEach((award, index) => {
+        movieData.awards.forEach((award) => {
           var awardQuery = `insert into movie_award (movie_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
-          console.log(query);
-
           client.query(awardQuery);
         });
 
@@ -391,7 +384,8 @@ exports.movie = app => {
 
       var upload = await cloudinary.v2.uploader.upload(fileURI,
         {
-          folder: "folder-name",
+          folder: "movies/" + movieData.title + "/" + movieData.media_type[i],
+          use_filename: true,
           resource_type: "auto",
         },
         async function (err, result) {
@@ -478,7 +472,6 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${posters[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'poster')`);
           else query = query.concat(`null, 'poster')`);
-
           client.query(query);
         }
 
@@ -488,7 +481,6 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${gallery[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
           else query = query.concat(`null, 'gallery')`);
-
           client.query(query);
         }
 
@@ -498,7 +490,6 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${trailers[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'trailer')`);
           else query = query.concat(`null, 'trailer')`);
-
           client.query(query);
         }
 
@@ -508,7 +499,40 @@ exports.movie = app => {
           var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${audios[i]}', `;
           if (desc != null) query = query.concat(`'${desc}', 'audio')`);
           else query = query.concat(`null, 'audio')`);
+          client.query(query);
+        }
 
+        // UPDATE MEDIA FROM DB
+
+        // posters
+        for (var i = 0; i < movieData.posters_to_update.length; i++) {
+          var desc = movieData.posters_to_update[i].description != null ? movieData.posters_to_update[i].description.replace(/'/g, "''") : null;
+          var query = `update movie_media set description = `;
+          desc != null ? query = query.concat(`'${desc}' where id = ${movieData.posters_to_update[i].id}`) : query = query.concat(`null where id = ${movieData.posters_to_update[i].id}`);
+          client.query(query);
+        }
+
+        // gallery
+        for (var i = 0; i < movieData.gallery_to_update.length; i++) {
+          var desc = movieData.gallery_to_update[i].description != null ? movieData.gallery_to_update[i].description.replace(/'/g, "''") : null;
+          var query = `update movie_media set description = `;
+          desc != null ? query = query.concat(`'${desc}' where id = ${movieData.gallery_to_update[i].id}`) : query = query.concat(`null where id = ${movieData.gallery_to_update[i].id}`);
+          client.query(query);
+        }
+
+        // trailers
+        for (var i = 0; i < movieData.trailers_to_update.length; i++) {
+          var desc = movieData.trailers_to_update[i].description != null ? movieData.trailers_to_update[i].description.replace(/'/g, "''") : null;
+          var query = `update movie_media set description = `;
+          desc != null ? query = query.concat(`'${desc}' where id = ${movieData.trailers_to_update[i].id}`) : query = query.concat(`null where id = ${movieData.trailers_to_update[i].id}`);
+          client.query(query);
+        }
+
+        // audios
+        for (var i = 0; i < movieData.audios_to_update.length; i++) {
+          var desc = movieData.audios_to_update[i].description != null ? movieData.audios_to_update[i].description.replace(/'/g, "''") : null;
+          var query = `update movie_media set description = `;
+          desc != null ? query = query.concat(`'${desc}' where id = ${movieData.audios_to_update[i].id}`) : query = query.concat(`null where id = ${movieData.audios_to_update[i].id}`);
           client.query(query);
         }
 
@@ -615,6 +639,7 @@ exports.movie = app => {
         });
 
         // add/update/delete awards
+        console.log(movieData);
 
         // delete awards
         movieData.awards_to_delete.forEach((award) => {
@@ -623,13 +648,12 @@ exports.movie = app => {
         });
 
         movieData.awards.forEach((award) => {
-          // if award in og_awards and in awards, update
-          if (movieData.og_awards.includes(award.id)) {
-            // update
-            client.query(`update movie_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`)
-            console.log('award query: ', `update movie_award set award_id = ${award.award_id}, year = ${award.year}, type = '${award.type}' where id = ${award.id}`);
-          } else if (!movieData.og_awards.includes(award.id) && !movieData.awards_to_delete.includes(award.id)) {
-            // add
+          if (award.award_id != null) {
+            // update, since awardId is existing
+            client.query(`update movie_award set award_id = ${award.id}, year = ${award.year}, type = '${award.type}' where id = ${award.award_id}`)
+            console.log('award query: ', `update movie_award set award_id = ${award.id}, year = ${award.year}, type = '${award.type}' where id = ${award.award_id}`);
+          } else {
+            // add, since awardId does not exist
             var awardQuery = `insert into movie_award (movie_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
             client.query(awardQuery);
           }

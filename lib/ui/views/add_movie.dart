@@ -8,6 +8,7 @@ import 'package:mime/mime.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/line.dart';
 import 'package:mubidibi/models/media_file.dart';
+import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/widgets/award_widget.dart';
 import 'package:mubidibi/ui/widgets/chips_input_test.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +18,6 @@ import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
-import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:mubidibi/ui/widgets/line_widget.dart';
@@ -39,6 +39,7 @@ import 'package:timezone/timezone.dart';
 
 // For Dynamic Widgets
 List<int> actorsFilter = []; // actors
+List<int> awardsFilter = []; // awards
 List movieGallery = [];
 List posters = [];
 List trailers = [];
@@ -115,6 +116,9 @@ class _AddMovieState extends State<AddMovie> {
     GlobalKey<FormState>(),
     GlobalKey<FormState>()
   ];
+
+  // MOVIE SCROLL CONTROLLERS FOR LISTVIEW
+  final ScrollController actorController = new ScrollController();
 
   // SERVICES
   final AuthenticationService _authenticationService =
@@ -194,8 +198,10 @@ class _AddMovieState extends State<AddMovie> {
         description: "Are you sure that you want to close the form?");
     if (response.confirmed == true) {
       setState(() {
+        // clears list para pag binalikan sya empty na ulit
         rolesFilter.value = [];
-        actorsFilter = []; // clears list para pag binalikan sya empty na ulit
+        actorsFilter = [];
+        awardsFilter = [];
         movieGallery = [];
         posters = [];
         trailers = [];
@@ -227,9 +233,11 @@ class _AddMovieState extends State<AddMovie> {
     if (_datePicker != null && _datePicker != _date) {
       setState(() {
         _date = _datePicker;
-        dateController.text = DateFormat("MMM. d, y", "fil").format(
-                TZDateTime.from(_date, tz.getLocation('Asia/Manila'))) ??
-            '';
+        // dateController.text = DateFormat("MMM. d, y", "fil").format(
+        //         TZDateTime.from(_date, tz.getLocation('Asia/Manila'))) ??
+        // '';
+        dateController.text =
+            DateFormat("MMM. d, y", "fil").format(_date) ?? '';
       });
     }
   }
@@ -266,6 +274,8 @@ class _AddMovieState extends State<AddMovie> {
             if (filtered[i] != null) {
               posters.add(filtered[i]);
 
+              /// posters list -- stores stored files ?
+
               // add photo widget to list
               posterList.add(MediaWidget(
                   category: "movie",
@@ -285,6 +295,7 @@ class _AddMovieState extends State<AddMovie> {
   // Function: Display Posters in the Review Step
   Widget displayPosters() {
     filteredPosterList = posterList
+        // .where((p) => p.item.saved == true)  -- commented out to include existing media
         .where((p) => p.item.saved == true || p.item.url != null)
         .toList();
 
@@ -678,7 +689,7 @@ class _AddMovieState extends State<AddMovie> {
                               child: Text(
                                 g.item.file != null
                                     ? g.item.file.path.split('/').last
-                                    : g.item.url,
+                                    : g.item.url.split('/').last,
                                 style: TextStyle(color: Colors.blue),
                                 overflow: TextOverflow.ellipsis,
                                 softWrap: true,
@@ -1011,6 +1022,8 @@ class _AddMovieState extends State<AddMovie> {
         awardOptions: awardOptions,
         item: new Award(),
         open: ValueNotifier<bool>(true),
+        prevId: ValueNotifier<int>(0),
+        type: "movie",
       ));
     });
   }
@@ -1154,6 +1167,14 @@ class _AddMovieState extends State<AddMovie> {
     });
   }
 
+  void updateActors() {
+    print('called');
+
+    var temp = actorList;
+    actorList = [];
+    actorList = temp;
+  }
+
   @override
   void initState() {
     initializeDateFormatting();
@@ -1161,6 +1182,7 @@ class _AddMovieState extends State<AddMovie> {
     // in case user just closes the app and not click the back buttons
     rolesFilter.value = [];
     actorsFilter = [];
+    awardsFilter = [];
     movieGallery = [];
     posters = [];
 
@@ -1171,6 +1193,13 @@ class _AddMovieState extends State<AddMovie> {
     directors = [];
     writers = [];
     super.initState();
+  }
+
+  @override
+  void didUpdateWidget(AddMovie oldWidget) {
+    print('add movie');
+    super.didUpdateWidget(oldWidget);
+    // if (widget.didUpdateWidget != null) widget.didUpdateWidget(oldWidget, this);
   }
 
   @override
@@ -1188,12 +1217,18 @@ class _AddMovieState extends State<AddMovie> {
         titleController.text = movie?.title ?? '';
 
         _date = movie?.releaseDate != null
-            ? DateTime.parse(movie?.releaseDate)
+            ? DateTime.parse(movie?.releaseDate).add(Duration(days: 1))
             : null;
 
+        print(movie?.releaseDate);
+        print(_date);
+        print(_date.toUtc());
+        print(_date.add(Duration(days: 1)));
+
         dateController.text = movie?.releaseDate != null
-            ? DateFormat("MMM. d, y", "fil")
-                .format(TZDateTime.from(_date, tz.getLocation('Asia/Manila')))
+            // ? DateFormat("MMM. d, y", "fil")
+            //     .format(TZDateTime.from(_date, tz.getLocation('Asia/Manila')))
+            ? DateFormat("MMM. d, y", "fil").format(_date)
             : '';
         synopsisController.text = movie?.synopsis ?? '';
         runtimeController.text = movie?.runtime?.toString() ?? '';
@@ -1221,10 +1256,13 @@ class _AddMovieState extends State<AddMovie> {
         var temp = movieAwards != null ? movieAwards : [];
 
         for (var i = 0; i < temp.length; i++) {
+          awardsFilter.add(temp[i].id);
           awardList.add(AwardWidget(
             awardOptions: awardOpts,
             item: temp[i],
             open: ValueNotifier<bool>(false),
+            prevId: ValueNotifier<int>(0),
+            type: "movie",
           ));
         }
 
@@ -1305,6 +1343,7 @@ class _AddMovieState extends State<AddMovie> {
               if (response.confirmed == true) {
                 setState(() {
                   actorsFilter = [];
+                  awardsFilter = [];
                   rolesFilter.value = [];
                   movieGallery = [];
                   posters = [];
@@ -1421,7 +1460,13 @@ class _AddMovieState extends State<AddMovie> {
                                   }
                                 } else {
                                   // Review
+
                                   // last step
+
+                                  print('Date: $_date');
+                                  print('Date to UTC: ${_date.toUtc()}');
+                                  print(
+                                      'Date to ISO: ${_date.toIso8601String()}');
 
                                   var confirm = await _dialogService
                                       .showConfirmationDialog(
@@ -1496,8 +1541,8 @@ class _AddMovieState extends State<AddMovie> {
                                           .map((a) => a.item)
                                           .toList();
 
-                                      awardsToSave.removeWhere(
-                                          (a) => awardsToDelete.contains(a.id));
+                                      awardsToSave.removeWhere((a) =>
+                                          awardsToDelete.contains(a.awardId));
                                     }
 
                                     // Famous Lines
@@ -1536,6 +1581,16 @@ class _AddMovieState extends State<AddMovie> {
                                           .toList();
                                     }
 
+                                    List<MediaFile> postersToUpdate = [];
+                                    if (movie != null &&
+                                        movie.posters != null &&
+                                        movie.posters.isNotEmpty) {
+                                      movie.posters.forEach((p) {
+                                        if (!postersToDelete.contains(p.id))
+                                          postersToUpdate.add(p);
+                                      });
+                                    }
+
                                     // Gallery
                                     List<File> galleryToSave = [];
                                     List<String> galleryDesc = [];
@@ -1550,6 +1605,16 @@ class _AddMovieState extends State<AddMovie> {
                                       galleryDesc = temp
                                           .map((a) => a.item.description)
                                           .toList();
+                                    }
+
+                                    List<MediaFile> galleryToUpdate = [];
+                                    if (movie != null &&
+                                        movie.gallery != null &&
+                                        movie.gallery.isNotEmpty) {
+                                      movie.gallery.forEach((p) {
+                                        if (!galleryToDelete.contains(p.id))
+                                          galleryToUpdate.add(p);
+                                      });
                                     }
 
                                     // Trailers
@@ -1569,6 +1634,16 @@ class _AddMovieState extends State<AddMovie> {
                                           .toList();
                                     }
 
+                                    List<MediaFile> trailersToUpdate = [];
+                                    if (movie != null &&
+                                        movie.trailers != null &&
+                                        movie.trailers.isNotEmpty) {
+                                      movie.trailers.forEach((p) {
+                                        if (!trailersToDelete.contains(p.id))
+                                          trailersToUpdate.add(p);
+                                      });
+                                    }
+
                                     // Audio
                                     List<File> audiosToSave = [];
                                     List<String> audioDesc = [];
@@ -1586,11 +1661,23 @@ class _AddMovieState extends State<AddMovie> {
                                           .toList();
                                     }
 
+                                    List<MediaFile> audiosToUpdate = [];
+                                    if (movie != null &&
+                                        movie.audios != null &&
+                                        movie.audios.isNotEmpty) {
+                                      movie.audios.forEach((p) {
+                                        if (!audiosToDelete.contains(p.id))
+                                          audiosToUpdate.add(p);
+                                      });
+                                    }
+
                                     final response = await model.addMovie(
                                       title: titleController.text,
                                       synopsis: synopsisController.text,
-                                      releaseDate:
-                                          _date != null ? _date.toString() : '',
+                                      movieId: movieId,
+                                      releaseDate: _date != null
+                                          ? _date.toUtc().toString()
+                                          : '',
                                       runtime: runtimeController.text,
                                       genre: genresToSave,
                                       directors: directorsToSave,
@@ -1607,7 +1694,7 @@ class _AddMovieState extends State<AddMovie> {
                                       audios: audiosToSave,
                                       audioDesc: audioDesc,
                                       addedBy: currentUser.userId,
-                                      movieId: movieId,
+
                                       // for edit purposes:
                                       postersToDelete: postersToDelete,
                                       galleryToDelete: galleryToDelete,
@@ -1620,25 +1707,11 @@ class _AddMovieState extends State<AddMovie> {
                                       awardsToDelete: awardsToDelete,
                                       genresToDelete: genresToDelete,
 
-                                      // original lists for comparison in edit movie
-                                      ogAct: crewEdit != null &&
-                                              crewEdit[2].isNotEmpty
-                                          ? crewEdit[2]
-                                              .map((a) => a.id)
-                                              .toList()
-                                          : [],
-                                      ogLines: movie != null &&
-                                              movie.quotes.isNotEmpty
-                                          ? movie.quotes
-                                              .map((a) => a.id)
-                                              .toList()
-                                          : [],
-                                      ogAwards: movieAwards != null &&
-                                              movieAwards.isNotEmpty
-                                          ? movieAwards
-                                              .map((a) => a.id)
-                                              .toList()
-                                          : [],
+                                      // edit -- update description of existing media
+                                      postersToUpdate: postersToUpdate,
+                                      galleryToUpdate: galleryToUpdate,
+                                      trailersToUpdate: trailersToUpdate,
+                                      audiosToUpdate: audiosToUpdate,
                                     );
 
                                     // when response is returned, stop showing circular progress indicator
@@ -1646,11 +1719,17 @@ class _AddMovieState extends State<AddMovie> {
                                       _saving =
                                           false; // set saving to false to trigger circular progress indicator
                                       // show success snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'Movie added successfully.',
-                                              Colors.green));
+                                      movieId != 0
+                                          ? _scaffoldKey.currentState
+                                              .showSnackBar(mySnackBar(
+                                                  context,
+                                                  'Movie updated successfully.',
+                                                  Colors.green))
+                                          : _scaffoldKey.currentState
+                                              .showSnackBar(mySnackBar(
+                                                  context,
+                                                  'Movie added successfully.',
+                                                  Colors.green));
 
                                       _saving =
                                           true; // set saving to true to trigger circular progress indicator
@@ -1665,16 +1744,19 @@ class _AddMovieState extends State<AddMovie> {
                                         Timer(
                                             const Duration(milliseconds: 2000),
                                             () {
-                                          // Navigator.pushReplacement(
-                                          //   context,
-                                          //   MaterialPageRoute(
-                                          //     builder: (context) => MovieView(
-                                          //         movieId: movie.movieId),
-                                          //   ),
-                                          // );
-                                           Navigator.pop(context, []);
+                                          movieId != 0
+                                              ? Navigator.pushReplacement(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        MovieView(
+                                                            movieId:
+                                                                movie.movieId),
+                                                  ),
+                                                )
+                                              : Navigator.pop(context,
+                                                  []); // --- this is wrong for add movie since it will only go back to dashboard
                                         });
-                                        
                                       }
                                     } else {
                                       _saving =
@@ -1705,7 +1787,7 @@ class _AddMovieState extends State<AddMovie> {
                                             ? MyStepState.complete
                                             : MyStepState.indexed,
                                     content: Container(
-                                      width: 300,
+                                      // maxHeight: 450,
                                       child: SingleChildScrollView(
                                         child: Form(
                                             key: _formKeys[i],
@@ -1995,14 +2077,28 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 15,
               ),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: getPosters,
+                    child: Row(
+                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
+                    ),
+                  )),
+              SizedBox(
+                height: 15,
+              ),
               ListView.builder(
                   itemCount: posterList.length,
                   shrinkWrap: true,
+                  reverse: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: posterList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(posterList[i]),
                             children: [
                               posterList[i],
                               value == true
@@ -2062,34 +2158,48 @@ class _AddMovieState extends State<AddMovie> {
                           );
                         });
                   }),
-              posterList.isNotEmpty
-                  ? SizedBox(
-                      height: 10,
-                    )
-                  : SizedBox(),
-              Container(
-                  width: 140,
-                  child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: getPosters,
-                    child: Row(
-                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
-                    ),
-                  )),
+              // posterList.isNotEmpty
+              //     ? SizedBox(
+              //         height: 10,
+              //       )
+              //     : SizedBox(),
+              // Container(
+              //     width: 140,
+              //     child: FlatButton(
+              //       color: Color.fromRGBO(240, 240, 240, 1),
+              //       onPressed: getPosters,
+              //       child: Row(
+              //         children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
+              //       ),
+              //     )),
               SizedBox(height: 15),
               Text('Mga Trailer',
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               SizedBox(
                 height: 15,
               ),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: getTrailers,
+                    child: Row(
+                      children: [Icon(Icons.videocam), Text(" Dagdagan")],
+                    ),
+                  )),
+              SizedBox(
+                height: 15,
+              ),
               ListView.builder(
                   itemCount: trailerList.length,
                   shrinkWrap: true,
+                  reverse: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: trailerList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(trailerList[i]),
                             children: [
                               trailerList[i],
                               value == true
@@ -2149,20 +2259,20 @@ class _AddMovieState extends State<AddMovie> {
                           );
                         });
                   }),
-              trailerList.isNotEmpty
-                  ? SizedBox(
-                      height: 10,
-                    )
-                  : SizedBox(),
-              Container(
-                  width: 140,
-                  child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: getTrailers,
-                    child: Row(
-                      children: [Icon(Icons.videocam), Text(" Dagdagan")],
-                    ),
-                  )),
+              // trailerList.isNotEmpty
+              //     ? SizedBox(
+              //         height: 10,
+              //       )
+              //     : SizedBox(),
+              // Container(
+              //     width: 140,
+              //     child: FlatButton(
+              //       color: Color.fromRGBO(240, 240, 240, 1),
+              //       onPressed: getTrailers,
+              //       child: Row(
+              //         children: [Icon(Icons.videocam), Text(" Dagdagan")],
+              //       ),
+              //     )),
               SizedBox(
                 height: 15,
               ),
@@ -2171,14 +2281,28 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 15,
               ),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addtoGallery,
+                    child: Row(
+                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
+                    ),
+                  )),
+              SizedBox(
+                height: 15,
+              ),
               ListView.builder(
                   itemCount: galleryList.length,
                   shrinkWrap: true,
+                  reverse: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: galleryList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(galleryList[i]),
                             children: [
                               galleryList[i],
                               value == true
@@ -2240,20 +2364,20 @@ class _AddMovieState extends State<AddMovie> {
                           );
                         });
                   }),
-              galleryList.isNotEmpty
-                  ? SizedBox(
-                      height: 10,
-                    )
-                  : SizedBox(),
-              Container(
-                  width: 140,
-                  child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: addtoGallery,
-                    child: Row(
-                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
-                    ),
-                  )),
+              // galleryList.isNotEmpty
+              //     ? SizedBox(
+              //         height: 10,
+              //       )
+              //     : SizedBox(),
+              // Container(
+              //     width: 140,
+              //     child: FlatButton(
+              //       color: Color.fromRGBO(240, 240, 240, 1),
+              //       onPressed: addtoGallery,
+              //       child: Row(
+              //         children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
+              //       ),
+              //     )),
               SizedBox(
                 height: 15,
               ),
@@ -2262,14 +2386,28 @@ class _AddMovieState extends State<AddMovie> {
               SizedBox(
                 height: 15,
               ),
+              Container(
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: getAudios,
+                    child: Row(
+                      children: [Icon(Icons.library_music), Text(" Dagdagan")],
+                    ),
+                  )),
+              SizedBox(
+                height: 15,
+              ),
               ListView.builder(
                   itemCount: audioList.length,
                   shrinkWrap: true,
+                  reverse: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: audioList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(audioList[i]),
                             children: [
                               audioList[i],
                               value == true
@@ -2330,20 +2468,20 @@ class _AddMovieState extends State<AddMovie> {
                           );
                         });
                   }),
-              audioList.isNotEmpty
-                  ? SizedBox(
-                      height: 10,
-                    )
-                  : SizedBox(),
-              Container(
-                  width: 140,
-                  child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: getAudios,
-                    child: Row(
-                      children: [Icon(Icons.library_music), Text(" Dagdagan")],
-                    ),
-                  )),
+              // audioList.isNotEmpty
+              //     ? SizedBox(
+              //         height: 10,
+              //       )
+              //     : SizedBox(),
+              // Container(
+              //     width: 140,
+              //     child: FlatButton(
+              //       color: Color.fromRGBO(240, 240, 240, 1),
+              //       onPressed: getAudios,
+              //       child: Row(
+              //         children: [Icon(Icons.library_music), Text(" Dagdagan")],
+              //       ),
+              //     )),
               SizedBox(
                 height: 15,
               ),
@@ -2527,30 +2665,30 @@ class _AddMovieState extends State<AddMovie> {
                           TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
-              SizedBox(height: 10),
               Container(
                 width: 140,
-                child: actorList.isEmpty
-                    ? FlatButton(
-                        color: Color.fromRGBO(240, 240, 240, 1),
-                        onPressed: addActor,
-                        child: Row(
-                          children: [
-                            Icon(Icons.person_add_alt_1_outlined),
-                            Text(" Dagdagan")
-                          ],
-                        ),
-                      )
-                    : null,
+                child: FlatButton(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  onPressed: addActor,
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_add_alt_1_outlined),
+                      Text(" Dagdagan")
+                    ],
+                  ),
+                ),
               ),
+
               ListView.builder(
                   itemCount: actorList.length,
+                  reverse: true,
                   shrinkWrap: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: actorList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(actorList[i]),
                             children: [
                               actorList[i],
                               value == true
@@ -2641,7 +2779,8 @@ class _AddMovieState extends State<AddMovie> {
                                                 actorsToDelete.add(
                                                     actorList[i].prevId.value);
                                               }
-                                              actorList.removeAt(i);
+                                              return actorList
+                                                  .remove(actorList[i]);
                                             });
                                           },
                                           child: Text('Tanggalin'),
@@ -2654,26 +2793,26 @@ class _AddMovieState extends State<AddMovie> {
                           );
                         });
                   }),
-              actorList.isNotEmpty
-                  ? SizedBox(
-                      height: 10,
-                    )
-                  : SizedBox(),
-              Container(
-                width: 140,
-                child: actorList.isNotEmpty
-                    ? FlatButton(
-                        color: Color.fromRGBO(240, 240, 240, 1),
-                        onPressed: addActor,
-                        child: Row(
-                          children: [
-                            Icon(Icons.person_add_alt_1_outlined),
-                            Text(" Dagdagan")
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
+              // actorList.isNotEmpty
+              //     ? SizedBox(
+              //         height: 10,
+              //       )
+              //     : SizedBox(),
+              // Container(
+              //   width: 140,
+              //   child: actorList.isNotEmpty
+              //       ? FlatButton(
+              //           color: Color.fromRGBO(240, 240, 240, 1),
+              //           onPressed: addActor,
+              //           child: Row(
+              //             children: [
+              //               Icon(Icons.person_add_alt_1_outlined),
+              //               Text(" Dagdagan")
+              //             ],
+              //           ),
+              //         )
+              //       : null,
+              // ),
               SizedBox(
                 height: 10,
               ),
@@ -2687,28 +2826,27 @@ class _AddMovieState extends State<AddMovie> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 140,
-                child: awardList.isEmpty
-                    ? FlatButton(
-                        color: Color.fromRGBO(240, 240, 240, 1),
-                        onPressed: addAward,
-                        child: Row(
-                          children: [
-                            Icon(Icons.emoji_events_outlined),
-                            Text(" Dagdagan")
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
+                  width: 140,
+                  child: FlatButton(
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addAward,
+                    child: Row(
+                      children: [
+                        Icon(Icons.emoji_events_outlined),
+                        Text(" Dagdagan")
+                      ],
+                    ),
+                  )),
               ListView.builder(
                   itemCount: awardList.length,
                   shrinkWrap: true,
+                  reverse: true,
                   itemBuilder: (BuildContext context, int i) {
                     return ValueListenableBuilder(
                         valueListenable: awardList[i].open,
                         builder: (context, value, widget) {
                           return Stack(
+                            key: ObjectKey(awardList[i]),
                             children: [
                               awardList[i],
                               value == true
@@ -2722,19 +2860,23 @@ class _AddMovieState extends State<AddMovie> {
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
-                                              if (movieAwards != null &&
+                                              awardsFilter
+                                                  .remove(awardList[i].item.id);
+
+                                              if (awardList[i].item.awardId !=
+                                                      null &&
+                                                  !awardsToDelete.contains(
+                                                      awardList[i]
+                                                          .item
+                                                          .awardId)) if (movieAwards !=
+                                                      null &&
                                                   movieAwards
-                                                      .map((a) => a.id)
+                                                      .map((a) => a.awardId)
                                                       .contains(awardList[i]
                                                           .item
-                                                          .id)) {
-                                                // for edit: delete item from DB
-                                                if (awardsToDelete.contains(
-                                                        awardList[i].item.id) ==
-                                                    false) {
-                                                  awardsToDelete.add(
-                                                      awardList[i].item.id);
-                                                }
+                                                          .awardId)) {
+                                                awardsToDelete.add(
+                                                    awardList[i].item.awardId);
                                               }
                                               awardList.removeAt(i);
                                             });
@@ -2749,26 +2891,26 @@ class _AddMovieState extends State<AddMovie> {
                           );
                         });
                   }),
-              awardList.isNotEmpty
-                  ? SizedBox(
-                      height: 10,
-                    )
-                  : SizedBox(),
-              Container(
-                width: 140,
-                child: awardList.isNotEmpty
-                    ? FlatButton(
-                        color: Color.fromRGBO(240, 240, 240, 1),
-                        onPressed: addAward,
-                        child: Row(
-                          children: [
-                            Icon(Icons.emoji_events_outlined),
-                            Text(" Dagdagan")
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
+              // awardList.isNotEmpty
+              //     ? SizedBox(
+              //         height: 10,
+              //       )
+              //     : SizedBox(),
+              // Container(
+              //   width: 140,
+              //   child: awardList.isNotEmpty
+              //       ? FlatButton(
+              //           color: Color.fromRGBO(240, 240, 240, 1),
+              //           onPressed: addAward,
+              //           child: Row(
+              //             children: [
+              //               Icon(Icons.emoji_events_outlined),
+              //               Text(" Dagdagan")
+              //             ],
+              //           ),
+              //         )
+              //       : null,
+              // ),
               SizedBox(
                 height: 10,
               ),
@@ -2790,8 +2932,8 @@ class _AddMovieState extends State<AddMovie> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: lineList.isEmpty && filteredActors.isEmpty ? null : 140,
-              child: lineList.isEmpty && filteredActors.isNotEmpty
+              width: filteredActors.isEmpty ? null : 140,
+              child: filteredActors.isNotEmpty
                   ? FlatButton(
                       color: Color.fromRGBO(240, 240, 240, 1),
                       onPressed: addLine,
@@ -2815,11 +2957,13 @@ class _AddMovieState extends State<AddMovie> {
             ListView.builder(
                 itemCount: lineList.length,
                 shrinkWrap: true,
+                reverse: true,
                 itemBuilder: (BuildContext context, int i) {
                   return ValueListenableBuilder(
                       valueListenable: lineList[i].open,
                       builder: (context, value, widget) {
                         return Stack(
+                          key: ObjectKey(lineList[i]),
                           children: [
                             lineList[i],
                             value == true
@@ -2862,24 +3006,24 @@ class _AddMovieState extends State<AddMovie> {
                         );
                       });
                 }),
-            SizedBox(
-              height: 10,
-            ),
-            Container(
-              width: 140,
-              child: lineList.isNotEmpty
-                  ? FlatButton(
-                      color: Color.fromRGBO(240, 240, 240, 1),
-                      onPressed: addLine,
-                      child: Row(
-                        children: [
-                          Icon(Icons.question_answer_outlined),
-                          Text(" Dagdagan")
-                        ],
-                      ),
-                    )
-                  : null,
-            ),
+            // SizedBox(
+            //   height: 10,
+            // ),
+            // Container(
+            //   width: 140,
+            //   child: lineList.isNotEmpty
+            //       ? FlatButton(
+            //           color: Color.fromRGBO(240, 240, 240, 1),
+            //           onPressed: addLine,
+            //           child: Row(
+            //             children: [
+            //               Icon(Icons.question_answer_outlined),
+            //               Text(" Dagdagan")
+            //             ],
+            //           ),
+            //         )
+            //       : null,
+            // ),
             SizedBox(
               height: 10,
             ),
@@ -2887,186 +3031,190 @@ class _AddMovieState extends State<AddMovie> {
         ));
       case 5: // Review
         return Container(
+          height: 450,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(5),
             color: Color.fromRGBO(240, 240, 240, 1),
           ),
           padding: EdgeInsets.all(10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Container(
-                alignment: Alignment.topLeft,
-                child: Text("Pamagat: ",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    )),
-              ),
-              Container(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  titleController.text,
-                  style: TextStyle(
-                    fontSize: 16,
-                  ),
-                  overflow: TextOverflow.clip,
-                  softWrap: true,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text("Pamagat: ",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      )),
                 ),
-              ),
-              SizedBox(height: 15),
-              filmGenres.length != 0
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Mga Genre: ",
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    titleController.text,
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                    overflow: TextOverflow.clip,
+                    softWrap: true,
+                  ),
+                ),
+                SizedBox(height: 15),
+                filmGenres.length != 0
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Mga Genre: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                filmGenres.length != 0
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Wrap(
+                            children: filmGenres
+                                .map<Widget>((str) => Container(
+                                      margin: EdgeInsets.only(right: 3),
+                                      child: Chip(
+                                        label: Text(str),
+                                        backgroundColor: Colors.blue[100],
+                                      ),
+                                    ))
+                                .toList()),
+                      )
+                    : SizedBox(),
+                filmGenres.length != 0 ? SizedBox(height: 15) : SizedBox(),
+                _date != null
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Petsa ng Paglabas: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                _date != null
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          _date == null
+                              ? ''
+                              : DateFormat("MMM. d, y", "fil").format(_date),
+                          // : DateFormat("MMM. d, y", "fil").format(
+                          //     TZDateTime.from(
+                          //         _date, tz.getLocation('Asia/Manila'))),
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
                             fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              filmGenres.length != 0
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Wrap(
-                          children: filmGenres
-                              .map<Widget>((str) => Container(
-                                    margin: EdgeInsets.only(right: 3),
-                                    child: Chip(
-                                      label: Text(str),
-                                      backgroundColor: Colors.blue[100],
-                                    ),
-                                  ))
-                              .toList()),
-                    )
-                  : SizedBox(),
-              filmGenres.length != 0 ? SizedBox(height: 15) : SizedBox(),
-              _date != null
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Petsa ng Paglabas: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              _date != null
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text(
-                        _date == null
-                            ? ''
-                            : DateFormat("MMM. d, y", "fil").format(
-                                TZDateTime.from(
-                                    _date, tz.getLocation('Asia/Manila'))),
-                        style: TextStyle(
-                          fontSize: 16,
+                          ),
                         ),
-                      ),
-                    )
-                  : SizedBox(),
-              _date != null ? SizedBox(height: 15) : SizedBox(),
-              Container(
-                alignment: Alignment.topLeft,
-                child: Text("Buod: ",
+                      )
+                    : SizedBox(),
+                _date != null ? SizedBox(height: 15) : SizedBox(),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text("Buod: ",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      )),
+                ),
+                Container(
+                  alignment: Alignment.topLeft,
+                  child: Text(
+                    synopsisController.text,
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
                       fontSize: 16,
-                    )),
-              ),
-              Container(
-                alignment: Alignment.topLeft,
-                child: Text(
-                  synopsisController.text,
-                  style: TextStyle(
-                    fontSize: 16,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 15),
-              displayPosters(),
-              displayTrailers(),
-              displayGallery(),
-              displayAudios(),
-              directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-              directors.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Mga Direktor: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-              directors.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Column(
-                          children: directors.map<Widget>((direk) {
-                        return new Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            new Icon(Icons.fiber_manual_record, size: 16),
-                            SizedBox(
-                              width: 5,
-                            ),
-                            Expanded(
-                              child: Text(
-                                direk.name,
-                                style: TextStyle(fontSize: 16),
-                                overflow: TextOverflow.clip,
-                                softWrap: true,
+                SizedBox(height: 15),
+                displayPosters(),
+                displayTrailers(),
+                displayGallery(),
+                displayAudios(),
+                directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                directors.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Mga Direktor: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                directors.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                directors.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Column(
+                            children: directors.map<Widget>((direk) {
+                          return new Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              new Icon(Icons.fiber_manual_record, size: 16),
+                              SizedBox(
+                                width: 5,
                               ),
-                            ),
-                          ],
-                        );
-                      }).toList()),
-                    )
-                  : SizedBox(),
-              writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-              writers.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Text("Mga Manunulat: ",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          )),
-                    )
-                  : SizedBox(),
-              writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
-              writers.isNotEmpty
-                  ? Container(
-                      alignment: Alignment.topLeft,
-                      child: Column(
-                          children: writers.map<Widget>((writer) {
-                        return new Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            new Icon(Icons.fiber_manual_record, size: 16),
-                            SizedBox(
-                              width: 5,
-                            ),
-                            Expanded(
-                              child: Text(
-                                writer.name,
-                                style: TextStyle(fontSize: 16),
-                                overflow: TextOverflow.clip,
-                                softWrap: true,
+                              Expanded(
+                                child: Text(
+                                  direk.name,
+                                  style: TextStyle(fontSize: 16),
+                                  overflow: TextOverflow.clip,
+                                  softWrap: true,
+                                ),
                               ),
-                            ),
-                          ],
-                        );
-                      }).toList()),
-                    )
-                  : SizedBox(),
-              displayActors(),
-              displayAwards(),
-              displayLines(),
-            ],
+                            ],
+                          );
+                        }).toList()),
+                      )
+                    : SizedBox(),
+                writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                writers.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Text("Mga Manunulat: ",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )),
+                      )
+                    : SizedBox(),
+                writers.isNotEmpty ? SizedBox(height: 10) : SizedBox(),
+                writers.isNotEmpty
+                    ? Container(
+                        alignment: Alignment.topLeft,
+                        child: Column(
+                            children: writers.map<Widget>((writer) {
+                          return new Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              new Icon(Icons.fiber_manual_record, size: 16),
+                              SizedBox(
+                                width: 5,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  writer.name,
+                                  style: TextStyle(fontSize: 16),
+                                  overflow: TextOverflow.clip,
+                                  softWrap: true,
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList()),
+                      )
+                    : SizedBox(),
+                displayActors(),
+                displayAwards(),
+                displayLines(),
+              ],
+            ),
           ),
         );
     }
@@ -3098,13 +3246,12 @@ class ActorWidget extends StatefulWidget {
 
 class ActorWidgetState extends State<ActorWidget> {
   var temp;
-  Crew tempActor;
-  List<String> tempRoles;
   bool showError;
   List<Crew> actorId = [];
 
   @override
   void initState() {
+    super.initState();
     showError = widget.crew.crewId != null &&
             widget.crew.role != null &&
             widget.crew.role.isNotEmpty
@@ -3116,13 +3263,8 @@ class ActorWidgetState extends State<ActorWidget> {
             ? true
             : widget.crew.saved;
     if (widget.crew.crewId != null) {
-      // var actor =
-      //     widget.crewList.singleWhere((a) => a.crewId == widget.crew.crewId);
-
-      // if (actor != null) actorId = [actor];
       actorId = [widget.crew];
     }
-    super.initState();
   }
 
   @override
@@ -3140,13 +3282,14 @@ class ActorWidgetState extends State<ActorWidget> {
               ),
               child: ChipsInput(
                 initialValue: actorId,
+                // initialValue: widget.crew.crewId != null ? [widget.crew] : [],
                 maxChips: 1,
                 keyboardAppearance: Brightness.dark,
                 textCapitalization: TextCapitalization.words,
                 enabled: true,
                 textStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 16),
                 decoration: const InputDecoration(
-                  labelText: 'Pumili ng aktor',
+                  labelText: 'Pumili ng aktor ',
                   contentPadding: EdgeInsets.all(10),
                 ),
                 findSuggestions: (String query) {
@@ -3179,17 +3322,13 @@ class ActorWidgetState extends State<ActorWidget> {
                     setState(() {
                       // widget.crew.id is intentionally left out
                       widget.crew.crewId = newList[0].crewId;
-                      widget.crew.firstName = newList[0].firstName;
-                      widget.crew.middleName = newList[0].middleName;
-                      widget.crew.lastName = newList[0].lastName;
-                      widget.crew.suffix = newList[0].suffix;
                       widget.crew.name = newList[0].name;
                       showError = widget.crew.crewId != null &&
                               widget.crew.role != null &&
                               widget.crew.role.length != 0
                           ? false
                           : true;
-                      actorId = [newList[0]];
+                      actorId = [newList[0]]; // newlist[0]
                       if (!actorsFilter.contains(newList[0].crewId)) {
                         actorsFilter.add(newList[0].crewId);
                       }
@@ -3197,10 +3336,6 @@ class ActorWidgetState extends State<ActorWidget> {
                   } else {
                     setState(() {
                       widget.crew.crewId = null;
-                      widget.crew.firstName = null;
-                      widget.crew.middleName = null;
-                      widget.crew.lastName = null;
-                      widget.crew.suffix = null;
                       widget.crew.name = null;
                       showError = widget.crew.crewId != null &&
                               widget.crew.role != null &&
@@ -3225,7 +3360,6 @@ class ActorWidgetState extends State<ActorWidget> {
                       setState(() {
                         actorsFilter.remove(c.crewId);
                         widget.prevId.value = c.crewId;
-                        print(widget.prevId.value);
                       });
                       return state.deleteChip(c);
                     },
@@ -3331,10 +3465,9 @@ class ActorWidgetState extends State<ActorWidget> {
                       widget.crew.role.isNotEmpty) {
                     setState(() {
                       // save to actors and roles list
-                      widget.open.value = false;
                       widget.crew.saved = true;
+                      widget.open.value = false;
 
-                      // save roles in roles masterlist
                       widget.crew.role.forEach((a) {
                         if (!rolesFilter.value.contains(a))
                           rolesFilter.value.add(a);
