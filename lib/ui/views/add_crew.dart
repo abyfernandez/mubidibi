@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mime/mime.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -130,7 +131,7 @@ class _AddCrewState extends State<AddCrew> {
   List<String> stepperTitle = [
     "Mga Basic na Detalye",
     "Mga Pelikula",
-    "Display Photo at Gallery",
+    "Media",
     "Mga Award",
     "Review"
   ];
@@ -258,7 +259,7 @@ class _AddCrewState extends State<AddCrew> {
               // DateFormat("MMM. d, y", "fil").format(
               //         TZDateTime.from(_birthday, tz.getLocation('Asia/Manila'))) ??
               //     '';
-              DateFormat("MMM. d, y", "fil").format(_birthday) ?? '';
+              DateFormat("MMMM d, y", "fil").format(_birthday) ?? '';
         });
       }
     } else {
@@ -279,7 +280,7 @@ class _AddCrewState extends State<AddCrew> {
               // DateFormat("MMM. d, y", "fil").format(
               //         TZDateTime.from(_deathdate, tz.getLocation('Asia/Manila'))) ??
               // '';
-              DateFormat("MMM. d, y", "fil").format(_deathdate) ?? '';
+              DateFormat("MMMM d, y", "fil").format(_deathdate) ?? '';
         });
       }
     }
@@ -298,7 +299,7 @@ class _AddCrewState extends State<AddCrew> {
       });
     } else {
       // User canceled the picker
-      print("No image selected.");
+      Fluttertoast.showToast(msg: 'No file selected.');
     }
   }
 
@@ -389,6 +390,9 @@ class _AddCrewState extends State<AddCrew> {
                 ),
               )
             : SizedBox(),
+        filteredAwards != null && filteredAwards.isNotEmpty
+            ? SizedBox(height: 15)
+            : SizedBox()
       ],
     );
   }
@@ -412,7 +416,7 @@ class _AddCrewState extends State<AddCrew> {
         if (imagePaths.contains(path) == false) {
           return File(path);
         } else {
-          print('File already exists.'); // FlutterToast or Snackbar
+          Fluttertoast.showToast(msg: 'File already exists.');
         }
       }).toList();
 
@@ -435,7 +439,7 @@ class _AddCrewState extends State<AddCrew> {
       }
     } else {
       // User canceled the picker
-      print('No media selected.');
+      Fluttertoast.showToast(msg: 'No media selected.');
     }
   }
 
@@ -591,6 +595,9 @@ class _AddCrewState extends State<AddCrew> {
                 }).toList(),
               )
             : SizedBox(),
+        filteredGalleryList != null && filteredGalleryList.isNotEmpty
+            ? SizedBox(height: 15)
+            : SizedBox()
       ],
     );
   }
@@ -875,8 +882,6 @@ class _AddCrewState extends State<AddCrew> {
                                   // last step
                                   FocusScope.of(context).unfocus();
 
-                                  print('DATE: ${_birthday.toUtc()}');
-
                                   var confirm = await _dialogService
                                       .showConfirmationDialog(
                                           title: "Confirm Details",
@@ -953,8 +958,8 @@ class _AddCrewState extends State<AddCrew> {
                                           .map((a) => a.item)
                                           .toList();
 
-                                      awardsToSave.removeWhere(
-                                          (a) => awardsToDelete.contains(a.id));
+                                      awardsToSave.removeWhere((a) =>
+                                          awardsToDelete.contains(a.awardId));
                                     }
 
                                     // Gallery
@@ -1030,12 +1035,21 @@ class _AddCrewState extends State<AddCrew> {
                                     if (response != 0) {
                                       _saving =
                                           false; // set saving to false to trigger circular progress indicator
+
                                       // show success snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
-                                              'Crew added successfully.',
-                                              Colors.green));
+                                      // _scaffoldKey.currentState.showSnackBar(
+                                      //     mySnackBar(
+                                      //         context,
+                                      //         'Crew added successfully.',
+                                      //         Colors.green));
+
+                                      Fluttertoast.showToast(
+                                          msg: crewId != 0
+                                              ? 'Crew updated successfully.'
+                                              : 'Crew added successfully.',
+                                          backgroundColor: Colors.green,
+                                          textColor: Colors.white,
+                                          fontSize: 16);
 
                                       _saving =
                                           true; // set saving to true to trigger circular progress indicator
@@ -1065,11 +1079,18 @@ class _AddCrewState extends State<AddCrew> {
                                       _saving =
                                           false; // set saving to false to trigger circular progress indicator
                                       // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
+                                      // _scaffoldKey.currentState.showSnackBar(
+                                      // mySnackBar(
+                                      //     context,
+                                      //     'Something went wrong. Check your inputs and try again.',
+                                      //     Colors.red));
+
+                                      Fluttertoast.showToast(
+                                          msg:
                                               'Something went wrong. Check your inputs and try again.',
-                                              Colors.red));
+                                          backgroundColor: Colors.red,
+                                          textColor: Colors.white,
+                                          fontSize: 16);
                                     }
                                   }
                                 }
@@ -1127,7 +1148,6 @@ class _AddCrewState extends State<AddCrew> {
                 decoration:
                     BoxDecoration(borderRadius: BorderRadius.circular(10)),
                 child: TextFormField(
-                  // autofocus: true,
                   focusNode: firstNameNode,
                   keyboardType: TextInputType.text,
                   textCapitalization: TextCapitalization.words,
@@ -1156,7 +1176,8 @@ class _AddCrewState extends State<AddCrew> {
               SizedBox(height: 15),
               // CREW MIDDLE NAME
               Container(
-                color: Color.fromRGBO(240, 240, 240, 1),
+                decoration:
+                    BoxDecoration(borderRadius: BorderRadius.circular(10)),
                 child: TextFormField(
                   focusNode: middleNameNode,
                   textCapitalization: TextCapitalization.words,
@@ -1170,6 +1191,8 @@ class _AddCrewState extends State<AddCrew> {
                   },
                   decoration: InputDecoration(
                     labelText: "Middle Name",
+                    filled: true,
+                    fillColor: Color.fromRGBO(240, 240, 240, 1),
                     contentPadding: EdgeInsets.all(10),
                   ),
                 ),
@@ -2451,7 +2474,6 @@ class _AddCrewState extends State<AddCrew> {
                     : SizedBox(),
                 SizedBox(height: 15),
                 displayGallery(),
-                SizedBox(height: 15),
                 displayAwards(),
                 // SizedBox(height: 15),
               ],

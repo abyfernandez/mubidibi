@@ -25,7 +25,7 @@ exports.user = app => {
       if (err) return res.send(err)
 
       var result = await client.query(
-        "SELECT * FROM account WHERE id = $1", [req.params.id],
+        "SELECT *, concat_ws(' ', first_name, middle_name, last_name, suffix) as name FROM account WHERE id = $1", [req.params.id],
         function onResult(err, result) {
           release()
           res.send(err || JSON.stringify(result.rows[0]));

@@ -96,6 +96,9 @@ class _DashboardViewState extends State<DashboardView>
     fetchCrew();
     fabIcon = Icons.admin_panel_settings;
 
+    headerId = 0;
+    favoriteFlag.value = false;
+
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 260),

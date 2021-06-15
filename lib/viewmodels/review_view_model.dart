@@ -8,8 +8,6 @@ import 'package:flutter/foundation.dart';
 class ReviewViewModel extends BaseModel {
   List<Review> reviews = [];
   Review userReview;
-  // Review _editingReview;
-  bool isEditing = false;
   bool isEmpty = false;
   num overAllRating = 0.0;
 
@@ -110,6 +108,8 @@ class ReviewViewModel extends BaseModel {
         'upvote': value
       }),
     );
+
+    setBusy(false);
 
     if (response.statusCode == 200) {
       // returns freshly fetched set of reviews

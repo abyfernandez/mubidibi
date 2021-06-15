@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/locator.dart';
+import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/my_drawer.dart';
 import 'package:mubidibi/ui/views/search_view.dart';
@@ -19,6 +20,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final DialogService _dialogService = locator<DialogService>();
+  final NavigationService _navigationService = locator<NavigationService>();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int pageIndex = 0;
   List<DropdownMenuItem> genreItems = [];
@@ -87,12 +89,8 @@ class _HomeViewState extends State<HomeView> {
     super.initState();
   }
 
-  // TO DO: When drawer is open and home button is clicked, the page must return to the dashboard
-
   @override
   Widget build(BuildContext context) {
-    // final Size screenSize = MediaQuery.of(context).size;
-
     if (genreItems == null) return CircularProgressIndicator();
     return Scaffold(
       key: _scaffoldKey,
@@ -124,11 +122,11 @@ class _HomeViewState extends State<HomeView> {
               automaticallyImplyLeading: false,
               actions: [
                 Container(
+                  alignment: Alignment.centerRight,
                   margin: EdgeInsets.only(left: 10, right: 10, top: 5),
                   child: DropdownButton<dynamic>(
                     icon: null,
                     iconEnabledColor: Colors.white,
-                    // TO DO: see if may mas ok na solution for this, also check if walang overflow sa ibang device
                     hint: Text(
                       "               Categories",
                       style: TextStyle(color: Colors.white),
@@ -158,6 +156,7 @@ class _HomeViewState extends State<HomeView> {
                   child: GestureDetector(
                     onTap: () {
                       _scaffoldKey.currentState.openEndDrawer();
+                      print(_scaffoldKey.currentState.isEndDrawerOpen);
                     },
                     child: Icon(Icons.menu),
                   ),
@@ -202,13 +201,17 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Future<bool> onBackPress() async {
-    var dialogResponse = await _dialogService.showConfirmationDialog(
-        title: "Exit App",
-        description: "Are you sure you want to exit the app?",
-        confirmationTitle: 'Yes',
-        cancelTitle: 'No');
-    if (dialogResponse.confirmed) {
-      exit(0);
+    if (!_scaffoldKey.currentState.isEndDrawerOpen) {
+      var dialogResponse = await _dialogService.showConfirmationDialog(
+          title: "Exit App",
+          description: "Are you sure you want to exit the app?",
+          confirmationTitle: 'Yes',
+          cancelTitle: 'No');
+      if (dialogResponse.confirmed) {
+        exit(0);
+      }
+    } else {
+      _navigationService.pop();
     }
     return Future.value(false);
   }

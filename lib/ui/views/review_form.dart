@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider_architecture/viewmodel_provider.dart';
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'package:mubidibi/constants/route_names.dart';
@@ -59,35 +60,29 @@ class ReviewFormState extends State<ReviewForm> {
     return timeago.format(timeAgo, locale: 'en');
   }
 
-  // void fetchUserReview() async {
-  //   var model = ReviewViewModel();
+  void fetchUserReview() async {
+    var model = ReviewViewModel();
 
-  //   var reviews = await model.getAllReviews(
-  //       movieId: widget.movie.movieId.toString(),
-  //       accountId: widget.currentUser.userId);
+    var reviews = await model.getAllReviews(
+        movieId: widget.movie.movieId.toString(),
+        accountId: widget.currentUser.userId);
 
-  // setState(() {
-  // userReview = model.userReview;
-  // reviewController.text = userReview?.review ?? '';
-  // rate = userReview?.rating ?? 5.00;
-  // upvoted = userReview?.upvoted ?? null;
-  // upvoteCount = userReview?.upvoteCount ?? 0;
-  // downvoteCount = userReview?.downvoteCount ?? 0;
-  // isApproved = userReview?.isApproved ?? false;
-  // _edit = userReview != null ? false : true;
-  // });
-  // }
-
-  @override
-  void initState() {
-    // fetchUserReview();
-    super.initState();
+    setState(() {
+      userReview = model.userReview;
+      reviewController.text = userReview?.review ?? '';
+      rate = userReview?.rating ?? 5.00;
+      upvoted = userReview?.upvoted ?? null;
+      upvoteCount = userReview?.upvoteCount ?? 0;
+      downvoteCount = userReview?.downvoteCount ?? 0;
+      isApproved = userReview?.isApproved ?? false;
+      _edit = userReview != null ? false : true;
+    });
   }
 
   @override
-  void dispose() {
-    super.dispose();
-    reviewController.dispose();
+  void initState() {
+    fetchUserReview();
+    super.initState();
   }
 
   final GlobalKey<FormState> _reviewFormKey = GlobalKey<FormState>();
@@ -96,22 +91,6 @@ class ReviewFormState extends State<ReviewForm> {
   Widget build(BuildContext context) {
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
-      onModelReady: (model) async {
-        model
-            .getAllReviews(
-                movieId: widget.movie.movieId.toString(),
-                accountId: widget.currentUser.userId)
-            .then((r) {
-          userReview = model.userReview;
-          reviewController.text = userReview?.review ?? '';
-          rate = userReview?.rating ?? 5.00;
-          upvoted = userReview?.upvoted ?? null;
-          upvoteCount = userReview?.upvoteCount ?? 0;
-          downvoteCount = userReview?.downvoteCount ?? 0;
-          isApproved = userReview?.isApproved ?? false;
-          _edit = userReview != null ? false : true;
-        });
-      },
       builder: (context, model, child) => _edit == false && userReview != null
           ?
           // display currentUser's review
@@ -221,22 +200,41 @@ class ReviewFormState extends State<ReviewForm> {
                                                             .toString());
                                                   });
 
-                                                  widget.sKey.currentState
-                                                      .showSnackBar(mySnackBar(
-                                                          context,
-                                                          'You ' +
-                                                              (value ==
-                                                                      'approve'
-                                                                  ? "approved "
-                                                                  : "hid ") +
-                                                              "this review.",
-                                                          Colors.green));
+                                                  // widget.sKey.currentState
+                                                  //     .showSnackBar(mySnackBar(
+                                                  //         context,
+                                                  //         'You ' +
+                                                  //             (value ==
+                                                  //                     'approve'
+                                                  //                 ? "approved "
+                                                  //                 : "hid ") +
+                                                  //             "this review.",
+                                                  //         Colors.green));
+
+                                                  Fluttertoast.showToast(
+                                                      msg: 'You ' +
+                                                          (value == 'approve'
+                                                              ? "approved "
+                                                              : "hid ") +
+                                                          "this review.",
+                                                      backgroundColor:
+                                                          Colors.green,
+                                                      textColor: Colors.white,
+                                                      fontSize: 16);
                                                 } else {
-                                                  widget.sKey.currentState
-                                                      .showSnackBar(mySnackBar(
-                                                          context,
+                                                  // widget.sKey.currentState
+                                                  //     .showSnackBar(mySnackBar(
+                                                  //         context,
+                                                  //         "Something went wrong.",
+                                                  //         Colors.red));
+
+                                                  Fluttertoast.showToast(
+                                                      msg:
                                                           "Something went wrong.",
-                                                          Colors.red));
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                      textColor: Colors.white,
+                                                      fontSize: 16);
                                                 }
                                               } else {
                                                 var response = await _dialogService
@@ -284,13 +282,21 @@ class ReviewFormState extends State<ReviewForm> {
                                                       _edit = true;
                                                     });
 
-                                                    widget.sKey.currentState
-                                                        .showSnackBar(
-                                                      mySnackBar(
-                                                          context,
-                                                          'This review has been deleted.',
-                                                          Colors.green),
-                                                    );
+                                                    // widget.sKey.currentState
+                                                    //     .showSnackBar(
+                                                    //   mySnackBar(
+                                                    //       context,
+                                                    //       'This review has been deleted.',
+                                                    //       Colors.green),
+                                                    // );
+
+                                                    Fluttertoast.showToast(
+                                                        msg:
+                                                            'This review has been deleted.',
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        textColor: Colors.white,
+                                                        fontSize: 16);
                                                   }
                                                 }
                                               }
@@ -353,7 +359,6 @@ class ReviewFormState extends State<ReviewForm> {
                                                     ? Row(
                                                         children: [
                                                           GestureDetector(
-                                                            // TO DO: Warning sign na need mag-sign in pag tinatry ng guest user magvote -- need improvement
                                                             onTap:
                                                                 widget.currentUser !=
                                                                         null
@@ -740,7 +745,6 @@ class ReviewFormState extends State<ReviewForm> {
                                     onPressed: submitting == false
                                         ? () async {
                                             reviewFocusNode.unfocus();
-
                                             if (_reviewFormKey.currentState
                                                 .validate()) {
                                               // submit post and save into db
@@ -778,26 +782,50 @@ class ReviewFormState extends State<ReviewForm> {
                                                   });
 
                                                   // show success snackbar
-                                                  widget.sKey.currentState
-                                                      .showSnackBar(mySnackBar(
-                                                          context,
+                                                  // widget.sKey.currentState
+                                                  //     .showSnackBar(mySnackBar(
+                                                  //         context,
+                                                  //         'Your review is pending for approval.',
+                                                  //         Colors.orange));
+
+                                                  Fluttertoast.showToast(
+                                                      msg:
                                                           'Your review is pending for approval.',
-                                                          Colors.orange));
+                                                      backgroundColor:
+                                                          Colors.orange,
+                                                      textColor: Colors.white,
+                                                      fontSize: 16);
                                                 } else {
                                                   // show error snackbar
-                                                  widget.sKey.currentState
-                                                      .showSnackBar(mySnackBar(
-                                                          context,
+                                                  // widget.sKey.currentState
+                                                  //     .showSnackBar(mySnackBar(
+                                                  //         context,
+                                                  //         'Something went wrong. Please try again later.',
+                                                  //         Colors.red));
+
+                                                  Fluttertoast.showToast(
+                                                      msg:
                                                           'Something went wrong. Please try again later.',
-                                                          Colors.red));
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                      textColor: Colors.white,
+                                                      fontSize: 16);
                                                 }
                                               } else {
-                                                widget.sKey.currentState
-                                                    .showSnackBar(mySnackBar(
-                                                        context,
+                                                // widget.sKey.currentState
+                                                //     .showSnackBar(mySnackBar(
+                                                //         context,
+                                                //         'Something went wrong. Please try again later.',
+                                                //         Colors.red));
+
+                                                Fluttertoast.showToast(
+                                                    msg:
                                                         'Something went wrong. Please try again later.',
-                                                        Colors.red));
+                                                    backgroundColor: Colors.red,
+                                                    textColor: Colors.white,
+                                                    fontSize: 16);
                                               }
+                                              reviewController.clear();
                                             }
                                           }
                                         : null,
@@ -818,8 +846,7 @@ class ReviewFormState extends State<ReviewForm> {
                                         setState(() {
                                           // reset
                                           userReview = null;
-                                          reviewController.text =
-                                              userReview?.review ?? '';
+                                          reviewController.clear();
                                           rate = userReview?.rating ?? 5.0;
                                           upvoted = userReview?.upvoted ?? null;
                                           upvoteCount =

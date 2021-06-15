@@ -1,6 +1,5 @@
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
-import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/views/configure_admin_view.dart';
@@ -9,6 +8,7 @@ import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/home_view.dart';
 import 'package:flutter/material.dart';
 import 'package:mubidibi/constants/route_names.dart';
+import 'package:mubidibi/ui/views/list_all_view.dart';
 import 'package:mubidibi/ui/views/login_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/views/search_view.dart';
@@ -115,6 +115,16 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           type: type,
           filter: filter,
           title: title,
+        ),
+      );
+    case ListAllViewRoute:
+      var items = settings.arguments as List;
+      var type = settings.arguments as String;
+      return _getPageRoute(
+        routeName: settings.name,
+        viewToShow: ListAllView(
+          items: items,
+          type: type,
         ),
       );
     default:

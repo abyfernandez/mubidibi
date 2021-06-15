@@ -47,7 +47,8 @@ class MyTooltip extends StatelessWidget {
   Widget build(BuildContext context) {
     final key = GlobalKey<State<Tooltip>>();
     return Tooltip(
-      margin: EdgeInsets.all(10),
+      margin: EdgeInsets.all(20),
+      padding: EdgeInsets.all(10),
       key: key,
       message: message,
       child: GestureDetector(

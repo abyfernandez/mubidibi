@@ -13,7 +13,8 @@ exports.movie = app => {
         query = query.concat(` WHERE is_deleted = false `);
       }
 
-      query = query.concat(` order by id`);
+      if (req.body.mode == "list") query = query.concat(` order by id`);
+      else if (req.body.mode == "form") query = query.concat(` order by title`);
 
       var result = await client.query(
         query).then(async (result) => {
@@ -126,6 +127,8 @@ exports.movie = app => {
     var trailers = []; // trailers urls 
     var audios = []; // audios urls 
 
+
+
     // separate media from other data
     if (pics != null) {
       for await (const pic of pics) {
@@ -160,10 +163,10 @@ exports.movie = app => {
         async function (err, result) {
           if (err) return err;
           else {
-            if (movieData.media_type[i] == "poster") posters.push(result.url);
-            else if (movieData.media_type[i] == "gallery") gallery.push(result.url);
-            else if (movieData.media_type[i] == "trailer") trailers.push(result.url);
-            else if (movieData.media_type[i] == "audio") audios.push(result.url);
+            if (movieData.media_type[i] == "poster") posters.push(result);
+            else if (movieData.media_type[i] == "gallery") gallery.push(result);
+            else if (movieData.media_type[i] == "trailer") trailers.push(result);
+            else if (movieData.media_type[i] == "audio") audios.push(result);
           }
         }
       );
@@ -240,7 +243,7 @@ exports.movie = app => {
         // posters
         for (var i = 0; i < posters.length; i++) {
           var desc = movieData.poster_desc[i] != null ? movieData.poster_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${posters[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type) values (${id}, '${posters[i].url}', '${posters[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'poster')`);
           else query = query.concat(`null, 'poster')`);
           client.query(query);
@@ -249,7 +252,7 @@ exports.movie = app => {
         // gallery
         for (var i = 0; i < gallery.length; i++) {
           var desc = movieData.gallery_desc[i] != null ? movieData.gallery_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${gallery[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type) values (${id}, '${gallery[i].url}', '${gallery[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
           else query = query.concat(`null, 'gallery')`);
           client.query(query);
@@ -258,7 +261,7 @@ exports.movie = app => {
         // trailers
         for (var i = 0; i < trailers.length; i++) {
           var desc = movieData.trailer_desc[i] != null ? movieData.trailer_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${trailers[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type) values (${id}, '${trailers[i].url}', '${trailers[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'trailer')`);
           else query = query.concat(`null, 'trailer')`);
           client.query(query);
@@ -267,7 +270,7 @@ exports.movie = app => {
         // audio
         for (var i = 0; i < audios.length; i++) {
           var desc = movieData.audio_desc[i] != null ? movieData.audio_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${audios[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type, format) values (${id}, '${audios[i].url}', '${audios[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'audio')`);
           else query = query.concat(`null, 'audio')`);
           client.query(query);
@@ -391,10 +394,10 @@ exports.movie = app => {
         async function (err, result) {
           if (err) return err;
           else {
-            if (movieData.media_type[i] == "poster") posters.push(result.url);
-            else if (movieData.media_type[i] == "gallery") gallery.push(result.url);
-            else if (movieData.media_type[i] == "trailer") trailers.push(result.url);
-            else if (movieData.media_type[i] == "audio") audios.push(result.url);
+            if (movieData.media_type[i] == "poster") posters.push(result);
+            else if (movieData.media_type[i] == "gallery") gallery.push(result);
+            else if (movieData.media_type[i] == "trailer") trailers.push(result);
+            else if (movieData.media_type[i] == "audio") audios.push(result);
           }
         }
       );
@@ -469,7 +472,7 @@ exports.movie = app => {
         // posters
         for (var i = 0; i < posters.length; i++) {
           var desc = movieData.poster_desc[i] != null ? movieData.poster_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${posters[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type) values (${id}, '${posters[i].url}', '${posters[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'poster')`);
           else query = query.concat(`null, 'poster')`);
           client.query(query);
@@ -478,7 +481,7 @@ exports.movie = app => {
         // gallery
         for (var i = 0; i < gallery.length; i++) {
           var desc = movieData.gallery_desc[i] != null ? movieData.gallery_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${gallery[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type) values (${id}, '${gallery[i].url}', '${gallery[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'gallery')`);
           else query = query.concat(`null, 'gallery')`);
           client.query(query);
@@ -487,7 +490,7 @@ exports.movie = app => {
         // trailers
         for (var i = 0; i < trailers.length; i++) {
           var desc = movieData.trailer_desc[i] != null ? movieData.trailer_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${trailers[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type) values (${id}, '${trailers[i].url}', '${trailers[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'trailer')`);
           else query = query.concat(`null, 'trailer')`);
           client.query(query);
@@ -496,7 +499,7 @@ exports.movie = app => {
         // audio
         for (var i = 0; i < audios.length; i++) {
           var desc = movieData.audio_desc[i] != null ? movieData.audio_desc[i].replace(/'/g, "''") : null;
-          var query = `insert into movie_media (movie_id, url, description, type) values (${id}, '${audios[i]}', `;
+          var query = `insert into movie_media (movie_id, url, format, description, type) values (${id}, '${audios[i].url}', '${audios[i].resource_type}', `;
           if (desc != null) query = query.concat(`'${desc}', 'audio')`);
           else query = query.concat(`null, 'audio')`);
           client.query(query);
@@ -731,7 +734,7 @@ exports.movie = app => {
       if (err) return res.send(err)
 
       client.query(
-        'select distinct unnest(genre) as genre from movie',
+        'select distinct unnest(genre) as genre from movie order by genre',
         function onResult(err, result) {
           console.log(result);
           release()
@@ -786,7 +789,7 @@ exports.movie = app => {
           function onResult(err, result) {
             console.log("delete: ", result);
             release();
-            res.send(err || JSON.stringify(!result.rows.length ? req.body.movie_id : 0));
+            res.send(err || JSON.stringify(!result.rows.length ? 0 : req.body.movie_id));
           }
         );
       } else if (req.body.type == 'add') {

@@ -3,6 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/services/authentication_service.dart';
@@ -368,18 +369,18 @@ class _AddAwardState extends State<AddAward>
                                                         SizedBox(width: 10),
                                                         Expanded(
                                                           child: Text(
-                                                              awards[i]
-                                                                      .description ??
-                                                                  '-',
-                                                              style: TextStyle(
-                                                                  fontSize: 16,
-                                                                  color: awards[
-                                                                              i]
-                                                                          .isDeleted
-                                                                      ? Colors
-                                                                          .black45
-                                                                      : Colors
-                                                                          .black)),
+                                                            awards[i]
+                                                                    .description ??
+                                                                '-',
+                                                            style: TextStyle(
+                                                                fontSize: 16,
+                                                                color: awards[i]
+                                                                        .isDeleted
+                                                                    ? Colors
+                                                                        .black45
+                                                                    : Colors
+                                                                        .black),
+                                                          ),
                                                         ),
                                                       ],
                                                     ),
@@ -531,15 +532,30 @@ class _AddAwardState extends State<AddAward>
 
                                                               if (id != 0) {
                                                                 _saving = false;
-                                                                _scaffoldKey
-                                                                    .currentState
-                                                                    .showSnackBar(mySnackBar(
-                                                                        context,
-                                                                        awards[i].isDeleted
-                                                                            ? 'Award restored successfully.'
-                                                                            : 'Award hidden successfully.',
+
+                                                                // _scaffoldKey
+                                                                //     .currentState
+                                                                //     .showSnackBar(mySnackBar(
+                                                                //         context,
+                                                                //         awards[i].isDeleted
+                                                                //             ? 'Award restored successfully.'
+                                                                //             : 'Award hidden successfully.',
+                                                                //         Colors
+                                                                //             .green));
+
+                                                                Fluttertoast.showToast(
+                                                                    msg: awards[i]
+                                                                            .isDeleted
+                                                                        ? 'Award restored successfully.'
+                                                                        : 'Award hidden successfully.',
+                                                                    backgroundColor:
                                                                         Colors
-                                                                            .green));
+                                                                            .green,
+                                                                    textColor:
+                                                                        Colors
+                                                                            .white,
+                                                                    fontSize:
+                                                                        16);
 
                                                                 Timer(
                                                                     const Duration(
@@ -591,7 +607,10 @@ class _AddAwardState extends State<AddAward>
                                               currentStep = step;
                                               if (_formKey.currentState
                                                       .validate() &&
-                                                  category.isNotEmpty) {}
+                                                  category.isNotEmpty) {
+                                                setState(
+                                                    () => currentStep = step);
+                                              }
                                             });
                                           } else {
                                             // allow tapping of steps
@@ -658,13 +677,23 @@ class _AddAwardState extends State<AddAward>
                                                 _saving =
                                                     false; // set saving to false to trigger circular progress indicator
                                                 // show success snackbar
-                                                _scaffoldKey.currentState
-                                                    .showSnackBar(mySnackBar(
-                                                        context,
-                                                        awardId != 0
-                                                            ? 'Award updated successfully.'
-                                                            : 'Award added successfully.',
-                                                        Colors.green));
+                                                // _scaffoldKey.currentState
+                                                //     .showSnackBar(mySnackBar(
+                                                //         context,
+                                                //         awardId != 0
+                                                //             ? 'Award updated successfully.'
+                                                //             : 'Award added successfully.',
+                                                //         Colors.green));
+
+                                                Fluttertoast.showToast(
+                                                    msg: awardId != 0
+                                                        ? 'Award updated successfully.'
+                                                        : 'Award added successfully.',
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                    textColor: Colors.white,
+                                                    fontSize: 16);
+
                                                 Timer(
                                                     const Duration(
                                                         milliseconds: 2000),
@@ -680,11 +709,18 @@ class _AddAwardState extends State<AddAward>
                                                 _saving =
                                                     false; // set saving to false to trigger circular progress indicator
                                                 // show error snackbar
-                                                _scaffoldKey.currentState
-                                                    .showSnackBar(mySnackBar(
-                                                        context,
+                                                // _scaffoldKey.currentState
+                                                //     .showSnackBar(mySnackBar(
+                                                //         context,
+                                                //         'Something went wrong. Check your inputs and try again.',
+                                                //         Colors.red));
+
+                                                Fluttertoast.showToast(
+                                                    msg:
                                                         'Something went wrong. Check your inputs and try again.',
-                                                        Colors.red));
+                                                    backgroundColor: Colors.red,
+                                                    textColor: Colors.white,
+                                                    fontSize: 16);
                                               }
                                             }
                                           }

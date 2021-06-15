@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mime/mime.dart';
 import 'package:mubidibi/models/media_file.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
@@ -71,12 +72,12 @@ class MediaWidgetState extends State<MediaWidget> {
           widget.item.file = File(result.files.single.path);
         });
       } else {
-        print('File already exists.'); // TO DO: FlutterToast or SnackBar
+        Fluttertoast.showToast(msg: 'File already exists.');
       }
       return null;
     } else {
       // User canceled the picker
-      print('No media selected.'); // TO DO: FlutterToast or SnackBar
+      Fluttertoast.showToast(msg: 'No file selected.');
     }
   }
 
@@ -106,12 +107,12 @@ class MediaWidgetState extends State<MediaWidget> {
             widget.item.file = File(result.files.single.path);
           });
         } else {
-          print('File already exists.'); // TO DO: FlutterToast or SnackBar
+          Fluttertoast.showToast(msg: 'File already exists.');
         }
         return null;
       } else {
         // User canceled the picker
-        print('No media selected.'); // TO DO: FlutterToast or SnackBar
+        Fluttertoast.showToast(msg: 'No file selected.');
       }
     } else if (widget.item.type == "poster") {
       // single file
@@ -136,12 +137,12 @@ class MediaWidgetState extends State<MediaWidget> {
             widget.item.file = File(result.files.single.path);
           });
         } else {
-          print('File already exists.'); // TO DO: FlutterToast or SnackBar
+          Fluttertoast.showToast(msg: 'File already exists.');
         }
         return null;
       } else {
         // User canceled the picker
-        print('No media selected.'); // TO DO: FlutterToast or SnackBar
+        Fluttertoast.showToast(msg: 'No file selected.');
       }
     }
   }
@@ -170,12 +171,12 @@ class MediaWidgetState extends State<MediaWidget> {
           widget.item.file = File(result.files.single.path);
         });
       } else {
-        print('File already exists.'); // TO DO: FlutterToast or SnackBar
+        Fluttertoast.showToast(msg: 'File already exists.');
       }
       return null;
     } else {
       // User canceled the picker
-      print('No file selected.'); // TO DO: FlutterToast or SnackBar
+      Fluttertoast.showToast(msg: 'No file selected.');
     }
   }
 
@@ -203,12 +204,12 @@ class MediaWidgetState extends State<MediaWidget> {
           widget.item.file = File(result.files.single.path);
         });
       } else {
-        print('File already exists.'); // TO DO: FlutterToast or SnackBar
+        Fluttertoast.showToast(msg: 'File already exists.');
       }
       return null;
     } else {
       // User canceled the picker
-      print('No media selected.'); // TO DO: FlutterToast or SnackBar
+      Fluttertoast.showToast(msg: 'No file selected.');
     }
   }
 
@@ -404,7 +405,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                           .startsWith('video/') ==
                                       true) ||
                               (widget.item.url != null &&
-                                  !widget.item.type.contains('/image/upload/')))
+                                  widget.item.format != 'image'))
                       // For Gallery type with Video Formats --
                       ? Column(
                           children: [
@@ -548,8 +549,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                             widget.item.url == null) ||
                                         (widget.item.file == null &&
                                             widget.item.url != null &&
-                                            widget.item.url
-                                                .contains('/image/upload/'))
+                                            widget.item.format == 'image')
                                     ? Container(
                                         padding: EdgeInsets.only(left: 10),
                                         child: Stack(
@@ -940,8 +940,7 @@ class MediaWidgetState extends State<MediaWidget> {
                               lookupMimeType(widget.item.file.path)
                                       .startsWith('audio/') ==
                                   true)) ||
-                      (widget.item.url != null &&
-                          !widget.item.url.contains('/image/upload/'))
+                      (widget.item.url != null && widget.item.format != 'image')
                   ? SizedBox(height: 15)
                   : SizedBox(),
               Container(
@@ -976,8 +975,7 @@ class MediaWidgetState extends State<MediaWidget> {
                             lookupMimeType(widget.item.file.path)
                                     .startsWith('audio/') ==
                                 true)) ||
-                    (widget.item.url != null &&
-                        !widget.item.url.contains('/image/upload/'))
+                    (widget.item.url != null && widget.item.format != 'image')
                 ? EdgeInsets.zero
                 : EdgeInsets.all(10),
             margin: EdgeInsets.only(bottom: 10, top: 10),
@@ -991,7 +989,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                         .startsWith('audio/') ==
                                     true)) ||
                         (widget.item.url != null &&
-                            !widget.item.url.contains('/image/upload/'))
+                            widget.item.format != 'image')
                     ? Container(
                         margin: EdgeInsets.all(10),
                         child: Row(
@@ -1010,7 +1008,10 @@ class MediaWidgetState extends State<MediaWidget> {
                             Container(
                               alignment: Alignment.topRight,
                               child: GestureDetector(
-                                child: Icon(Icons.edit_outlined),
+                                // child: Icon(Icons.edit_outlined),
+                                child: Text('EDIT',
+                                    style: TextStyle(
+                                        color: Colors.black54, fontSize: 16)),
                                 onTap: () {
                                   setState(() {
                                     widget.open.value = true;
@@ -1031,7 +1032,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                         .startsWith('image/') ==
                                     true) ||
                             (widget.item.url != null &&
-                                widget.item.url.contains('/image/upload/'))
+                                widget.item.format == 'image')
                         ? Container(
                             alignment: Alignment.centerLeft,
                             height: 100,
@@ -1078,7 +1079,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                         .startsWith('image/') ==
                                     true) ||
                             (widget.item.url != null &&
-                                widget.item.url.contains('/image/upload/'))
+                                widget.item.format == 'image')
                         ? SizedBox(width: 15)
                         : SizedBox(),
                     Expanded(
@@ -1087,7 +1088,7 @@ class MediaWidgetState extends State<MediaWidget> {
                                           .startsWith('image/') ==
                                       true) ||
                               (widget.item.url != null &&
-                                  widget.item.url.contains('/image/upload/'))
+                                  widget.item.format == 'image')
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1108,7 +1109,11 @@ class MediaWidgetState extends State<MediaWidget> {
                                 Container(
                                   alignment: Alignment.topRight,
                                   child: GestureDetector(
-                                    child: Icon(Icons.edit_outlined),
+                                    // child: Icon(Icons.edit_outlined),
+                                    child: Text('EDIT',
+                                        style: TextStyle(
+                                            color: Colors.black54,
+                                            fontSize: 16)),
                                     onTap: () {
                                       setState(() {
                                         widget.open.value = true;

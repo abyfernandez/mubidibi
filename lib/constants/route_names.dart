@@ -13,3 +13,4 @@ const String CrewViewRoute = "CrewView";
 const String SearchViewRoute = "SearchView";
 const String SeeAllViewRoute = "SeeAllView";
 const String ConfigureAdminViewRoute = "ConfigureAdminView";
+const String ListAllViewRoute = "ListAllView";

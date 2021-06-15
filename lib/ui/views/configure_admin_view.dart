@@ -1,9 +1,9 @@
 // ADD AND REMOVE ADMINS
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mubidibi/models/user.dart';
@@ -24,15 +24,12 @@ class ConfigureAdminView extends StatefulWidget {
   _ConfigureAdminViewState createState() => _ConfigureAdminViewState();
 }
 
-class _ConfigureAdminViewState extends State<ConfigureAdminView>
-    with SingleTickerProviderStateMixin {
+class _ConfigureAdminViewState extends State<ConfigureAdminView> {
   var currentUser;
   bool _saving = false;
   List<User> users = [];
   List<int> changed =
       []; // records ids of users whose isAdmin status has been modified by the admin
-  TabController _tabController;
-  int index = 0;
 
   final _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -49,27 +46,10 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView>
     });
   }
 
-  bool checkIndex() {
-    return index == 1;
-  }
-
-  Widget getTitle() {
-    return index == 0
-        ? Text(
-            "Mga Admin",
-            style: TextStyle(color: Colors.black),
-          )
-        : Text(
-            "Account",
-            style: TextStyle(color: Colors.black),
-          );
-  }
-
   @override
   void initState() {
     currentUser = _authenticationService.currentUser;
     fetchUsers();
-    _tabController = new TabController(vsync: this, length: 2);
     initializeDateFormatting();
     tz.initializeTimeZones();
 
@@ -82,264 +62,196 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView>
 
     return ViewModelProvider<UserViewModel>.withConsumer(
       viewModel: UserViewModel(),
-      builder: (context, model, child) => DefaultTabController(
-        length: 2,
-        child: Scaffold(
-            key: _scaffoldKey,
-            resizeToAvoidBottomInset: false,
-            appBar: AppBar(
-              title: getTitle(),
-              backgroundColor: Colors.white,
-              shadowColor: Colors.transparent,
-            ),
-            body: ModalProgressHUD(
-              inAsyncCall: _saving,
-              child: AnnotatedRegion<SystemUiOverlayStyle>(
-                value: SystemUiOverlayStyle.light,
-                child: GestureDetector(
-                  onTap: () => FocusScope.of(context).unfocus(),
-                  child: Container(
-                    height: double.infinity,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 10),
-                        SizedBox(
-                          height: 50,
-                          child: AppBar(
-                            shadowColor: Colors.transparent,
-                            backgroundColor: Colors.transparent,
-                            bottom: TabBar(
-                              controller: _tabController,
-                              onTap: (val) {
-                                FocusScope.of(context).unfocus();
-                                setState(() {
-                                  index = val;
-                                });
-                              },
-                              labelColor: Colors.blue,
-                              unselectedLabelColor: Colors.black54,
-                              tabs: [
-                                Tab(
-                                  child: Text('Mga Admin'),
-                                ),
-                                Tab(
-                                  child: Text('Account'),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(height: 20), //20
-
-                        Expanded(
-                            child: TabBarView(
-                          controller: _tabController,
+      builder: (context, model, child) => Scaffold(
+        key: _scaffoldKey,
+        resizeToAvoidBottomInset: false,
+        appBar: AppBar(
+          title: Text('Mga Admin'),
+          backgroundColor: Colors.white,
+          shadowColor: Colors.transparent,
+        ),
+        body: ModalProgressHUD(
+          inAsyncCall: _saving,
+          child: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle.light,
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Container(
+                height: double.infinity,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 10),
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      child: SingleChildScrollView(
+                        child: Column(
                           children: [
-                            // TAB NO. 1
                             Container(
-                              padding: EdgeInsets.all(10),
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 10),
-                                      child: Text(
-                                          'Lagyan ng check ang mga nais mong maging admin.',
-                                          style: TextStyle(
-                                              fontStyle: FontStyle.italic,
-                                              color: Colors.grey)),
-                                    ),
-                                    ListView.builder(
-                                      physics: BouncingScrollPhysics(),
-                                      shrinkWrap: true,
-                                      itemCount: users.length,
-                                      itemBuilder: (context, i) {
-                                        return Container(
-                                          color: Colors.white,
-                                          margin: EdgeInsets.only(bottom: 5),
-                                          child: ExpansionTile(
-                                            tilePadding: EdgeInsets.symmetric(
-                                                horizontal: 10),
-                                            expandedAlignment:
-                                                Alignment.centerLeft,
-                                            expandedCrossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            title: CheckboxListTile(
-                                                activeColor: Colors.lightBlue,
-                                                contentPadding: EdgeInsets.zero,
-                                                controlAffinity:
-                                                    ListTileControlAffinity
-                                                        .leading,
-                                                value: users[i].isAdmin,
-                                                onChanged: (bool newVal) {
-                                                  setState(() {
-                                                    users[i].isAdmin = newVal;
-                                                    // save index of modified tile
-                                                    if (changed.contains(i) ==
-                                                        false) {
-                                                      changed.add(i);
-                                                    }
-                                                  });
-                                                },
-                                                title: Text(users[i].firstName +
-                                                    (users[i].middleName != null
-                                                        ? " " +
-                                                            users[i].middleName
-                                                        : "") +
-                                                    (users[i].lastName != null
-                                                        ? " " +
-                                                            users[i].lastName
-                                                        : "") +
-                                                    (users[i].suffix != null
-                                                        ? " " + users[i].suffix
-                                                        : ""))),
-                                            children: [
-                                              Container(
-                                                padding: EdgeInsets.only(
-                                                    left: 10,
-                                                    right: 10,
-                                                    bottom: 10,
-                                                    top: 0),
-                                                child: Column(
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                            Icons.cake_outlined,
-                                                            color: Colors.pink),
-                                                        SizedBox(width: 10),
-                                                        Text(
-                                                            users[i].birthday !=
-                                                                        null &&
-                                                                    users[i]
-                                                                            .birthday
-                                                                            .trim() !=
-                                                                        ''
-                                                                ? DateFormat(
-                                                                        "MMM. d, y",
-                                                                        "fil")
-                                                                    .format(TZDateTime.from(
-                                                                        DateTime.parse(users[i]
-                                                                            .birthday),
-                                                                        tz.getLocation(
-                                                                            'Asia/Manila')))
-                                                                : '-',
-                                                            style: TextStyle(
-                                                                fontSize: 16)),
-                                                      ],
-                                                    ),
-                                                    Row(
-                                                      children: [
-                                                        Icon(
-                                                            Icons
-                                                                .email_outlined,
-                                                            color: Colors
-                                                                .lightBlue),
-                                                        SizedBox(width: 10),
-                                                        Text(users[i].email,
-                                                            style: TextStyle(
-                                                                fontSize: 16)),
-                                                      ],
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                            childrenPadding: EdgeInsets.only(
-                                                left: 55, right: 10),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                    SizedBox(height: 20),
-                                    Container(
-                                      padding: EdgeInsets.only(right: 10),
-                                      alignment: Alignment.centerRight,
-                                      child: FlatButton(
-                                        color: Colors.lightBlue,
-                                        onPressed: () async {
-                                          // save values
-                                          // will send the list of users as well as the list of indexes to be updated
-                                          _saving =
-                                              true; // set saving to true to trigger circular progress indicator
-
-                                          var res = await model.updateAdmins(
-                                              users: users, changed: changed);
-
-                                          if (res == true) {
-                                            _saving =
-                                                false; // set saving to false to trigger circular progress indicator
-
-                                            _scaffoldKey.currentState
-                                                .showSnackBar(mySnackBar(
-                                                    context,
-                                                    'Users updated successfully.',
-                                                    Colors.green));
-
-                                            Timer(
-                                                const Duration(
-                                                    milliseconds: 2000), () {
-                                              fetchUsers();
-
-                                              // Navigator.pushReplacement(
-                                              //   context,
-                                              //   MaterialPageRoute(
-                                              //     builder: (context) =>
-                                              //         ConfigureAdminView(),
-                                              //   ),
-                                              // );
-                                            });
-                                          } else {
-                                            _saving =
-                                                false; // set saving to false to trigger circular progress indicator
-                                            _scaffoldKey.currentState
-                                                .showSnackBar(mySnackBar(
-                                                    context,
-                                                    'Error updating users.',
-                                                    Colors.red));
-
-                                            Timer(
-                                                const Duration(
-                                                    milliseconds: 2000), () {
-                                              fetchUsers();
-                                              // Navigator.pushReplacement(
-                                              //   context,
-                                              //   MaterialPageRoute(
-                                              //     builder: (context) =>
-                                              //         ConfigureAdminView(),
-                                              //   ),
-                                              // );
-                                            });
-                                          }
+                              padding: EdgeInsets.symmetric(vertical: 10),
+                              child: Text(
+                                  'Lagyan ng check ang mga nais mong maging admin.',
+                                  style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.grey)),
+                            ),
+                            ListView.builder(
+                              physics: BouncingScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: users.length,
+                              itemBuilder: (context, i) {
+                                return Container(
+                                  color: Colors.white,
+                                  margin: EdgeInsets.only(bottom: 5),
+                                  child: ExpansionTile(
+                                    tilePadding:
+                                        EdgeInsets.symmetric(horizontal: 10),
+                                    expandedAlignment: Alignment.centerLeft,
+                                    expandedCrossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    title: CheckboxListTile(
+                                        activeColor: Colors.lightBlue,
+                                        contentPadding: EdgeInsets.zero,
+                                        controlAffinity:
+                                            ListTileControlAffinity.leading,
+                                        value: users[i].isAdmin,
+                                        onChanged: (bool newVal) {
+                                          setState(() {
+                                            users[i].isAdmin = newVal;
+                                            // save index of modified tile
+                                            if (changed.contains(i) == false) {
+                                              changed.add(i);
+                                            }
+                                          });
                                         },
-                                        child: Text(
-                                          'Save',
-                                          style: TextStyle(color: Colors.white),
+                                        title: Text(users[i].name)),
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.only(
+                                            left: 10,
+                                            right: 10,
+                                            bottom: 10,
+                                            top: 0),
+                                        child: Column(
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Icon(Icons.cake_outlined),
+                                                SizedBox(width: 10),
+                                                Text(
+                                                    users[i].birthday != null &&
+                                                            users[i]
+                                                                    .birthday
+                                                                    .trim() !=
+                                                                ''
+                                                        ? DateFormat(
+                                                                "MMM. d, y",
+                                                                "fil")
+                                                            .format(TZDateTime.from(
+                                                                DateTime.parse(
+                                                                    users[i]
+                                                                        .birthday),
+                                                                tz.getLocation(
+                                                                    'Asia/Manila')))
+                                                        : '-',
+                                                    style: TextStyle(
+                                                        fontSize: 16)),
+                                              ],
+                                            ),
+                                            Row(
+                                              children: [
+                                                Icon(Icons.email_outlined),
+                                                SizedBox(width: 10),
+                                                Text(
+                                                  users[i].email,
+                                                  style:
+                                                      TextStyle(fontSize: 16),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                    childrenPadding:
+                                        EdgeInsets.only(left: 55, right: 10),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(height: 20),
+                            Container(
+                              padding: EdgeInsets.only(right: 10),
+                              alignment: Alignment.centerRight,
+                              child: FlatButton(
+                                color: Colors.lightBlue,
+                                onPressed: () async {
+                                  // save values
+                                  // will send the list of users as well as the list of indexes to be updated
+                                  _saving =
+                                      true; // set saving to true to trigger circular progress indicator
+
+                                  var res = await model.updateAdmins(
+                                      users: users, changed: changed);
+
+                                  if (res == true) {
+                                    _saving =
+                                        false; // set saving to false to trigger circular progress indicator
+
+                                    // _scaffoldKey.currentState.showSnackBar(
+                                    //     mySnackBar(
+                                    //         context,
+                                    //         'Users updated successfully.',
+                                    //         Colors.green));
+
+                                    Fluttertoast.showToast(
+                                        msg: 'Users updated successfully.',
+                                        backgroundColor: Colors.green,
+                                        textColor: Colors.white,
+                                        fontSize: 16);
+
+                                    Timer(const Duration(milliseconds: 2000),
+                                        () {
+                                      fetchUsers();
+                                    });
+                                  } else {
+                                    _saving =
+                                        false; // set saving to false to trigger circular progress indicator
+                                    // _scaffoldKey.currentState.showSnackBar(
+                                    //     mySnackBar(
+                                    //         context,
+                                    //         'Error updating users.',
+                                    //         Colors.red));
+
+                                    Fluttertoast.showToast(
+                                        msg: 'Error updating users.',
+                                        backgroundColor: Colors.red,
+                                        textColor: Colors.white,
+                                        fontSize: 16);
+
+                                    Timer(const Duration(milliseconds: 2000),
+                                        () {
+                                      fetchUsers();
+                                    });
+                                  }
+                                },
+                                child: Text(
+                                  'Save',
+                                  style: TextStyle(color: Colors.white),
                                 ),
                               ),
                             ),
-
-                            // TAB NO. 2
-                            Container(
-                              padding: EdgeInsets.all(10),
-                              child: Text('test'),
-                            ),
                           ],
-                        )),
-                      ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            )),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:sleek_circular_slider/sleek_circular_slider.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:mubidibi/models/movie.dart';
@@ -82,21 +83,23 @@ class DisplayReviewsState extends State<DisplayReviews> {
         movieId: widget.movie.movieId.toString(),
         accountId:
             widget.currentUser != null ? widget.currentUser.userId : "0");
+    if (this.mounted) {
+      // Your state change code goes here
+      setState(() {
+        userReviews = widget.currentUser != null
+            ? model.reviews
+                .where((review) => review.userId != widget.currentUser.userId)
+                .toList()
+            : model.reviews;
 
-    setState(() {
-      userReviews = widget.currentUser != null
-          ? model.reviews
-              .where((review) => review.userId != widget.currentUser.userId)
-              .toList()
-          : model.reviews;
-
-      for (var i = 0; i < userReviews?.length ?? 0; i++) {
-        upvoted.add(userReviews[i]?.upvoted);
-        upvoteCount.add(userReviews[i]?.upvoteCount ?? 0);
-        downvoteCount.add(userReviews[i]?.downvoteCount ?? 0);
-        isApproved.add(userReviews[i]?.isApproved ?? false);
-      }
-    });
+        for (var i = 0; i < userReviews?.length ?? 0; i++) {
+          upvoted.add(userReviews[i]?.upvoted);
+          upvoteCount.add(userReviews[i]?.upvoteCount ?? 0);
+          downvoteCount.add(userReviews[i]?.downvoteCount ?? 0);
+          isApproved.add(userReviews[i]?.isApproved ?? false);
+        }
+      });
+    }
   }
 
   @override
@@ -228,22 +231,41 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                                   .toString());
                                                     });
 
-                                                    widget.sKey.currentState
-                                                        .showSnackBar(mySnackBar(
-                                                            context,
-                                                            'You ' +
-                                                                (value ==
-                                                                        'approve'
-                                                                    ? "approved "
-                                                                    : "hid ") +
-                                                                "this review.",
-                                                            Colors.green));
+                                                    // widget.sKey.currentState
+                                                    //     .showSnackBar(mySnackBar(
+                                                    //         context,
+                                                    //         'You ' +
+                                                    //             (value ==
+                                                    //                     'approve'
+                                                    //                 ? "approved "
+                                                    //                 : "hid ") +
+                                                    //             "this review.",
+                                                    //         Colors.green));
+
+                                                    Fluttertoast.showToast(
+                                                        msg: 'You ' +
+                                                            (value == 'approve'
+                                                                ? "approved "
+                                                                : "hid ") +
+                                                            "this review.",
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        textColor: Colors.white,
+                                                        fontSize: 16);
                                                   } else {
-                                                    widget.sKey.currentState
-                                                        .showSnackBar(mySnackBar(
-                                                            context,
+                                                    // widget.sKey.currentState
+                                                    //     .showSnackBar(mySnackBar(
+                                                    //         context,
+                                                    //         "Something went wrong.",
+                                                    //         Colors.red));
+
+                                                    Fluttertoast.showToast(
+                                                        msg:
                                                             "Something went wrong.",
-                                                            Colors.red));
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                        textColor: Colors.white,
+                                                        fontSize: 16);
                                                   }
                                                 } else {
                                                   var response = await _dialogService
@@ -288,11 +310,20 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                         userReviews = newItems;
                                                       });
 
-                                                      widget.sKey.currentState
-                                                          .showSnackBar(mySnackBar(
-                                                              context,
-                                                              'This review has been deleted.',
-                                                              Colors.green));
+                                                      // widget.sKey.currentState
+                                                      //     .showSnackBar(mySnackBar(
+                                                      //         context,
+                                                      //         'This review has been deleted.',
+                                                      //         Colors.green));
+
+                                                      Fluttertoast.showToast(
+                                                          msg:
+                                                              "This review has been deleted.",
+                                                          backgroundColor:
+                                                              Colors.green,
+                                                          textColor:
+                                                              Colors.white,
+                                                          fontSize: 16);
                                                     }
                                                   }
                                                 }

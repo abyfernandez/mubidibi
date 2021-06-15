@@ -2,15 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
-// import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
-import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/models/movie.dart';
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:mubidibi/ui/views/see_all_view.dart';
-import 'package:mubidibi/ui/widgets/content_header.dart';
-// import '../../locator.dart';
 
 class ContentList extends StatelessWidget {
   final String title;
@@ -76,14 +72,7 @@ class ContentList extends StatelessWidget {
                                               title: 'Mga Personalidad',
                                               showFilter: true),
                                 ),
-                              ).then((data) {
-                                if (data[0] == true) {
-                                  rebuild.value = true;
-                                  // headerFavorite.value = headerId == data[2]
-                                  //     ? data[1]
-                                  //     : headerFavorite.value;
-                                }
-                              });
+                              );
                             },
                             child: Text(
                               seeAll,
@@ -117,14 +106,7 @@ class ContentList extends StatelessWidget {
                                               showFilter: true,
                                             ),
                                 ),
-                              ).then((data) {
-                                if (data[0] == true) {
-                                  rebuild.value = true;
-                                  // headerFavorite.value = headerId == data[2]
-                                  //     ? data[1]
-                                  //     : headerFavorite.value;
-                                }
-                              });
+                              );
                             },
                             child: Text(
                               seeAll,
@@ -159,14 +141,7 @@ class ContentList extends StatelessWidget {
                               builder: (_) =>
                                   MovieView(movieId: movies[index].movieId),
                             ),
-                          ).then((data) {
-                            if (data[0] == true) {
-                              rebuild.value = true;
-                              // headerFavorite.value = headerId == data[2]
-                              //     ? data[1]
-                              //     : headerFavorite.value;
-                            }
-                          });
+                          );
                         },
                         child: Stack(
                           children: [
@@ -251,14 +226,7 @@ class ContentList extends StatelessWidget {
                               builder: (_) => CrewView(
                                   crewId: crew[index].crewId.toString()),
                             ),
-                          ).then((data) {
-                            if (data[0] == true) {
-                              rebuild.value = true;
-                              // headerFavorite.value = headerId == data[2]
-                              //     ? data[1]
-                              //     : headerFavorite.value;
-                            }
-                          })
+                          )
                         },
                         child: Stack(
                           children: [

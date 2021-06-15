@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mubidibi/ui/shared/video_file.dart';
 import 'package:mubidibi/ui/views/dashboard_view.dart';
+import 'package:mubidibi/ui/views/list_all_view.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:video_player/video_player.dart';
 import 'package:floating_action_bubble/floating_action_bubble.dart';
@@ -449,7 +451,7 @@ class _CrewViewState extends State<CrewView>
                                 cancelTitle: "No",
                                 confirmationTitle: "Yes",
                                 description:
-                                    "Are you sure you want to delete this crew?");
+                                    "Are you sure you want to delete this item?");
                         if (response.confirmed == true) {
                           var model = CrewViewModel();
 
@@ -459,10 +461,16 @@ class _CrewViewState extends State<CrewView>
                               id: crew.crewId.toString());
                           if (deleteRes != 0) {
                             // show success snackbar
-                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                                context,
-                                'Crew deleted successfully.',
-                                Colors.green));
+                            // _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                            //     context,
+                            //     'Item deleted successfully.',
+                            //     Colors.green));
+
+                            Fluttertoast.showToast(
+                                msg: 'Item deleted successfully.',
+                                backgroundColor: Colors.green,
+                                textColor: Colors.white,
+                                fontSize: 16);
 
                             Timer(const Duration(milliseconds: 2000), () {
                               _saving = false;
@@ -480,10 +488,16 @@ class _CrewViewState extends State<CrewView>
                           } else {
                             _saving = false;
 
-                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                                context,
-                                'Something went wrong. Try again.',
-                                Colors.red));
+                            // _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                            //     context,
+                            //     'Something went wrong. Try again.',
+                            //     Colors.red));
+
+                            Fluttertoast.showToast(
+                                msg: 'Something went wrong. Try again.',
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                                fontSize: 16);
                           }
                         }
                       },
@@ -507,7 +521,7 @@ class _CrewViewState extends State<CrewView>
                             cancelTitle: "No",
                             confirmationTitle: "Yes",
                             description:
-                                "Are you sure you want to restore this movie?");
+                                "Are you sure you want to restore this item?");
                         if (response.confirmed == true) {
                           var model = CrewViewModel();
 
@@ -518,10 +532,16 @@ class _CrewViewState extends State<CrewView>
                           if (restoreRes != 0) {
                             // show success snackbar
 
-                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                                context,
-                                'This movie is now restored.',
-                                Colors.green));
+                            // _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                            //     context,
+                            //     'This item is now restored.',
+                            //     Colors.green));
+
+                            Fluttertoast.showToast(
+                                msg: 'This item is now restored.',
+                                backgroundColor: Colors.green,
+                                textColor: Colors.white,
+                                fontSize: 16);
 
                             Timer(const Duration(milliseconds: 2000), () {
                               _saving = false;
@@ -540,10 +560,16 @@ class _CrewViewState extends State<CrewView>
                           } else {
                             _saving = false;
 
-                            _scaffoldKey.currentState.showSnackBar(mySnackBar(
-                                context,
-                                'Something went wrong. Try again.',
-                                Colors.red));
+                            // _scaffoldKey.currentState.showSnackBar(mySnackBar(
+                            //     context,
+                            //     'Something went wrong. Try again.',
+                            //     Colors.red));
+
+                            Fluttertoast.showToast(
+                                msg: 'Something went wrong. Try again.',
+                                backgroundColor: Colors.red,
+                                textColor: Colors.white,
+                                fontSize: 16);
                           }
                         }
                       },
@@ -821,12 +847,6 @@ class _CrewViewState extends State<CrewView>
                                                                 true) {
                                                               rebuild.value =
                                                                   true;
-                                                              // headerFavorite
-                                                              //     .value = headerId ==
-                                                              //         data[2]
-                                                              //     ? data[1]
-                                                              //     : headerFavorite
-                                                              //         .value;
                                                             }
                                                           });
                                                         },
@@ -1003,61 +1023,113 @@ class _CrewViewState extends State<CrewView>
                           ? SizedBox(height: 20)
                           : SizedBox(),
                       // Mga Award
-                      // Mga Award
                       awards != null && awards.length != 0
-                          ? Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20.0),
-                              child: Text("Mga Award",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  )),
-                            )
-                          : SizedBox(),
-                      awards != null && awards.length != 0
-                          ? Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20.0),
+                          ? Container(
+                              // padding: EdgeInsets.symmetric(horizontal: 20.0),
                               child: Column(
-                                children: awards.map((award) {
-                                  return ListTile(
-                                    title: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        new Icon(Icons.fiber_manual_record,
-                                            size: 16),
-                                        SizedBox(
-                                          width: 5,
-                                        ),
-                                        Flexible(
-                                          child: Text(
-                                              award.name +
-                                                  (award.year != null
-                                                      ? " (" + award.year + ") "
-                                                      : ""),
-                                              style: TextStyle(fontSize: 16),
-                                              softWrap: true,
-                                              overflow: TextOverflow.clip),
-                                        ),
-                                      ],
-                                    ),
-                                    subtitle: award.type != null
-                                        ? Container(
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 20.0),
-                                            child: Text(
-                                                award.type == "nominated"
-                                                    ? "Nominado"
-                                                    : "Panalo",
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Mga Award",
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      awards.length >= 4
+                                          ? GestureDetector(
+                                              child: Text(
+                                                'Tingnan Lahat',
                                                 style: TextStyle(
-                                                    fontStyle: FontStyle.italic,
-                                                    fontSize: 16),
+                                                    fontSize: 14,
+                                                    color: Colors.blue),
+                                                overflow: TextOverflow.ellipsis,
                                                 softWrap: true,
-                                                overflow: TextOverflow.clip),
-                                          )
-                                        : SizedBox(),
-                                  );
-                                }).toList(),
+                                              ),
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ListAllView(
+                                                      type: 'award',
+                                                      items: awards,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                          : Container(),
+                                    ],
+                                  ),
+                                  Column(
+                                    children: awards.map((award) {
+                                      var i = awards.indexOf(award);
+                                      return i < 2
+                                          ? ListTile(
+                                              title: Row(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  new Icon(
+                                                      Icons.fiber_manual_record,
+                                                      size: 16),
+                                                  SizedBox(
+                                                    width: 5,
+                                                  ),
+                                                  Flexible(
+                                                    child: Text(
+                                                        award.name +
+                                                            (award.year != null
+                                                                ? " (" +
+                                                                    award.year +
+                                                                    ") "
+                                                                : ""),
+                                                        style: TextStyle(
+                                                            fontSize: 16),
+                                                        softWrap: true,
+                                                        overflow:
+                                                            TextOverflow.clip),
+                                                  ),
+                                                ],
+                                              ),
+                                              subtitle: award.type != null
+                                                  ? Container(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal: 20.0),
+                                                      child: Text(
+                                                          (award.event ?? '') +
+                                                                      award
+                                                                          .type ==
+                                                                  "nominated"
+                                                              ? "Nominado"
+                                                              : "Panalo",
+                                                          style: TextStyle(
+                                                              fontStyle:
+                                                                  FontStyle
+                                                                      .italic,
+                                                              fontSize: 16),
+                                                          softWrap: true,
+                                                          overflow: TextOverflow
+                                                              .clip),
+                                                    )
+                                                  : SizedBox(),
+                                            )
+                                          : SizedBox();
+                                    }).toList(),
+                                  ),
+                                  awards.length >= 3
+                                      ? Container(
+                                          alignment: Alignment.center,
+                                          child: Text(' . . . ',
+                                              style: TextStyle(fontSize: 20)))
+                                      : SizedBox(),
+                                ],
                               ),
                             )
                           : SizedBox(),
@@ -1072,43 +1144,12 @@ class _CrewViewState extends State<CrewView>
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
                                 Text(
                                   "Gallery",
                                   style: TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold),
                                 ),
-                                // crew.gallery.length >= 4
-                                //     ? GestureDetector(
-                                //         child: Text(
-                                //           'Tingnan Lahat',
-                                //           style: TextStyle(
-                                //               fontSize: 14,
-                                //               color: Colors.blue),
-                                //           overflow: TextOverflow.ellipsis,
-                                //           softWrap: true,
-                                //         ),
-                                //         onTap: () {
-                                //           Navigator.push(
-                                //             context,
-                                //             MaterialPageRoute(
-                                //               builder: (context) =>
-                                //                   SeeAllView(
-                                //                 type: 'photos',
-                                //                 title: "Gallery",
-                                //                 photos: crew.gallery,
-                                //               ),
-                                //             ),
-                                //           );
-                                //         },
-                                //       )
-                                //     : Container(),
-                                //   ],
-                                // ),
                                 crew.gallery.isNotEmpty
                                     ? SizedBox(height: 10)
                                     : SizedBox(),

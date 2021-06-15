@@ -11,6 +11,7 @@ class MediaFile {
   String type; // poster, gallery, trailer, audio, display_pic
   File file;
   String category; // movie or crew
+  String format; // resource type provided by cloudinary
   bool saved;
 
   MediaFile({
@@ -22,6 +23,7 @@ class MediaFile {
     this.type,
     this.file,
     this.category,
+    this.format,
     this.saved,
   });
 
@@ -35,7 +37,8 @@ class MediaFile {
         type: json['type'],
         category: json['crew_id'] == null
             ? (json['movie_id'] == null ? null : 'movie')
-            : 'crew');
+            : 'crew',
+        format: json['format']);
   }
 
   Map<String, dynamic> toJson() => {
@@ -46,5 +49,6 @@ class MediaFile {
         "description": description,
         "type": type,
         "category": category,
+        "format": format,
       };
 }

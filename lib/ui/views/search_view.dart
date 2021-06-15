@@ -110,12 +110,6 @@ class _SearchViewState extends State<SearchView> {
                                           Color.fromRGBO(240, 240, 240, 1),
                                     ),
                                     onChanged: (query) {
-                                      // Search for the movie/s that fit/s the query string
-                                      // List<String> parsedQuery = [];
-                                      // parsedQuery = query.split(' ');
-
-                                      // TO DO: MORE ACCURATE SEARCHES
-
                                       if (_searchBy == "Pelikula") {
                                         searchController.text.trim() != ""
                                             ? setState(() {

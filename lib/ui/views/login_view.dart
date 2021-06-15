@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:flutter/material.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
@@ -173,7 +174,13 @@ class _LoginViewState extends State<LoginView> {
                                           });
 
                                           // show snack bar or flutter toast (success)
-                                          // TO DO: route test -- flutter toast or snackbar to notify that user has successfully logged in
+
+                                          Fluttertoast.showToast(
+                                              msg: 'Login successful.',
+                                              backgroundColor: Colors.green,
+                                              textColor: Colors.white,
+                                              fontSize: 16);
+
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
                                           // Navigator.pushReplacementNamed(
@@ -182,9 +189,16 @@ class _LoginViewState extends State<LoginView> {
                                           FocusScope.of(context).unfocus();
 
                                           // set _saving to false and display error dialog box or snackbar/flutter toast for login error
+
                                           setState(() {
                                             _saving = false;
                                           });
+
+                                          // Fluttertoast.showToast(
+                                          //     msg: 'Login failed.',
+                                          //     backgroundColor: Colors.red,
+                                          //     textColor: Colors.white,
+                                          //     fontSize: 16);
                                         }
                                       },
                               ),
@@ -211,7 +225,7 @@ class _LoginViewState extends State<LoginView> {
                             ),
 
                             // LOG IN BUTTON
-                            // TO DO: allow user to submit using the 'enter' key in the keyboard
+
                             Container(
                               padding: EdgeInsets.symmetric(vertical: 30.0),
                               width: double.infinity,
@@ -235,18 +249,32 @@ class _LoginViewState extends State<LoginView> {
                                           });
 
                                           // show snack bar or flutter toast (success)
-                                          // TO DO: route test -- flutter toast or snackbar to notify that user has successfully logged in
+
+                                          Fluttertoast.showToast(
+                                              msg: 'Login successful.',
+                                              backgroundColor: Colors.green,
+                                              textColor: Colors.white,
+                                              fontSize: 16);
+
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
+
                                           // Navigator.pushReplacementNamed(
                                           //     context, HomeViewRoute);
                                         } else {
                                           FocusScope.of(context).unfocus();
 
                                           // set _saving to false and display error dialog box or snackbar/flutter toast for login error
+
                                           setState(() {
                                             _saving = false;
                                           });
+
+                                          // Fluttertoast.showToast(
+                                          //     msg: 'Login failed.',
+                                          //     backgroundColor: Colors.red,
+                                          //     textColor: Colors.white,
+                                          //     fontSize: 16);
                                         }
                                       },
                                 padding: EdgeInsets.all(18.0),
@@ -301,7 +329,7 @@ class _LoginViewState extends State<LoginView> {
                             //   ]),
                             // ]),
 
-                            //  TO DO: SIGN IN WITH GOOGLE
+                            // SIGN IN WITH GOOGLE
                             // // SIGN IN WITH GOOGLE
                             // Padding(
                             //   padding: EdgeInsets.symmetric(vertical: 20.0),

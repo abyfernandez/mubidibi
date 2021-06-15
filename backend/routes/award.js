@@ -60,6 +60,8 @@ exports.award = app => {
       var query = `SELECT award.id, award.name, to_json(award.category) as category, award.event, award.created_at, award.description, award.added_by, award.is_deleted, to_json(c.type) as type, c.award_id, c.crew_id, c.year from award left join crew_award as c on c.award_id = award.id where crew_id = ${req.body.crew_id}`;
       if (req.body.user != "admin") query = query.concat(` and award.is_deleted = false`);
 
+      query = query.concat(` order by year desc nulls last`)
+
       client.query(
         query,
         async function onResult(err, result) {

@@ -258,6 +258,7 @@ class AwardWidgetState extends State<AwardWidget> {
                     Expanded(
                       child: Container(
                         child: TextFormField(
+                          autofocus: false,
                           initialValue: widget.item.year,
                           focusNode: yearNode,
                           keyboardType: TextInputType.number,
@@ -334,6 +335,7 @@ class AwardWidgetState extends State<AwardWidget> {
                               isDense: false,
                               underline: Container(),
                               onChanged: (val) {
+                                FocusScope.of(context).unfocus();
                                 setState(() {
                                   widget.item.type = val;
                                   showTypeError();
@@ -417,7 +419,9 @@ class AwardWidgetState extends State<AwardWidget> {
                         overflow: TextOverflow.clip),
                   ),
                   GestureDetector(
-                    child: Icon(Icons.edit_outlined),
+                    // child: Icon(Icons.edit_outlined),
+                    child: Text('EDIT',
+                        style: TextStyle(color: Colors.black54, fontSize: 16)),
                     onTap: () {
                       setState(() {
                         widget.open.value = true;

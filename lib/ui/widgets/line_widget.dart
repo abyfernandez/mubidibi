@@ -286,7 +286,10 @@ class LineWidgetState extends State<LineWidget> {
                           ? SizedBox(width: 5)
                           : SizedBox(),
                       GestureDetector(
-                        child: Icon(Icons.edit_outlined),
+                        // child: Icon(Icons.edit_outlined),
+                        child: Text('EDIT',
+                            style:
+                                TextStyle(color: Colors.black54, fontSize: 16)),
                         onTap: () {
                           setState(() {
                             widget.open.value = true;
@@ -298,7 +301,8 @@ class LineWidgetState extends State<LineWidget> {
                 ),
                 ListTile(
                   title: Text('"' + widget.item.line.trim() + '"'),
-                  subtitle: Text("- " + widget.item.role),
+                  subtitle: Text("- " + widget.item.role,
+                      style: TextStyle(color: Colors.black45)),
                 ),
               ],
             ),

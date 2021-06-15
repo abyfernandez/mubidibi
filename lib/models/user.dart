@@ -13,6 +13,7 @@ class User {
   final String middleName;
   final String lastName;
   final String suffix;
+  final String name;
   final String birthday;
   bool isAdmin;
 
@@ -23,6 +24,7 @@ class User {
     this.middleName,
     this.lastName,
     this.suffix,
+    this.name,
     this.birthday,
     this.isAdmin,
   });
@@ -35,6 +37,7 @@ class User {
       middleName: json['middle_name'],
       lastName: json['last_name'],
       suffix: json['suffix'],
+      name: json['name'],
       birthday: json['birthday'],
       isAdmin: json['is_admin'],
     );
@@ -47,6 +50,7 @@ class User {
         'middle_name': middleName,
         'last_name': lastName,
         'suffix': suffix,
+        'name': name,
         'birthday': birthday,
         'is_admin': isAdmin,
       };

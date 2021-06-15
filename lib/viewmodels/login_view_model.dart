@@ -70,7 +70,7 @@ class LoginViewModel extends BaseModel {
   //     } else {
   //       await _authenticationService.signOut();
   //       await _navigationService.navigateTo(LoginViewRoute);
-  //       // TO DO: create login error route  and replace the above line of code
+  //       // create login error route  and replace the above line of code
   //     }
   //   }
   // }

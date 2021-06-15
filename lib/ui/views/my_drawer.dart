@@ -18,20 +18,22 @@ class MyDrawer extends StatelessWidget {
     var currentUser = _authenticationService.currentUser;
 
     return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          shadowColor: Colors.transparent,
-          // iconTheme: IconThemeData(
-          //     color: Colors.black, //change your color here
-          //     ),
-          leading: GestureDetector(
-              child: Icon(Icons.arrow_back),
-              onTap: () {
-                FocusScope.of(context).unfocus();
-                _navigationService.pop();
-              }),
-        ),
-        body: Container(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        shadowColor: Colors.transparent,
+        leading: GestureDetector(
+            child: Icon(Icons.arrow_back),
+            onTap: () {
+              FocusScope.of(context).unfocus();
+              _navigationService.pop();
+            }),
+      ),
+      body: WillPopScope(
+        onWillPop: () {
+          _navigationService.pop();
+          return Future.value(false);
+        },
+        child: Container(
           color: Colors.white,
           height: double.infinity,
           width: double.infinity,
@@ -45,31 +47,16 @@ class MyDrawer extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Color.fromRGBO(240, 240, 240, 1),
                         ),
-                        // margin: EdgeInsets.only(bottom: 0),
-                        accountName: GestureDetector(
-                          child: Text(
-                              currentUser.firstName +
-                                  (currentUser.middleName != null
-                                      ? " " + currentUser.middleName
-                                      : "") +
-                                  (currentUser.lastName != null
-                                      ? " " + currentUser.lastName
-                                      : "") +
-                                  (currentUser.suffix != null
-                                      ? " " + currentUser.suffix
-                                      : ""),
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              )),
-                          onTap: () {
-                            print("View Profile");
-                          },
+                        accountName: Text(
+                          currentUser.name,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         accountEmail: Text(
                           currentUser.email,
                           style: TextStyle(
-                            // color: Colors.white,
                             fontSize: 16,
                           ),
                         ),
@@ -115,8 +102,6 @@ class MyDrawer extends StatelessWidget {
                                       "Are you sure that you want to sign out?");
                           if (response.confirmed == true) {
                             await _authenticationService.signOut();
-                            // await _navigationService
-                            //     .navigateTo(StartUpViewRoute);
                             Navigator.of(context).pushNamedAndRemoveUntil(
                                 StartUpViewRoute,
                                 (Route<dynamic> route) => false);
@@ -134,7 +119,6 @@ class MyDrawer extends StatelessWidget {
                               fontWeight: FontWeight.w300, fontSize: 16),
                         ),
                         onTap: () {
-                          // _navigationService.navigateTo(LoginViewRoute);
                           Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
@@ -146,6 +130,8 @@ class MyDrawer extends StatelessWidget {
               ],
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

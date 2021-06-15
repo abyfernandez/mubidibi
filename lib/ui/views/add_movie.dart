@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mime/mime.dart';
 import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/line.dart';
@@ -168,7 +169,7 @@ class _AddMovieState extends State<AddMovie> {
   int currentStep = 0;
   List<String> stepperTitle = [
     "Mga Basic na Detalye",
-    "Mga Poster, Screenshot, at Ibang Media",
+    "Media",
     "Mga Personalidad",
     "Mga Award",
     "Mga Sumikat na Linya",
@@ -237,7 +238,7 @@ class _AddMovieState extends State<AddMovie> {
         //         TZDateTime.from(_date, tz.getLocation('Asia/Manila'))) ??
         // '';
         dateController.text =
-            DateFormat("MMM. d, y", "fil").format(_date) ?? '';
+            DateFormat("MMMM d, y", "fil").format(_date) ?? '';
       });
     }
   }
@@ -263,7 +264,7 @@ class _AddMovieState extends State<AddMovie> {
         if (imagePaths.contains(path) == false) {
           return File(path);
         } else {
-          print('Image already exists'); // FlutterToast or Snackbar
+          Fluttertoast.showToast(msg: 'File already exists.');
         }
       }).toList();
 
@@ -288,7 +289,7 @@ class _AddMovieState extends State<AddMovie> {
       }
     } else {
       // User canceled the picker
-      print('No image selected.');
+      Fluttertoast.showToast(msg: 'No file selected.');
     }
   }
 
@@ -422,7 +423,7 @@ class _AddMovieState extends State<AddMovie> {
         if (imagePaths.contains(path) == false) {
           return File(path);
         } else {
-          print('File already exists.'); // FlutterToast or Snackbar
+          Fluttertoast.showToast(msg: 'File already exists.');
         }
       }).toList();
 
@@ -445,7 +446,7 @@ class _AddMovieState extends State<AddMovie> {
       }
     } else {
       // User canceled the picker
-      print('No media selected.');
+      Fluttertoast.showToast(msg: 'No media selected.');
     }
   }
 
@@ -627,7 +628,7 @@ class _AddMovieState extends State<AddMovie> {
         if (imagePaths.contains(path) == false) {
           return File(path);
         } else {
-          print('File already exists'); // FlutterToast or Snackbar
+          Fluttertoast.showToast(msg: 'File already exists.');
         }
       }).toList();
 
@@ -650,7 +651,7 @@ class _AddMovieState extends State<AddMovie> {
       }
     } else {
       // User canceled the picker
-      print('No file selected.');
+      Fluttertoast.showToast(msg: 'No file selected.');
     }
   }
 
@@ -749,7 +750,7 @@ class _AddMovieState extends State<AddMovie> {
         if (imagePaths.contains(path) == false) {
           return File(path);
         } else {
-          print('File already exists'); // FlutterToast or Snackbar
+          Fluttertoast.showToast(msg: 'File already exists.');
         }
       }).toList();
 
@@ -772,7 +773,7 @@ class _AddMovieState extends State<AddMovie> {
       }
     } else {
       // User canceled the picker
-      print('No file selected.');
+      Fluttertoast.showToast(msg: 'No file selected.');
     }
   }
 
@@ -870,7 +871,6 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               )
             : SizedBox(),
-        // TO DO: fix overflow issue when text is too long
         filteredActors.length != 0
             ? Container(
                 alignment: Alignment.topLeft,
@@ -1067,7 +1067,6 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               )
             : SizedBox(),
-        // TO DO: fix overflow issue when text is too long
         filteredLines.length != 0
             ? Container(
                 alignment: Alignment.topLeft,
@@ -1097,7 +1096,7 @@ class _AddMovieState extends State<AddMovie> {
                           Padding(
                             padding: EdgeInsets.only(left: 10),
                             child: f.item.role != null
-                                ? Text(" (" + f.item.role + ")",
+                                ? Text(" -" + f.item.role,
                                     style: TextStyle(
                                         fontStyle: FontStyle.italic,
                                         fontSize: 16),
@@ -1168,8 +1167,6 @@ class _AddMovieState extends State<AddMovie> {
   }
 
   void updateActors() {
-    print('called');
-
     var temp = actorList;
     actorList = [];
     actorList = temp;
@@ -1196,13 +1193,6 @@ class _AddMovieState extends State<AddMovie> {
   }
 
   @override
-  void didUpdateWidget(AddMovie oldWidget) {
-    print('add movie');
-    super.didUpdateWidget(oldWidget);
-    // if (widget.didUpdateWidget != null) widget.didUpdateWidget(oldWidget, this);
-  }
-
-  @override
   Widget build(BuildContext context) {
     var currentUser = _authenticationService.currentUser;
 
@@ -1220,15 +1210,10 @@ class _AddMovieState extends State<AddMovie> {
             ? DateTime.parse(movie?.releaseDate).add(Duration(days: 1))
             : null;
 
-        print(movie?.releaseDate);
-        print(_date);
-        print(_date.toUtc());
-        print(_date.add(Duration(days: 1)));
-
         dateController.text = movie?.releaseDate != null
             // ? DateFormat("MMM. d, y", "fil")
             //     .format(TZDateTime.from(_date, tz.getLocation('Asia/Manila')))
-            ? DateFormat("MMM. d, y", "fil").format(_date)
+            ? DateFormat("MMMM d, y", "fil").format(_date)
             : '';
         synopsisController.text = movie?.synopsis ?? '';
         runtimeController.text = movie?.runtime?.toString() ?? '';
@@ -1437,24 +1422,25 @@ class _AddMovieState extends State<AddMovie> {
                                       break;
 
                                     case 1: // Mga Poster, Screenshot at iba pang Media
+                                      FocusScope.of(context).unfocus();
                                       setState(() {
                                         currentStep++;
                                       });
                                       break;
                                     case 2: // Mga Personalidad
                                       setState(() {
+                                        FocusScope.of(context).unfocus();
                                         directorNode.unfocus();
                                         writerNode.unfocus();
-                                        // TO DO: unfocus keyboard when an actor/role textfield is currently active
                                         currentStep++;
                                       });
                                       break;
                                     case 3: // Mga Award
-                                      // TO DO: unfocus keyboard when a genre textfield is currently active
+                                      FocusScope.of(context).unfocus();
                                       setState(() => currentStep++);
                                       break;
                                     case 4: // Mga Sumikat na Linya
-                                      // TO DO: unfocus keyboard when a genre textfield is currently active
+                                      FocusScope.of(context).unfocus();
                                       setState(() => currentStep++);
                                       break;
                                   }
@@ -1462,11 +1448,6 @@ class _AddMovieState extends State<AddMovie> {
                                   // Review
 
                                   // last step
-
-                                  print('Date: $_date');
-                                  print('Date to UTC: ${_date.toUtc()}');
-                                  print(
-                                      'Date to ISO: ${_date.toIso8601String()}');
 
                                   var confirm = await _dialogService
                                       .showConfirmationDialog(
@@ -1719,17 +1700,27 @@ class _AddMovieState extends State<AddMovie> {
                                       _saving =
                                           false; // set saving to false to trigger circular progress indicator
                                       // show success snackbar
-                                      movieId != 0
-                                          ? _scaffoldKey.currentState
-                                              .showSnackBar(mySnackBar(
-                                                  context,
-                                                  'Movie updated successfully.',
-                                                  Colors.green))
-                                          : _scaffoldKey.currentState
-                                              .showSnackBar(mySnackBar(
-                                                  context,
-                                                  'Movie added successfully.',
-                                                  Colors.green));
+
+                                      // movieId != 0
+                                      //     ? _scaffoldKey.currentState
+                                      //         .showSnackBar(mySnackBar(
+                                      //             context,
+                                      //             'Movie updated successfully.',
+                                      //             Colors.green))
+
+                                      //     : _scaffoldKey.currentState
+                                      //         .showSnackBar(mySnackBar(
+                                      //             context,
+                                      //             'Movie added successfully.',
+                                      //             Colors.green));
+
+                                      Fluttertoast.showToast(
+                                          msg: movieId != 0
+                                              ? 'Movie updated successfully.'
+                                              : 'Movie added successfully.',
+                                          backgroundColor: Colors.green,
+                                          textColor: Colors.white,
+                                          fontSize: 16);
 
                                       _saving =
                                           true; // set saving to true to trigger circular progress indicator
@@ -1762,11 +1753,18 @@ class _AddMovieState extends State<AddMovie> {
                                       _saving =
                                           false; // set saving to false to trigger circular progress indicator
                                       // show error snackbar
-                                      _scaffoldKey.currentState.showSnackBar(
-                                          mySnackBar(
-                                              context,
+                                      // _scaffoldKey.currentState.showSnackBar(
+                                      //     mySnackBar(
+                                      //         context,
+                                      //         'Something went wrong. Check your inputs and try again.',
+                                      //         Colors.red));
+
+                                      Fluttertoast.showToast(
+                                          msg:
                                               'Something went wrong. Check your inputs and try again.',
-                                              Colors.red));
+                                          backgroundColor: Colors.red,
+                                          textColor: Colors.white,
+                                          fontSize: 16);
                                     }
                                   }
                                 }
@@ -2877,6 +2875,25 @@ class _AddMovieState extends State<AddMovie> {
                                                           .awardId)) {
                                                 awardsToDelete.add(
                                                     awardList[i].item.awardId);
+                                              }  else if (awardList[i]
+                                                          .prevId
+                                                          .value !=
+                                                      null &&
+                                                  awardList[i].prevId.value !=
+                                                      0 &&
+                                                  !awardsToDelete.contains(
+                                                      awardList[i]
+                                                          .prevId
+                                                          .value) &&
+                                                  (movieAwards != null &&
+                                                      movieAwards
+                                                          .map((c) => c.awardId)
+                                                          .toList()
+                                                          .contains(awardList[i]
+                                                              .prevId
+                                                              .value))) {
+                                                awardsToDelete.add(
+                                                    awardList[i].prevId.value);
                                               }
                                               awardList.removeAt(i);
                                             });
@@ -3103,7 +3120,7 @@ class _AddMovieState extends State<AddMovie> {
                         child: Text(
                           _date == null
                               ? ''
-                              : DateFormat("MMM. d, y", "fil").format(_date),
+                              : DateFormat("MMMM d, y", "fil").format(_date),
                           // : DateFormat("MMM. d, y", "fil").format(
                           //     TZDateTime.from(
                           //         _date, tz.getLocation('Asia/Manila'))),
@@ -3508,7 +3525,9 @@ class ActorWidgetState extends State<ActorWidget> {
                 ),
               ),
               trailing: GestureDetector(
-                child: Icon(Icons.edit_outlined, color: Colors.black87),
+                // child: Icon(Icons.edit_outlined, color: Colors.black87),
+                child: Text('EDIT',
+                    style: TextStyle(color: Colors.black54, fontSize: 16)),
                 onTap: () {
                   setState(() {
                     widget.open.value = true;

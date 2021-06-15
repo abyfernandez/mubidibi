@@ -5,12 +5,12 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
+import 'package:mubidibi/services/navigation_service.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
-import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
-import 'package:mubidibi/ui/widgets/content_header.dart';
 import 'package:mubidibi/ui/widgets/input_chips.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
@@ -52,22 +52,18 @@ class _SeeAllViewState extends State<SeeAllView> {
   final bool showFilter;
   final String title;
 
+  final NavigationService _navigationService = locator<NavigationService>();
+
   List<Movie> films = [];
   List<Crew> personalidad = [];
   List<String> filters = []; // list of filters to apply
   List<String> genres = []; // String versions of genre straight from api
   FocusNode filterNode;
   List<String> roles = ['Direktor', 'Manunulat', 'Aktor'];
-
   List filtered = []; // filtered films
-  List favData = [];
+
   _SeeAllViewState(this.movies, this.crew, this.favorites, this.type,
       this.filter, this.showFilter, this.title);
-
-  Future<bool> onBackPress() async {
-    Navigator.pop(context, favData);
-    return Future.value(false);
-  }
 
   @override
   void initState() {
@@ -92,18 +88,16 @@ class _SeeAllViewState extends State<SeeAllView> {
             child: Icon(Icons.arrow_back),
             onTap: () async {
               FocusScope.of(context).unfocus();
-              Navigator.pop(context, favData);
+              _navigationService.pop();
             },
           ),
         ),
-        body: WillPopScope(
-            onWillPop: onBackPress,
-            child: AnnotatedRegion<SystemUiOverlayStyle>(
-                value: SystemUiOverlayStyle.light,
-                child: GestureDetector(
-                    onTap: () => FocusScope.of(context).unfocus(),
-                    child: SingleChildScrollView(
-                        child: SafeArea(child: showContent(context)))))));
+        body: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle.light,
+            child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: SingleChildScrollView(
+                    child: SafeArea(child: showContent(context))))));
   }
 
   // function for calling viewmodel's getAllMovies method
@@ -342,20 +336,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     MaterialPageRoute(
                                       builder: (_) =>
                                           MovieView(movieId: movie.movieId),
-                                    )).then((data) {
-                                  setState(() {
-                                    print('see all: $favData');
-                                    favData = data;
-                                  });
-                                  if (data[0] == true) {
-                                    rebuild.value = true;
-                                    headerFavorite.value = headerId == data[2]
-                                        ? data[1]
-                                        : headerFavorite.value;
-                                    if (type == "movies") fetchMovies();
-                                    if (type == "favorites") fetchFavorites();
-                                  }
-                                });
+                                    ));
                               },
                             ),
                           )
@@ -512,19 +493,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     MaterialPageRoute(
                                       builder: (_) =>
                                           MovieView(movieId: movie.movieId),
-                                    )).then((data) {
-                                  setState(() {
-                                    favData = data;
-                                  });
-                                  if (data[0] == true) {
-                                    rebuild.value = true;
-                                    headerFavorite.value = headerId == data[2]
-                                        ? data[1]
-                                        : headerFavorite.value;
-                                    if (type == "movies") fetchMovies();
-                                    if (type == "favorites") fetchFavorites();
-                                  }
-                                });
+                                    ));
                               },
                             ),
                           )
@@ -672,19 +641,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                   MaterialPageRoute(
                                     builder: (_) => CrewView(
                                         crewId: crew.crewId.toString()),
-                                  )).then((data) {
-                                setState(() {
-                                  favData = data;
-                                });
-                                if (data[0] == true) {
-                                  rebuild.value = true;
-                                  headerFavorite.value = headerId == data[2]
-                                      ? data[1]
-                                      : headerFavorite.value;
-                                  if (type == "movies") fetchMovies();
-                                  if (type == "favorites") fetchFavorites();
-                                }
-                              });
+                                  ));
                             },
                           ),
                         )
