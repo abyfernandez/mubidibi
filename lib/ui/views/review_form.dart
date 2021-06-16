@@ -67,16 +67,18 @@ class ReviewFormState extends State<ReviewForm> {
         movieId: widget.movie.movieId.toString(),
         accountId: widget.currentUser.userId);
 
-    setState(() {
-      userReview = model.userReview;
-      reviewController.text = userReview?.review ?? '';
-      rate = userReview?.rating ?? 5.00;
-      upvoted = userReview?.upvoted ?? null;
-      upvoteCount = userReview?.upvoteCount ?? 0;
-      downvoteCount = userReview?.downvoteCount ?? 0;
-      isApproved = userReview?.isApproved ?? false;
-      _edit = userReview != null ? false : true;
-    });
+    if (mounted) {
+      setState(() {
+        userReview = model.userReview;
+        reviewController.text = userReview?.review ?? '';
+        rate = userReview?.rating ?? 5.00;
+        upvoted = userReview?.upvoted ?? null;
+        upvoteCount = userReview?.upvoteCount ?? 0;
+        downvoteCount = userReview?.downvoteCount ?? 0;
+        isApproved = userReview?.isApproved ?? false;
+        _edit = userReview != null ? false : true;
+      });
+    }
   }
 
   @override

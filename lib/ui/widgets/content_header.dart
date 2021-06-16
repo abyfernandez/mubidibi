@@ -37,7 +37,6 @@ class _ContentHeaderState extends State<ContentHeader> {
   _ContentHeaderState(this.featuredContent);
 
   bool favChecker(bool value) {
-    print(value);
     return value;
   }
 
@@ -165,7 +164,6 @@ class _ContentHeaderState extends State<ContentHeader> {
                                     movieId: featuredContent.movieId,
                                     type: fav ? 'delete' : 'add')
                                 .then((val) {
-                              print('VAL: $val');
                               favoriteFlag.value = val != 0 ? true : false;
                               rebuild.value = true;
                               Fluttertoast.showToast(

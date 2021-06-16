@@ -13,50 +13,46 @@ class SignInCategoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        shadowColor: Colors.transparent,
+        backgroundColor: Colors.transparent,
+      ),
       resizeToAvoidBottomInset: false,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
         value: SystemUiOverlayStyle.light,
         child: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
-          child: Stack(
-            children: <Widget>[
-              Container(
-                height: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 30.0,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Flexible(
-                      child: SizedBox(height: 100),
-                      flex: 1,
-                    ),
-                    Shimmer.fromColors(
-                      period: Duration(milliseconds: 500),
-                      baseColor: Colors.blue,
-                      highlightColor: Colors.red,
-                      child: Container(
-                        height: 100,
-                        alignment: Alignment.center,
-                        child: Text(
-                          "mubidibi",
-                          style: TextStyle(
-                            fontSize: 50,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+          child: Container(
+            height: double.infinity,
+            padding: EdgeInsets.symmetric(
+              horizontal: 30.0,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Shimmer.fromColors(
+                  period: Duration(milliseconds: 500),
+                  baseColor: Colors.blue,
+                  highlightColor: Colors.red,
+                  child: Container(
+                    height: 100,
+                    child: Text(
+                      "mubidibi",
+                      style: TextStyle(
+                        fontSize: 50,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Flexible(
-                      child: SizedBox(height: 100),
-                      flex: 1,
-                    ),
-                    Flexible(
-                      child: Container(
+                  ),
+                ),
+                SizedBox(height: 50),
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 350,
                         padding: EdgeInsets.symmetric(vertical: 10.0),
-                        width: double.infinity,
                         child: FlatButton(
                           onPressed: () async {
                             await _navigationService.navigateTo(LoginViewRoute);
@@ -78,12 +74,9 @@ class SignInCategoryView extends StatelessWidget {
                           ),
                         ),
                       ),
-                      flex: 1,
-                    ),
-                    Flexible(
-                      child: Container(
+                      Container(
+                        width: 350,
                         padding: EdgeInsets.symmetric(vertical: 10.0),
-                        width: double.infinity,
                         child: FlatButton(
                           onPressed: () async {
                             await _navigationService
@@ -106,57 +99,11 @@ class SignInCategoryView extends StatelessWidget {
                           ),
                         ),
                       ),
-                      flex: 1,
-                    ),
-                    Flexible(
-                      flex: 1,
-                      child: Container(
-                        alignment: Alignment.bottomCenter,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            InkWell(
-                              child: Text(
-                                "Help",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                              onTap: () => {print("Help button tapped.")},
-                            ),
-                            InkWell(
-                              child: Text(
-                                "Privacy",
-                                style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  letterSpacing: 1.5,
-                                ),
-                              ),
-                              onTap: () => {print("Privacy button tapped.")},
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Positioned(
-                top: 40,
-                left: 15,
-                child: GestureDetector(
-                  onTap: () {
-                    _navigationService.pop();
-                  },
-                  child: Icon(Icons.arrow_back, color: Colors.black, size: 25),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

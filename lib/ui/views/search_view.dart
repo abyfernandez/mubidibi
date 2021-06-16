@@ -7,8 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/models/movie.dart';
-// import 'package:mubidibi/services/navigation_service.dart';
-// import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/ui/views/crew_view.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
@@ -24,7 +22,6 @@ class SearchView extends StatefulWidget {
 }
 
 class _SearchViewState extends State<SearchView> {
-  // final NavigationService _navigationService = locator<NavigationService>();
   final searchController = new TextEditingController();
 
   List<Movie> movieQueryResult = [];
@@ -64,6 +61,7 @@ class _SearchViewState extends State<SearchView> {
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
       builder: (context, model, child) => Scaffold(
+        backgroundColor: Colors.white,
         resizeToAvoidBottomInset: false,
         body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.light,
@@ -475,7 +473,7 @@ class _SearchViewState extends State<SearchView> {
                                               context,
                                               MaterialPageRoute(
                                                 builder: (_) => CrewView(
-                                                  crewId: c.crewId.toString(),
+                                                  crewId: c.crewId,
                                                 ),
                                               ));
                                           setState(() {

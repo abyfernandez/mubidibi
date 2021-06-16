@@ -47,8 +47,6 @@ class LineWidgetState extends State<LineWidget> {
     widget.item.saved = widget.item.id == null ? false : true;
 
     if (widget.item.role != null) {
-      // var chosen = rolesFilter.value.singleWhere((a) => a == widget.item.role);
-      // if (chosen != null) tempRole = [chosen];
       tempRole = [widget.item.role];
     }
     super.initState();
@@ -286,7 +284,6 @@ class LineWidgetState extends State<LineWidget> {
                           ? SizedBox(width: 5)
                           : SizedBox(),
                       GestureDetector(
-                        // child: Icon(Icons.edit_outlined),
                         child: Text('EDIT',
                             style:
                                 TextStyle(color: Colors.black54, fontSize: 16)),

@@ -189,7 +189,6 @@ class ChipsInputState<T> extends State<TestChipsInput<T>>
         final _suggestionBoxHeight =
             max(topAvailableSpace, bottomAvailableSpace);
         final showTop = topAvailableSpace > bottomAvailableSpace;
-        // print("showTop: $showTop" );
         final compositedTransformFollowerOffset =
             showTop ? Offset(0, -size.height) : Offset.zero;
 

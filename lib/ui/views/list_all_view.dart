@@ -1,21 +1,7 @@
 // List All Page -- for Awards and Lines
 
-import 'dart:convert';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:mubidibi/models/crew.dart';
-import 'package:mubidibi/models/movie.dart';
-import 'package:mubidibi/ui/views/crew_view.dart';
-import 'package:mubidibi/ui/views/dashboard_view.dart';
-import 'package:mubidibi/ui/views/movie_view.dart';
-import 'package:mubidibi/ui/widgets/content_header.dart';
-import 'package:mubidibi/ui/widgets/input_chips.dart';
-import 'package:mubidibi/viewmodels/crew_view_model.dart';
-import 'package:mubidibi/viewmodels/movie_view_model.dart';
-import 'package:http/http.dart' as http;
-import 'package:mubidibi/globals.dart' as Config;
 
 class ListAllView extends StatefulWidget {
   final List items;

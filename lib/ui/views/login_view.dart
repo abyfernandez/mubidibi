@@ -7,7 +7,6 @@ import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/login_view_model.dart';
 import 'package:mubidibi/services/navigation_service.dart';
-// import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/ui/widgets/input_field.dart';
 import 'package:mubidibi/constants/route_names.dart';
 import 'package:shimmer/shimmer.dart';
@@ -67,13 +66,12 @@ class _LoginViewState extends State<LoginView> {
           iconTheme: IconThemeData(
             color: Colors.black, // change your color here
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           leading: GestureDetector(
             child: Icon(Icons.arrow_back),
             onTap: () async {
               FocusScope.of(context).unfocus();
-              // _navigationService.pop();
               _navigationService.navigateTo(HomeViewRoute);
             },
           ),
@@ -123,16 +121,12 @@ class _LoginViewState extends State<LoginView> {
                             ),
 
                             // EMAIL ADDRESS FIELD
-                            // TO DO: validate with regex before allowing to be submitted
-                            // Column(
-                            // crossAxisAlignment: CrossAxisAlignment.start,
-                            // children: <Widget>[
                             SizedBox(height: 50.0),
                             Container(
                               child: InputField(
                                 fieldFocusNode: emailNode,
                                 nextFocusNode: passwordlNode,
-                                placeholder: 'Email Address',
+                                placeholder: 'Email Address *',
                                 controller: emailController,
                                 onChanged: (val) {
                                   setState(() {
@@ -148,7 +142,7 @@ class _LoginViewState extends State<LoginView> {
                               child: InputField(
                                 fieldFocusNode: passwordlNode,
                                 nextFocusNode: loginButtonNode,
-                                placeholder: 'Password',
+                                placeholder: 'Password *',
                                 password: true,
                                 controller: passwordController,
                                 onChanged: (val) {
@@ -183,8 +177,6 @@ class _LoginViewState extends State<LoginView> {
 
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
-                                          // Navigator.pushReplacementNamed(
-                                          //     context, HomeViewRoute);
                                         } else {
                                           FocusScope.of(context).unfocus();
 
@@ -193,41 +185,15 @@ class _LoginViewState extends State<LoginView> {
                                           setState(() {
                                             _saving = false;
                                           });
-
-                                          // Fluttertoast.showToast(
-                                          //     msg: 'Login failed.',
-                                          //     backgroundColor: Colors.red,
-                                          //     textColor: Colors.white,
-                                          //     fontSize: 16);
                                         }
                                       },
                               ),
                             ),
 
-                            // link to sign up
-                            Row(
-                              children: [
-                                Text('Gumawa ng bagong account '),
-                                InkWell(
-                                    onTap: () {
-                                      FocusScope.of(context).unfocus();
-
-                                      _navigationService
-                                          .navigateTo(SignUpViewRoute);
-                                    },
-                                    child: Text('dito',
-                                        style: TextStyle(
-                                            color: Colors.lightBlue,
-                                            decoration:
-                                                TextDecoration.underline))),
-                                Text('.'),
-                              ],
-                            ),
-
                             // LOG IN BUTTON
 
                             Container(
-                              padding: EdgeInsets.symmetric(vertical: 30.0),
+                              padding: EdgeInsets.symmetric(vertical: 30),
                               width: double.infinity,
                               child: FlatButton(
                                 focusNode: loginButtonNode,
@@ -258,9 +224,6 @@ class _LoginViewState extends State<LoginView> {
 
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
-
-                                          // Navigator.pushReplacementNamed(
-                                          //     context, HomeViewRoute);
                                         } else {
                                           FocusScope.of(context).unfocus();
 
@@ -269,12 +232,6 @@ class _LoginViewState extends State<LoginView> {
                                           setState(() {
                                             _saving = false;
                                           });
-
-                                          // Fluttertoast.showToast(
-                                          //     msg: 'Login failed.',
-                                          //     backgroundColor: Colors.red,
-                                          //     textColor: Colors.white,
-                                          //     fontSize: 16);
                                         }
                                       },
                                 padding: EdgeInsets.all(18.0),
@@ -296,6 +253,27 @@ class _LoginViewState extends State<LoginView> {
                                   ),
                                 ),
                               ),
+                            ),
+
+                            // link to sign up
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('Gumawa ng bagong account '),
+                                InkWell(
+                                    onTap: () {
+                                      FocusScope.of(context).unfocus();
+
+                                      _navigationService
+                                          .navigateTo(SignUpViewRoute);
+                                    },
+                                    child: Text('dito',
+                                        style: TextStyle(
+                                            color: Colors.lightBlue,
+                                            decoration:
+                                                TextDecoration.underline))),
+                                Text('.'),
+                              ],
                             ),
 
                             SizedBox(height: 10.0),

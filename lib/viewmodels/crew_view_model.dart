@@ -75,17 +75,28 @@ class CrewViewModel extends BaseModel {
   }
 
   // Function: GET ONE CREW for Crew View Details
-  Future<Crew> getOneCrew({@required String crewId}) async {
-    var queryParams = {
-      'id': crewId,
-    };
-    setBusy(true);
+  Future<Crew> getOneCrew({@required int crewId}) async {
+    // var queryParams = {
+    //   'id': crewId,
+    // };
+    // setBusy(true);
 
-    var uri =
-        Uri.http(Config.apiNoHTTP, '/mubidibi/one-crew/$crewId', queryParams);
+    // var uri =
+    //     Uri.http(Config.apiNoHTTP, '/mubidibi/one-crew/$crewId', queryParams);
 
-    // send API Request
-    final response = await http.get(uri);
+    // // send API Request
+    // final response = await http.get(uri);
+
+    final response = await http.post(Config.api + 'one-crew/',
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, dynamic>{
+          "user": currentUser != null && currentUser.isAdmin == true
+              ? "admin"
+              : "non-admin",
+          "crew_id": crewId,
+        }));
 
     setBusy(false);
 

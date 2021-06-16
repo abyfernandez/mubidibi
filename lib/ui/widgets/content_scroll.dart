@@ -87,7 +87,7 @@ class ContentScroll extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (_) =>
-                                CrewView(crewId: crew[index].crewId.toString()),
+                                CrewView(crewId: crew[index].crewId),
                           ),
                         ),
                       },

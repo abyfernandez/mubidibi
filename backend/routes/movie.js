@@ -99,7 +99,6 @@ exports.movie = app => {
           }
           return movie;
         });
-      console.log(result);
       release();
       if (result) res.send(JSON.stringify(result));
       else res.send(err);
@@ -138,7 +137,6 @@ exports.movie = app => {
 
         } else {
           var buffer = await pic.toBuffer();
-          console.log(pic.file);
           mediaBuffer.push(buffer);
           mediaMimeType.push(pic.mimetype);
         }
@@ -235,8 +233,6 @@ exports.movie = app => {
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      console.log(query);
-
       var result = await client.query(query).then((result) => {
         const id = result.rows[0].add_movie
 
@@ -315,7 +311,6 @@ exports.movie = app => {
           } else {
             actorQuery = actorQuery.concat(`null)`);
           }
-          console.log(actorQuery);
           client.query(actorQuery);
         });
 
@@ -329,7 +324,6 @@ exports.movie = app => {
         movieData.lines.forEach((quote, index) => {
           var line = quote.quotation.replace(/'/g, "''");
           var query = `insert into quote (movie_id, quotation, role) values (${id}, '${line}', '${quote.role}')`;
-          console.log(query);
           client.query(query);
         })
         return result;
@@ -604,7 +598,6 @@ exports.movie = app => {
                 ${actor.crew_id},
                 `;
 
-            console.log("ROLES: ", actor.role);
             if (actor.role.length) {
               actorQuery = actorQuery.concat(`array [`);
               actor.role.forEach(role => {
@@ -617,7 +610,6 @@ exports.movie = app => {
             } else {
               actorQuery = actorQuery.concat(`null)`);
             }
-            console.log("actorQuery: ", actorQuery)
             client.query(actorQuery);
           } else {
             // update, since id is existing
@@ -635,14 +627,12 @@ exports.movie = app => {
               actorQuery = actorQuery.concat(`null `);
             }
             actorQuery = actorQuery.concat(`where actor_id = ${actor.id} and movie_id = ${id}`);
-            console.log("actorQuery: ", actorQuery)
 
             client.query(actorQuery);
           }
         });
 
         // add/update/delete awards
-        console.log(movieData);
 
         // delete awards
         movieData.awards_to_delete.forEach((award) => {
@@ -654,7 +644,6 @@ exports.movie = app => {
           if (award.award_id != null) {
             // update, since awardId is existing
             client.query(`update movie_award set award_id = ${award.id}, year = ${award.year}, type = '${award.type}' where id = ${award.award_id}`)
-            console.log('award query: ', `update movie_award set award_id = ${award.id}, year = ${award.year}, type = '${award.type}' where id = ${award.award_id}`);
           } else {
             // add, since awardId does not exist
             var awardQuery = `insert into movie_award (movie_id, award_id, year, type) values (${id}, ${award.id}, ${award.year}, '${award.type}')`;
@@ -663,8 +652,6 @@ exports.movie = app => {
         });
 
         // add/update/delete lines
-
-        console.log(movieData);
 
         movieData.lines_to_delete.forEach((quote) => {
           // delete
@@ -736,7 +723,6 @@ exports.movie = app => {
       client.query(
         'select distinct unnest(genre) as genre from movie order by genre',
         function onResult(err, result) {
-          console.log(result);
           release()
           if (result) res.send(JSON.stringify(result.rows));
           else res.send(err);
@@ -787,7 +773,6 @@ exports.movie = app => {
       if (req.body.type == 'delete') {
         client.query(`delete from favorite where movie_id = ${req.body.movie_id} and account_id = '${req.body.account_id}'`,
           function onResult(err, result) {
-            console.log("delete: ", result);
             release();
             res.send(err || JSON.stringify(!result.rows.length ? 0 : req.body.movie_id));
           }
@@ -795,8 +780,6 @@ exports.movie = app => {
       } else if (req.body.type == 'add') {
         client.query(`insert into favorite (movie_id, account_id) values (${req.body.movie_id}, '${req.body.account_id}') returning id`,
           function onResult(err, result) {
-            console.log('add: ', result);
-
             release();
             res.send(err || JSON.stringify(result.rows[0].id));
           }

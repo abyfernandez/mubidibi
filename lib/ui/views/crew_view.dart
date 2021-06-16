@@ -4,7 +4,6 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mubidibi/ui/shared/video_file.dart';
-import 'package:mubidibi/ui/views/dashboard_view.dart';
 import 'package:mubidibi/ui/views/list_all_view.dart';
 import 'package:mubidibi/ui/widgets/full_photo_ver2.dart';
 import 'package:video_player/video_player.dart';
@@ -19,7 +18,6 @@ import 'package:mubidibi/models/award.dart';
 import 'package:mubidibi/models/crew.dart';
 import 'package:mubidibi/services/authentication_service.dart';
 import 'package:mubidibi/services/dialog_service.dart';
-import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/views/add_crew.dart';
 import 'package:mubidibi/ui/views/movie_view.dart';
 import 'package:mubidibi/ui/views/see_all_view.dart';
@@ -33,7 +31,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/timezone.dart';
 
 class CrewView extends StatefulWidget {
-  final String crewId;
+  final int crewId;
 
   CrewView({this.crewId});
 
@@ -43,7 +41,7 @@ class CrewView extends StatefulWidget {
 
 class _CrewViewState extends State<CrewView>
     with SingleTickerProviderStateMixin {
-  final String crewId;
+  final int crewId;
 
   _CrewViewState(this.crewId);
 
@@ -59,7 +57,6 @@ class _CrewViewState extends State<CrewView>
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   List<Award> awards;
   List<Award> awardOptions;
-  List favData;
   // Video Player / Carousel variables
   int _gallerySlider = 0;
   final CarouselController _galleryController = CarouselController();
@@ -95,7 +92,7 @@ class _CrewViewState extends State<CrewView>
   }
 
   Future<bool> onBackPress() async {
-    Navigator.pop(context, favData);
+    Navigator.pop(context, []);
     return Future.value(false);
   }
 
@@ -124,14 +121,26 @@ class _CrewViewState extends State<CrewView>
     return Wrap(
         children: crew.type != null
             ? crew.type.map((type) {
-                return Container(
-                    margin: EdgeInsets.only(right: 5),
-                    child: Chip(
-                      labelPadding: EdgeInsets.only(left: 2, right: 2),
-                      label: Text(type,
-                          style: TextStyle(fontSize: 12, color: Colors.white)),
-                      backgroundColor: Colors.lightBlue,
-                    ));
+                return GestureDetector(
+                    child: Container(
+                        margin: EdgeInsets.only(right: 5),
+                        child: Chip(
+                          labelPadding: EdgeInsets.only(left: 2, right: 2),
+                          label: Text(type,
+                              style:
+                                  TextStyle(fontSize: 12, color: Colors.white)),
+                          backgroundColor: Colors.lightBlue,
+                        )),
+                    onTap: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => SeeAllView(
+                                  type: "crew",
+                                  title: type,
+                                  showFilter: false,
+                                  filter: type)));
+                    });
               }).toList()
             : []);
   }
@@ -150,19 +159,7 @@ class _CrewViewState extends State<CrewView>
                           builder: (context) =>
                               MovieView(movieId: movie.movieId),
                         ),
-                      ).then((data) {
-                        setState(() {
-                          fetchCrew();
-                          fetchAwards();
-                          favData = data;
-                        });
-                        if (data[0] == true) {
-                          rebuild.value = true;
-                          // headerFavorite.value = headerId == data[2]
-                          //     ? data[1]
-                          //     : headerFavorite.value;
-                        }
-                      });
+                      );
                     },
                     child: Stack(
                       children: [
@@ -385,7 +382,7 @@ class _CrewViewState extends State<CrewView>
             child: Icon(Icons.arrow_back),
             onTap: () async {
               FocusScope.of(context).unfocus();
-              Navigator.pop(context, favData);
+              Navigator.pop(context, []);
             },
           ),
         ),
@@ -479,7 +476,7 @@ class _CrewViewState extends State<CrewView>
                               //   context,
                               //   MaterialPageRoute(
                               //     builder: (context) =>
-                              //         CrewView(crewId: crew.crewId.toString()),
+                              //         CrewView(crewId: crew.crewId),
                               //   ),
                               // );
                               fetchCrew();
@@ -550,7 +547,7 @@ class _CrewViewState extends State<CrewView>
                               //   context,
                               //   MaterialPageRoute(
                               //     builder: (context) => CrewView(
-                              //       crewId: crew.crewId.toString(),
+                              //       crewId: crew.crewId,
                               //     ),
                               //   ),
                               // );
@@ -839,16 +836,7 @@ class _CrewViewState extends State<CrewView>
                                                                     "Mga Pelikula Bilang Direktor",
                                                               ),
                                                             ),
-                                                          ).then((data) {
-                                                            setState(() {
-                                                              favData = data;
-                                                            });
-                                                            if (data[0] ==
-                                                                true) {
-                                                              rebuild.value =
-                                                                  true;
-                                                            }
-                                                          });
+                                                          );
                                                         },
                                                       ),
                                                     )
@@ -912,22 +900,7 @@ class _CrewViewState extends State<CrewView>
                                                                     "Mga Pelikula Bilang Manunulat",
                                                               ),
                                                             ),
-                                                          ).then((data) {
-                                                            setState(() {
-                                                              favData = data;
-                                                            });
-                                                            if (data[0] ==
-                                                                true) {
-                                                              rebuild.value =
-                                                                  true;
-                                                              // headerFavorite
-                                                              //     .value = headerId ==
-                                                              //         data[2]
-                                                              //     ? data[1]
-                                                              //     : headerFavorite
-                                                              //         .value;
-                                                            }
-                                                          });
+                                                          );
                                                         },
                                                       ),
                                                     )
@@ -989,22 +962,7 @@ class _CrewViewState extends State<CrewView>
                                                                     "Mga Pelikula Bilang Aktor",
                                                               ),
                                                             ),
-                                                          ).then((data) {
-                                                            setState(() {
-                                                              favData = data;
-                                                            });
-                                                            if (data[0] ==
-                                                                true) {
-                                                              rebuild.value =
-                                                                  true;
-                                                              // headerFavorite
-                                                              //     .value = headerId ==
-                                                              //         data[2]
-                                                              //     ? data[1]
-                                                              //     : headerFavorite
-                                                              //         .value;
-                                                            }
-                                                          });
+                                                          );
                                                         },
                                                       ),
                                                     )

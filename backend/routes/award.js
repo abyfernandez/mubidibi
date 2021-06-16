@@ -4,8 +4,6 @@ exports.award = app => {
   app.post('/mubidibi/all-awards/', (req, res) => {
     app.pg.connect(onConnect)
 
-    console.log(req.body);
-
     function onConnect(err, client, release) {
       if (err) return res.send(err)
 
@@ -22,7 +20,6 @@ exports.award = app => {
       client.query(
         query,
         async function onResult(err, result) {
-          console.log(result.rows);
           release()
           res.send(err || JSON.stringify(result.rows));
         }
@@ -135,7 +132,6 @@ exports.award = app => {
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
-      console.log(query);
       var award = await client.query(query);
 
       release();

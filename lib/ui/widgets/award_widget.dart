@@ -335,7 +335,8 @@ class AwardWidgetState extends State<AwardWidget> {
                               isDense: false,
                               underline: Container(),
                               onChanged: (val) {
-                                FocusScope.of(context).unfocus();
+                                typeNode.unfocus();
+                                yearNode.unfocus();
                                 setState(() {
                                   widget.item.type = val;
                                   showTypeError();

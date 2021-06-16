@@ -20,6 +20,7 @@ class AuthenticationService {
   Future _populateCurrentUser(FirebaseUser user) async {
     if (user != null) {
       _currentUser = await getUser(userId: user.uid);
+      print('currentUser: $_currentUser');
     } else {
       _currentUser = null;
     }
@@ -62,7 +63,6 @@ class AuthenticationService {
     // send API request
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      print(jsonDecode(response.body));
       return User.fromJson(jsonDecode(response.body));
     } else {
       throw Exception('Failed to load user');
@@ -97,6 +97,7 @@ class AuthenticationService {
           'lastName': lastName,
           'suffix': suffix,
           'birthday': birthday,
+          'email': email
         }),
       );
 

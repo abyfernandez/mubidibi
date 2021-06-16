@@ -28,7 +28,6 @@ import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/locator.dart';
-import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';
 import 'package:http/http.dart' as http;
@@ -955,7 +954,6 @@ class _AddMovieState extends State<AddMovie> {
                 ),
               )
             : SizedBox(),
-        // TO DO: fix overflow issue when text is too long
         filteredAwards.length != 0
             ? Container(
                 alignment: Alignment.topLeft,

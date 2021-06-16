@@ -29,7 +29,6 @@ import 'package:provider_architecture/provider_architecture.dart';
 import 'package:mubidibi/viewmodels/movie_view_model.dart';
 import 'package:mubidibi/viewmodels/crew_view_model.dart';
 import 'package:mubidibi/locator.dart';
-import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/ui/widgets/my_stepper.dart';
 import 'package:mubidibi/globals.dart' as Config;
 import 'package:timezone/data/latest.dart' as tz;
@@ -176,7 +175,6 @@ class _AddCrewState extends State<AddCrew> {
                 ),
               )
             : SizedBox(),
-        // TO DO: fix overflow issue when text is too long
         filteredMovieActorList.length != 0
             ? Container(
                 alignment: Alignment.topLeft,
@@ -336,7 +334,6 @@ class _AddCrewState extends State<AddCrew> {
                 ),
               )
             : SizedBox(),
-        // TO DO: fix overflow issue when text is too long
         filteredAwards.length != 0
             ? Container(
                 alignment: Alignment.topLeft,
@@ -1056,7 +1053,7 @@ class _AddCrewState extends State<AddCrew> {
 
                                       // get movie using id redirect to detail view using response
                                       var crewRes = await model.getOneCrew(
-                                          crewId: response.toString());
+                                          crewId: response);
 
                                       if (crewRes != null) {
                                         _saving =
@@ -1064,14 +1061,6 @@ class _AddCrewState extends State<AddCrew> {
                                         Timer(
                                             const Duration(milliseconds: 2000),
                                             () {
-                                          // Navigator.pushReplacement(
-                                          //   context,
-                                          //   MaterialPageRoute(
-                                          //     builder: (context) => CrewView(
-                                          //         crewId: crewRes.crewId
-                                          //             .toString()),
-                                          //   ),
-                                          // );
                                           Navigator.pop(context, []);
                                         });
                                       }

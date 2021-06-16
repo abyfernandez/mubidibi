@@ -12,7 +12,7 @@ class SignUpViewModel extends BaseModel {
   final DialogService _dialogService = locator<DialogService>();
   final NavigationService _navigationService = locator<NavigationService>();
 
-  Future signUp({
+  Future<bool> signUp({
     @required String email,
     @required String password,
     @required firstName,
@@ -36,18 +36,20 @@ class SignUpViewModel extends BaseModel {
     setBusy(false);
     if (result is bool) {
       if (result) {
-        _navigationService.navigateTo(HomeViewRoute);
+        return true;
       } else {
         await _dialogService.showDialog(
           title: 'Sign Up Failed',
-          description: 'Please check your inputs and try again later',
+          description: 'Please check if your inputs are correct.',
         );
       }
+      return false;
     } else {
       await _dialogService.showDialog(
         title: 'Sign Up Failed',
-        description: 'Please check your inputs and try again later',
+        description: result,
       );
+      return false;
     }
   }
 }

@@ -9,7 +9,6 @@ import 'package:mubidibi/models/review.dart';
 import 'package:mubidibi/models/user.dart';
 import 'package:mubidibi/services/dialog_service.dart';
 import 'package:mubidibi/services/navigation_service.dart';
-import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/viewmodels/review_view_model.dart';
 import '../../locator.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -83,7 +82,8 @@ class DisplayReviewsState extends State<DisplayReviews> {
         movieId: widget.movie.movieId.toString(),
         accountId:
             widget.currentUser != null ? widget.currentUser.userId : "0");
-    if (this.mounted) {
+
+    if (mounted) {
       // Your state change code goes here
       setState(() {
         userReviews = widget.currentUser != null

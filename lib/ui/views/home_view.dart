@@ -145,7 +145,9 @@ class _HomeViewState extends State<HomeView> {
                               builder: (BuildContext context) => SeeAllView(
                                   movies: null,
                                   type: "movies",
-                                  title: filterBy.value,
+                                  showFilter: true,
+                                  // title: filterBy.value,
+                                  title: 'Mga Pelikula',
                                   filter: filterBy.value)));
                     },
                     underline: Container(),
@@ -156,7 +158,6 @@ class _HomeViewState extends State<HomeView> {
                   child: GestureDetector(
                     onTap: () {
                       _scaffoldKey.currentState.openEndDrawer();
-                      print(_scaffoldKey.currentState.isEndDrawerOpen);
                     },
                     child: Icon(Icons.menu),
                   ),

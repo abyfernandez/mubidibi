@@ -83,7 +83,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         viewToShow: AddCrew(crew: crew),
       );
     case CrewViewRoute:
-      var crewId = settings.arguments as String;
+      var crewId = settings.arguments as int;
       return _getPageRoute(
         routeName: settings.name,
         viewToShow: CrewView(crewId: crewId),

@@ -122,14 +122,17 @@ exports.crew = app => {
   });
 
   // GET ONE CREW FOR A CERTAIN MOVIE -- CREW VIEW
-  app.get('/mubidibi/one-crew/:id', (req, res) => {
+  app.post('/mubidibi/one-crew/:id', (req, res) => {
     app.pg.connect(onConnect)
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err)
 
-      client.query(
-        `SELECT *, concat_ws(' ', first_name, middle_name, last_name, suffix) as name FROM crew where id = $1`, [parseInt(req.params.id)],
+      var query = `SELECT *, concat_ws(' ', first_name, middle_name, last_name, suffix) as name FROM crew where id = ${req.body.crew_id}`
+
+      if (req.body.user != "admin") query = query.concat(` and is_deleted = false`);
+
+      client.query(query,
         async function onResult(err, result) {
           var crew = result.rows[0];
 
@@ -144,9 +147,23 @@ exports.crew = app => {
           var type = [];
           var movies = [];
 
-          var director = await client.query(`select exists(select 1 from movie_director where director_id=$1)`, [parseInt(req.params.id)]);
-          var writer = await client.query(`select exists(select 1 from movie_writer where writer_id=$1)`, [parseInt(req.params.id)]);
-          var actor = await client.query(`select exists(select 1 from movie_actor where actor_id=$1)`, [parseInt(req.params.id)]);
+          var directorQ = `select exists(select 1 from movie_director left join crew on movie_director.director_id = crew.id where director_id=${req.body.crew_id}`
+          if (req.body.user != "admin") directorQ = directorQ.concat(` and crew.is_deleted = false)`);
+          else directorQ = directorQ.concat(`)`);
+
+          var director = await client.query(directorQ);
+
+          var writerQ = `select exists(select 1 from movie_writer left join crew on movie_writer.writer_id = crew.id where writer_id=${req.body.crew_id}`
+          if (req.body.user != "admin") writerQ = writerQ.concat(` and crew.is_deleted = false)`);
+          else writerQ = writerQ.concat(`)`);
+
+          var writer = await client.query(writerQ);
+
+          var actorQ = `select exists(select 1 from movie_actor left join crew on movie_actor.actor_id = crew.id where actor_id=${req.body.crew_id}`
+          if (req.body.user != "admin") actorQ = actorQ.concat(` and crew.is_deleted = false)`);
+          else actorQ = actorQ.concat(`)`);
+
+          var actor = await client.query(actorQ);
 
           if (director.rows[0].exists) type.push("Direktor");
           if (writer.rows[0].exists) type.push("Manunulat");
@@ -155,7 +172,9 @@ exports.crew = app => {
           crew['type'] = type;
 
           // get the movies associated to this crew according to crew type
-          var movies_directed = await client.query(`select movie.* from movie left join movie_director as md on movie.id = md.movie_id where md.director_id = $1`, [parseInt(req.params.id)]);
+          var moviesD = `select movie.* from movie left join movie_director as md on movie.id = md.movie_id where md.director_id = ${req.body.crew_id}`;
+          if (req.body.user != "admin") moviesD = moviesD.concat(` and movie.is_deleted = false`);
+          var movies_directed = await client.query(moviesD);
 
           // get posters  
           for (var i = 0; i < movies_directed.rows.length; i++) {
@@ -163,7 +182,9 @@ exports.crew = app => {
             movies_directed.rows[i]['posters'] = rows;
           }
 
-          var movies_written = await client.query(`select movie.* from movie left join movie_writer as mw on movie.id = mw.movie_id where mw.writer_id = $1`, [parseInt(req.params.id)]);
+          var moviesW = `select movie.* from movie left join movie_writer as mw on movie.id = mw.movie_id where mw.writer_id = ${req.body.crew_id}`;
+          if (req.body.user != "admin") moviesW = moviesW.concat(` and movie.is_deleted = false`);
+          var movies_written = await client.query(moviesW);
 
           // get posters  
           for (var i = 0; i < movies_written.rows.length; i++) {
@@ -171,7 +192,9 @@ exports.crew = app => {
             movies_written.rows[i]['posters'] = rows;
           }
 
-          var movies_acted = await client.query(`select movie.* from movie left join movie_actor as ma on movie.id = ma.movie_id where ma.actor_id = $1`, [parseInt(req.params.id)]);
+          var moviesA = `select movie.* from movie left join movie_actor as ma on movie.id = ma.movie_id where ma.actor_id = ${req.body.crew_id}`;
+          if (req.body.user != "admin") moviesA = moviesA.concat(` and movie.is_deleted = false`);
+          var movies_acted = await client.query(moviesA);
 
           // get posters  
           for (var i = 0; i < movies_acted.rows.length; i++) {
@@ -628,8 +651,6 @@ exports.crew = app => {
             )`)
         });
 
-        console.log(crewData);
-
         // add/update/delete movie actors
         crewData.actors_to_delete.forEach((actor) => {
           // delete
@@ -679,7 +700,6 @@ exports.crew = app => {
         });
 
         // add/update/delete awards
-        console.log(crewData);
 
         crewData.awards_to_delete.forEach((award) => {
           // delete

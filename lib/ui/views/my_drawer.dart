@@ -66,20 +66,6 @@ class MyDrawer extends StatelessWidget {
                         ),
                       )
                     : SizedBox(),
-                // Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
-                // ListTile(
-                //   leading: Icon(
-                //     Icons.info_outlined,
-                //     size: 20,
-                //   ),
-                //   title: Text(
-                //     "About Mubidibi",
-                //     style: TextStyle(fontWeight: FontWeight.w300, fontSize: 16),
-                //   ),
-                //   onTap: () {
-                //     // TO DO: Create page for App Info
-                //   },
-                // ),
                 Divider(color: Color.fromRGBO(20, 20, 20, 1), height: 1),
                 currentUser != null
                     ? ListTile(

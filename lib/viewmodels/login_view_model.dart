@@ -39,7 +39,7 @@ class LoginViewModel extends BaseModel {
     } else {
       await _dialogService.showDialog(
         title: 'Login Failed',
-        description: 'Please check your inputs and try again.',
+        description: result,
       );
       return false;
     }

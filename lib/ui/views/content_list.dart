@@ -223,8 +223,8 @@ class ContentList extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => CrewView(
-                                  crewId: crew[index].crewId.toString()),
+                              builder: (_) =>
+                                  CrewView(crewId: crew[index].crewId),
                             ),
                           )
                         },

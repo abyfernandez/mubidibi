@@ -34,7 +34,7 @@ class AwardViewModel extends BaseModel {
     }
   }
 
-  // Function: GET AWARDS for Movie Detail View -- // TO DO: include the awards received by the movie's crew
+  // Function: GET AWARDS for Movie Detail View
   Future<List<Award>> getAwards(
       {@required int movieId, @required String user}) async {
     setBusy(true);
@@ -57,7 +57,7 @@ class AwardViewModel extends BaseModel {
 
   // Function: GET AWARDS for Awards Detail View
   Future<List<Award>> getCrewAwards(
-      {@required String crewId, @required String user}) async {
+      {@required int crewId, @required String user}) async {
     setBusy(true);
 
     // send API Request

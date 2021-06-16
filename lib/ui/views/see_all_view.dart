@@ -79,6 +79,7 @@ class _SeeAllViewState extends State<SeeAllView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        // backgroundColor: Colors.white,
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
           backgroundColor: Colors.white,
@@ -96,8 +97,7 @@ class _SeeAllViewState extends State<SeeAllView> {
             value: SystemUiOverlayStyle.light,
             child: GestureDetector(
                 onTap: () => FocusScope.of(context).unfocus(),
-                child: SingleChildScrollView(
-                    child: SafeArea(child: showContent(context))))));
+                child: SingleChildScrollView(child: showContent(context)))));
   }
 
   // function for calling viewmodel's getAllMovies method
@@ -114,16 +114,20 @@ class _SeeAllViewState extends State<SeeAllView> {
             json.decode(response.body).map((x) => x['genre']));
       }
 
-      setState(() {
-        filtered = films;
-        applyFilter(filters);
-      });
+      if (mounted) {
+        setState(() {
+          filtered = films;
+          applyFilter(filters);
+        });
+      }
     } else {
-      setState(() {
-        films = movies;
-        filtered = films;
-        applyFilter(filters);
-      });
+      if (mounted) {
+        setState(() {
+          films = movies;
+          filtered = films;
+          applyFilter(filters);
+        });
+      }
     }
   }
 
@@ -185,10 +189,11 @@ class _SeeAllViewState extends State<SeeAllView> {
               item.type != null && item.type.toSet().containsAll(groupBy))
           .toList();
     }
-
-    setState(() {
-      filtered = filtered;
-    });
+    if (mounted) {
+      setState(() {
+        filtered = filtered;
+      });
+    }
   }
 
   Widget showContent(context) {
@@ -203,7 +208,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                   ? Container(
                       margin: EdgeInsets.only(left: 15, right: 15),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        // color: Colors.white,
+                        color: Color.fromRGBO(240, 240, 240, 1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: ChipsInput(
@@ -216,7 +222,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                             fontFamily: 'Poppins', fontSize: 16),
                         decoration: const InputDecoration(
                           labelText: 'Filter by genre',
-                          contentPadding: EdgeInsets.all(10),
+                          contentPadding: EdgeInsets.only(
+                              right: 10, top: 10, bottom: 10, left: 15),
+                          border: InputBorder.none,
                         ),
                         findSuggestions: (String query) {
                           if (query.isNotEmpty) {
@@ -343,7 +351,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                           .toList()
                       : [
                           Center(
-                            child: Text("No content found."),
+                            child: Text("No content found.",
+                                style: TextStyle(fontSize: 16)),
                           ),
                         ]),
             ],
@@ -360,7 +369,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                   ? Container(
                       margin: EdgeInsets.only(left: 15, right: 15),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Color.fromRGBO(240, 240, 240, 1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: ChipsInput(
@@ -373,7 +382,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                             fontFamily: 'Poppins', fontSize: 16),
                         decoration: const InputDecoration(
                           labelText: 'Filter by genre',
-                          contentPadding: EdgeInsets.all(10),
+                          contentPadding: EdgeInsets.only(
+                              right: 10, top: 10, bottom: 10, left: 15),
+                          border: InputBorder.none,
                         ),
                         findSuggestions: (String query) {
                           if (query.isNotEmpty) {
@@ -500,7 +511,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                           .toList()
                       : [
                           Center(
-                            child: Text("No content found."),
+                            child: Text("No content found.",
+                                style: TextStyle(fontSize: 16)),
                           ),
                         ]),
             ],
@@ -517,7 +529,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                   ? Container(
                       margin: EdgeInsets.only(left: 15, right: 15),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        // color: Colors.white,
+                        color: Color.fromRGBO(240, 240, 240, 1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: ChipsInput(
@@ -530,7 +543,9 @@ class _SeeAllViewState extends State<SeeAllView> {
                             fontFamily: 'Poppins', fontSize: 16),
                         decoration: const InputDecoration(
                           labelText: 'Filter by type',
-                          contentPadding: EdgeInsets.all(10),
+                          contentPadding: EdgeInsets.only(
+                              right: 10, top: 10, bottom: 10, left: 15),
+                          border: InputBorder.none,
                         ),
                         findSuggestions: (String query) {
                           if (query.isNotEmpty) {
@@ -640,7 +655,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (_) => CrewView(
-                                        crewId: crew.crewId.toString()),
+                                        crewId: crew.crewId),
                                   ));
                             },
                           ),
@@ -648,7 +663,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                         .toList()
                     : [
                         Center(
-                          child: Text("No content found."),
+                          child: Text("No content found.",
+                              style: TextStyle(fontSize: 16)),
                         )
                       ],
               ),

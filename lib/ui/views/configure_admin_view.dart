@@ -9,7 +9,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:mubidibi/models/user.dart';
 import 'package:mubidibi/locator.dart';
 import 'package:mubidibi/services/authentication_service.dart';
-import 'package:mubidibi/ui/shared/shared_styles.dart';
 import 'package:mubidibi/viewmodels/user_view_model.dart';
 import 'package:provider_architecture/provider_architecture.dart';
 import 'package:modal_progress_hud/modal_progress_hud.dart';

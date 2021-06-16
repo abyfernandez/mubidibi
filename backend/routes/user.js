@@ -66,10 +66,8 @@ exports.user = app => {
     var suffix = req.body.suffix != null || req.body.suffix != "" ? req.body.suffix.replace(/'/g, "''") : '';
 
     // build query
-    var query = `call add_account (
-    '${req.body.userId}',
-    '${first_name}',
-    `;
+    var query = `insert into account (id, first_name, birthday, middle_name, last_name, suffix, email, added_by) values (
+    '${req.body.userId}', '${first_name}', `;
 
     // if birthday is not required
     if (req.body.birthday != null) {
@@ -78,40 +76,36 @@ exports.user = app => {
       query = query.concat(`null, `);
     }
 
-    // query = query.concat(`'${req.body.birthday}',
-    // `);  // if birthday is required
-
-    query = query.concat(`_middle_name => `);
-
     if (middle_name != '') {
-      query = query.concat(`'${middle_name}',
-      `);
+      query = query.concat(`'${middle_name}', `);
     } else {
-      query = query.concat(`null,
-      `);
+      query = query.concat(`null, `);
     }
 
-    query = query.concat(`_last_name => '${last_name}', 
-    _suffix => `);
+    if (last_name != '') {
+      query = query.concat(`'${last_name}', `);
+    } else {
+      query = query.concat(`null, `);
+    }
 
     if (suffix != '') {
-      query = query.concat(`'${suffix}'
-      )`);
+      query = query.concat(`'${suffix}', `);
     } else {
-      query = query.concat(`null
-      )`);
+      query = query.concat(`null, `);
     }
+
+    query = query.concat(`'${req.body.email}', '${req.body.userId}', is_admin = false) returning id`);
 
     async function onConnect(err, client, release) {
       if (err) return res.send(err);
 
-      var result = await client.query(query, function onResult(err, result) {
-
-        return (err || result);
-      });
-
-      release();
-      res.send(err || JSON.stringify(result));
+      client.query(
+        query,
+        function onResult(err, result) {
+          release()
+          res.send(err || JSON.stringify(result));
+        }
+      )
     }
   });
 }
