@@ -103,7 +103,7 @@ class _SignUpFirstPageState extends State<SignUpFirstPage> {
     return ViewModelProvider<SignUpViewModel>.withConsumer(
       viewModel: SignUpViewModel(),
       builder: (context, model, child) => Scaffold(
-        resizeToAvoidBottomInset: false,
+        // resizeToAvoidBottomInset: false,
         appBar: AppBar(
           backgroundColor: Colors.white,
           shadowColor: Colors.transparent,
@@ -364,7 +364,7 @@ class _SecondFormPageState extends State<SignUpSecondPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
-                          SizedBox(height: 50.0),
+                          // SizedBox(height: 50.0),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

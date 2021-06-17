@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mime/mime.dart';
@@ -1205,7 +1206,8 @@ class _AddMovieState extends State<AddMovie> {
         titleController.text = movie?.title ?? '';
 
         _date = movie?.releaseDate != null
-            ? DateTime.parse(movie?.releaseDate).add(Duration(days: 1))
+            // ? DateTime.parse(movie?.releaseDate).add(Duration(days: 1))
+            ? DateTime.parse(movie?.releaseDate)
             : null;
 
         dateController.text = movie?.releaseDate != null
@@ -2074,14 +2076,11 @@ class _AddMovieState extends State<AddMovie> {
                 height: 15,
               ),
               Container(
-                  width: 140,
                   child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: getPosters,
-                    child: Row(
-                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
-                    ),
-                  )),
+                color: Color.fromRGBO(240, 240, 240, 1),
+                onPressed: getPosters,
+                child: Text(" Dagdagan"),
+              )),
               SizedBox(
                 height: 15,
               ),
@@ -2102,9 +2101,9 @@ class _AddMovieState extends State<AddMovie> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
@@ -2144,7 +2143,9 @@ class _AddMovieState extends State<AddMovie> {
                                               posterList.removeAt(i);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2175,14 +2176,12 @@ class _AddMovieState extends State<AddMovie> {
                 height: 15,
               ),
               Container(
-                  width: 140,
-                  child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: getTrailers,
-                    child: Row(
-                      children: [Icon(Icons.videocam), Text(" Dagdagan")],
-                    ),
-                  )),
+                child: FlatButton(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  onPressed: getTrailers,
+                  child: Text(" Dagdagan"),
+                ),
+              ),
               SizedBox(
                 height: 15,
               ),
@@ -2203,9 +2202,9 @@ class _AddMovieState extends State<AddMovie> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
@@ -2245,7 +2244,9 @@ class _AddMovieState extends State<AddMovie> {
                                               trailerList.removeAt(i);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2278,14 +2279,12 @@ class _AddMovieState extends State<AddMovie> {
                 height: 15,
               ),
               Container(
-                  width: 140,
-                  child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: addtoGallery,
-                    child: Row(
-                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
-                    ),
-                  )),
+                child: FlatButton(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  onPressed: addtoGallery,
+                  child: Text(" Dagdagan"),
+                ),
+              ),
               SizedBox(
                 height: 15,
               ),
@@ -2306,9 +2305,9 @@ class _AddMovieState extends State<AddMovie> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
@@ -2350,7 +2349,9 @@ class _AddMovieState extends State<AddMovie> {
                                               galleryList.removeAt(i);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2383,14 +2384,12 @@ class _AddMovieState extends State<AddMovie> {
                 height: 15,
               ),
               Container(
-                  width: 140,
-                  child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: getAudios,
-                    child: Row(
-                      children: [Icon(Icons.library_music), Text(" Dagdagan")],
-                    ),
-                  )),
+                child: FlatButton(
+                  color: Color.fromRGBO(240, 240, 240, 1),
+                  onPressed: getAudios,
+                  child: Text(" Dagdagan"),
+                ),
+              ),
               SizedBox(
                 height: 15,
               ),
@@ -2411,9 +2410,9 @@ class _AddMovieState extends State<AddMovie> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
@@ -2454,7 +2453,9 @@ class _AddMovieState extends State<AddMovie> {
                                               audioList.removeAt(i);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2662,17 +2663,10 @@ class _AddMovieState extends State<AddMovie> {
                 ],
               ),
               Container(
-                width: 140,
                 child: FlatButton(
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  onPressed: addActor,
-                  child: Row(
-                    children: [
-                      Icon(Icons.person_add_alt_1_outlined),
-                      Text(" Dagdagan")
-                    ],
-                  ),
-                ),
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addActor,
+                    child: Text(" Dagdagan")),
               ),
 
               ListView.builder(
@@ -2692,9 +2686,9 @@ class _AddMovieState extends State<AddMovie> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
@@ -2779,7 +2773,9 @@ class _AddMovieState extends State<AddMovie> {
                                                   .remove(actorList[i]);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2822,17 +2818,10 @@ class _AddMovieState extends State<AddMovie> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                  width: 140,
                   child: FlatButton(
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: addAward,
-                    child: Row(
-                      children: [
-                        Icon(Icons.emoji_events_outlined),
-                        Text(" Dagdagan")
-                      ],
-                    ),
-                  )),
+                      color: Color.fromRGBO(240, 240, 240, 1),
+                      onPressed: addAward,
+                      child: Text(" Dagdagan"))),
               ListView.builder(
                   itemCount: awardList.length,
                   shrinkWrap: true,
@@ -2850,9 +2839,9 @@ class _AddMovieState extends State<AddMovie> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
@@ -2873,7 +2862,7 @@ class _AddMovieState extends State<AddMovie> {
                                                           .awardId)) {
                                                 awardsToDelete.add(
                                                     awardList[i].item.awardId);
-                                              }  else if (awardList[i]
+                                              } else if (awardList[i]
                                                           .prevId
                                                           .value !=
                                                       null &&
@@ -2896,7 +2885,9 @@ class _AddMovieState extends State<AddMovie> {
                                               awardList.removeAt(i);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2947,18 +2938,11 @@ class _AddMovieState extends State<AddMovie> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: filteredActors.isEmpty ? null : 140,
               child: filteredActors.isNotEmpty
                   ? FlatButton(
                       color: Color.fromRGBO(240, 240, 240, 1),
                       onPressed: addLine,
-                      child: Row(
-                        children: [
-                          Icon(Icons.question_answer_outlined),
-                          Text(" Dagdagan")
-                        ],
-                      ),
-                    )
+                      child: Text(" Dagdagan"))
                   : lineList.isEmpty && filteredActors.isEmpty
                       ? Text(
                           'Magdagdag ng aktor para ma-access ang step na ito',
@@ -2986,9 +2970,9 @@ class _AddMovieState extends State<AddMovie> {
                                     bottom: 0,
                                     right: 0,
                                     child: Container(
-                                      child: OutlineButton(
-                                        padding: EdgeInsets.all(0),
-                                        color: Colors.white,
+                                      child: TextButton(
+                                        // padding: EdgeInsets.all(0),
+                                        // color: Colors.white,
                                         onPressed: () {
                                           FocusScope.of(context).unfocus();
                                           setState(() {
@@ -3011,7 +2995,9 @@ class _AddMovieState extends State<AddMovie> {
                                             lineList.removeAt(i);
                                           });
                                         },
-                                        child: Text('Tanggalin'),
+                                        child: Text('TANGGALIN',
+                                            style: TextStyle(
+                                                color: Colors.black45)),
                                       ),
                                       alignment: Alignment.centerRight,
                                     ),
@@ -3470,9 +3456,9 @@ class ActorWidgetState extends State<ActorWidget> {
                 : SizedBox(),
             showError == true ? SizedBox(height: 15) : SizedBox(),
             Container(
-              child: OutlineButton(
-                padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                color: Colors.white,
+              child: TextButton(
+                // padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                // color: Colors.white,
                 onPressed: () {
                   FocusScope.of(context).unfocus();
                   if (widget.crew.crewId != null &&
@@ -3495,7 +3481,7 @@ class ActorWidgetState extends State<ActorWidget> {
                     });
                   }
                 },
-                child: Text('Save'),
+                child: Text('SAVE', style: TextStyle(color: Colors.blue)),
               ),
               alignment: Alignment.center,
             )

@@ -128,7 +128,7 @@ class _CrewViewState extends State<CrewView>
                           labelPadding: EdgeInsets.only(left: 2, right: 2),
                           label: Text(type,
                               style:
-                                  TextStyle(fontSize: 12, color: Colors.white)),
+                                  TextStyle(fontSize: 10, color: Colors.white)),
                           backgroundColor: Colors.lightBlue,
                         )),
                     onTap: () {
@@ -165,7 +165,6 @@ class _CrewViewState extends State<CrewView>
                       children: [
                         Container(
                           alignment: Alignment.center,
-
                           height: 180, //200
                           width: 120, //130
                           margin:
@@ -194,7 +193,7 @@ class _CrewViewState extends State<CrewView>
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -247,7 +246,7 @@ class _CrewViewState extends State<CrewView>
                 decoration: BoxDecoration(color: Colors.transparent),
                 child: Stack(
                   children: [
-                    p.url.contains('/image/upload/')
+                    p.format == "image"
                         ? Container(
                             child: GestureDetector(
                               child: Center(
@@ -369,7 +368,14 @@ class _CrewViewState extends State<CrewView>
 
   @override
   Widget build(BuildContext context) {
-    if (crew == null) return Center(child: CircularProgressIndicator());
+    if (crew == null) {
+      return Container(
+          color: Colors.white,
+          height: double.infinity,
+          child: Center(child: Container(child: CircularProgressIndicator())));
+    }
+
+    // return Center(child: CircularProgressIndicator());
 
     return ViewModelProvider.withConsumer(
       viewModel: CrewViewModel(),
@@ -401,7 +407,7 @@ class _CrewViewState extends State<CrewView>
                 iconColor: Colors.white,
                 bubbleColor: Colors.lightBlue,
                 icon: Icons.edit_outlined,
-                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                titleStyle: TextStyle(fontSize: 14, color: Colors.white),
                 onPress: () async {
                   var model = MovieViewModel();
                   var movieOptions = await model.getAllMovies(mode: "form");
@@ -433,7 +439,7 @@ class _CrewViewState extends State<CrewView>
                       iconColor: Colors.white,
                       bubbleColor: Colors.lightBlue,
                       icon: Icons.delete,
-                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      titleStyle: TextStyle(fontSize: 14, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
                         setState(() {
@@ -467,7 +473,7 @@ class _CrewViewState extends State<CrewView>
                                 msg: 'Item deleted successfully.',
                                 backgroundColor: Colors.green,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
 
                             Timer(const Duration(milliseconds: 2000), () {
                               _saving = false;
@@ -494,7 +500,7 @@ class _CrewViewState extends State<CrewView>
                                 msg: 'Something went wrong. Try again.',
                                 backgroundColor: Colors.red,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
                           }
                         }
                       },
@@ -504,7 +510,7 @@ class _CrewViewState extends State<CrewView>
                       iconColor: Colors.white,
                       bubbleColor: Colors.lightBlue,
                       icon: Icons.restore_from_trash_outlined,
-                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      titleStyle: TextStyle(fontSize: 14, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
                         setState(() {
@@ -538,7 +544,7 @@ class _CrewViewState extends State<CrewView>
                                 msg: 'This item is now restored.',
                                 backgroundColor: Colors.green,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
 
                             Timer(const Duration(milliseconds: 2000), () {
                               _saving = false;
@@ -566,7 +572,7 @@ class _CrewViewState extends State<CrewView>
                                 msg: 'Something went wrong. Try again.',
                                 backgroundColor: Colors.red,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
                           }
                         }
                       },
@@ -619,7 +625,7 @@ class _CrewViewState extends State<CrewView>
                                 softWrap: true,
                                 overflow: TextOverflow.clip,
                                 style: TextStyle(
-                                  fontSize: 25,
+                                  fontSize: 22,
                                   fontFamily: 'Poppins',
                                   color: Colors.black,
                                 ),
@@ -634,30 +640,36 @@ class _CrewViewState extends State<CrewView>
                                 Text(
                                   "Born:   " +
                                       (crew.birthday != null
+                                          // ? DateFormat("MMM. d, y", "fil")
+                                          //     .format(TZDateTime.from(
+                                          //         DateTime.parse(crew.birthday),
+                                          //         tz.getLocation(
+                                          //             'Asia/Manila')))
                                           ? DateFormat("MMM. d, y", "fil")
-                                              .format(TZDateTime.from(
-                                                  DateTime.parse(crew.birthday),
-                                                  tz.getLocation(
-                                                      'Asia/Manila')))
+                                              .format(
+                                                  DateTime.parse(crew.birthday))
                                           : '-'),
-                                  style: TextStyle(fontSize: 16),
+                                  style: TextStyle(fontSize: 14),
                                   softWrap: true,
-                                  overflow: TextOverflow.fade,
+                                  overflow: TextOverflow.clip,
                                 ),
                                 crew.isAlive == false
                                     ? Text(
                                         'Died:   ' +
                                             (crew.deathdate != null
+                                                // ? DateFormat("MMM. d, y", "fil")
+                                                //     .format(TZDateTime.from(
+                                                //         DateTime.parse(
+                                                //             crew.deathdate),
+                                                //         tz.getLocation(
+                                                //             'Asia/Manila')))
                                                 ? DateFormat("MMM. d, y", "fil")
-                                                    .format(TZDateTime.from(
-                                                        DateTime.parse(
-                                                            crew.deathdate),
-                                                        tz.getLocation(
-                                                            'Asia/Manila')))
+                                                    .format(DateTime.parse(
+                                                        crew.deathdate))
                                                 : '-'),
-                                        style: TextStyle(fontSize: 16),
+                                        style: TextStyle(fontSize: 14),
                                         softWrap: true,
-                                        overflow: TextOverflow.fade)
+                                        overflow: TextOverflow.clip)
                                     : Container(),
                               ],
                             ),
@@ -666,9 +678,9 @@ class _CrewViewState extends State<CrewView>
                                   (crew.birthplace != null
                                       ? crew.birthplace
                                       : '-'),
-                              style: TextStyle(fontSize: 16),
+                              style: TextStyle(fontSize: 14),
                               softWrap: true,
-                              overflow: TextOverflow.fade,
+                              overflow: TextOverflow.clip,
                             ),
                           ],
                         ),
@@ -742,7 +754,7 @@ class _CrewViewState extends State<CrewView>
                                   child: Text(
                                     'This item is currently hidden. Restore in settings.',
                                     style: TextStyle(
-                                        color: Colors.red, fontSize: 16),
+                                        color: Colors.red, fontSize: 14),
                                     softWrap: true,
                                     overflow: TextOverflow.clip,
                                   ),
@@ -760,7 +772,7 @@ class _CrewViewState extends State<CrewView>
                       Text(
                         "Description",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -768,14 +780,14 @@ class _CrewViewState extends State<CrewView>
                       crew.description != null
                           ? Text(
                               "     " + crew.description,
-                              style: TextStyle(fontSize: 16),
+                              style: TextStyle(fontSize: 14),
                               textAlign: TextAlign.justify,
                             )
                           : Center(
                               child: Text(
                                 'No description found.',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontStyle: FontStyle.italic,
                                   color: Colors.grey,
                                 ),
@@ -798,11 +810,11 @@ class _CrewViewState extends State<CrewView>
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Flexible(
+                                              Expanded(
                                                 child: Text(
                                                   "Mga Pelikula bilang Direktor",
                                                   style: TextStyle(
-                                                      fontSize: 18,
+                                                      fontSize: 16,
                                                       fontWeight:
                                                           FontWeight.bold),
                                                   overflow: TextOverflow.clip,
@@ -818,8 +830,8 @@ class _CrewViewState extends State<CrewView>
                                                               fontSize: 14,
                                                               color:
                                                                   Colors.blue),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
+                                                          overflow:
+                                                              TextOverflow.clip,
                                                           softWrap: true,
                                                         ),
                                                         onTap: () {
@@ -862,11 +874,11 @@ class _CrewViewState extends State<CrewView>
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Flexible(
+                                              Expanded(
                                                 child: Text(
                                                   "Mga Pelikula bilang Manunulat",
                                                   style: TextStyle(
-                                                      fontSize: 18,
+                                                      fontSize: 16,
                                                       fontWeight:
                                                           FontWeight.bold),
                                                   overflow: TextOverflow.clip,
@@ -882,8 +894,8 @@ class _CrewViewState extends State<CrewView>
                                                               fontSize: 14,
                                                               color:
                                                                   Colors.blue),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
+                                                          overflow:
+                                                              TextOverflow.clip,
                                                           softWrap: true,
                                                         ),
                                                         onTap: () {
@@ -926,13 +938,15 @@ class _CrewViewState extends State<CrewView>
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Flexible(
+                                              Expanded(
                                                 child: Text(
                                                   "Mga Pelikula bilang Aktor",
                                                   style: TextStyle(
-                                                      fontSize: 18,
+                                                      fontSize: 16,
                                                       fontWeight:
                                                           FontWeight.bold),
+                                                  overflow: TextOverflow.clip,
+                                                  softWrap: true,
                                                 ),
                                               ),
                                               crew.movies[2].length >= 4
@@ -944,8 +958,8 @@ class _CrewViewState extends State<CrewView>
                                                               fontSize: 14,
                                                               color:
                                                                   Colors.blue),
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
+                                                          overflow:
+                                                              TextOverflow.clip,
                                                           softWrap: true,
                                                         ),
                                                         onTap: () {
@@ -992,11 +1006,17 @@ class _CrewViewState extends State<CrewView>
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        "Mga Award",
-                                        style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold),
+                                      Expanded(
+                                        child: Container(
+                                          child: Text(
+                                            "Mga Award",
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold),
+                                            overflow: TextOverflow.clip,
+                                            softWrap: true,
+                                          ),
+                                        ),
                                       ),
                                       awards.length >= 4
                                           ? GestureDetector(
@@ -1005,7 +1025,7 @@ class _CrewViewState extends State<CrewView>
                                                 style: TextStyle(
                                                     fontSize: 14,
                                                     color: Colors.blue),
-                                                overflow: TextOverflow.ellipsis,
+                                                overflow: TextOverflow.clip,
                                                 softWrap: true,
                                               ),
                                               onTap: () {
@@ -1035,7 +1055,7 @@ class _CrewViewState extends State<CrewView>
                                                 children: [
                                                   new Icon(
                                                       Icons.fiber_manual_record,
-                                                      size: 16),
+                                                      size: 14),
                                                   SizedBox(
                                                     width: 5,
                                                   ),
@@ -1048,7 +1068,7 @@ class _CrewViewState extends State<CrewView>
                                                                     ") "
                                                                 : ""),
                                                         style: TextStyle(
-                                                            fontSize: 16),
+                                                            fontSize: 14),
                                                         softWrap: true,
                                                         overflow:
                                                             TextOverflow.clip),
@@ -1071,7 +1091,7 @@ class _CrewViewState extends State<CrewView>
                                                               fontStyle:
                                                                   FontStyle
                                                                       .italic,
-                                                              fontSize: 16),
+                                                              fontSize: 12),
                                                           softWrap: true,
                                                           overflow: TextOverflow
                                                               .clip),
@@ -1085,7 +1105,7 @@ class _CrewViewState extends State<CrewView>
                                       ? Container(
                                           alignment: Alignment.center,
                                           child: Text(' . . . ',
-                                              style: TextStyle(fontSize: 20)))
+                                              style: TextStyle(fontSize: 18)))
                                       : SizedBox(),
                                 ],
                               ),
@@ -1102,11 +1122,13 @@ class _CrewViewState extends State<CrewView>
                               mainAxisAlignment: MainAxisAlignment.start,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  "Gallery",
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
+                                Container(
+                                  child: Text(
+                                    "Gallery",
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                                 crew.gallery.isNotEmpty
                                     ? SizedBox(height: 10)

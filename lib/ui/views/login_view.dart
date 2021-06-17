@@ -61,7 +61,7 @@ class _LoginViewState extends State<LoginView> {
     return ViewModelProvider<LoginViewModel>.withConsumer(
       viewModel: LoginViewModel(),
       builder: (context, model, child) => Scaffold(
-        resizeToAvoidBottomInset: false,
+        // resizeToAvoidBottomInset: false,
         appBar: AppBar(
           iconTheme: IconThemeData(
             color: Colors.black, // change your color here
@@ -102,7 +102,7 @@ class _LoginViewState extends State<LoginView> {
                               height: 100,
                               child: Center(
                                 child: Shimmer.fromColors(
-                                  period: Duration(milliseconds: 500),
+                                  period: Duration(seconds: 2),
                                   baseColor: Colors.blue,
                                   highlightColor: Colors.red,
                                   child: Container(
@@ -173,7 +173,7 @@ class _LoginViewState extends State<LoginView> {
                                               msg: 'Login successful.',
                                               backgroundColor: Colors.green,
                                               textColor: Colors.white,
-                                              fontSize: 16);
+                                              fontSize: 16); // 16
 
                                           _navigationService
                                               .navigateTo(HomeViewRoute);
@@ -256,8 +256,9 @@ class _LoginViewState extends State<LoginView> {
                             ),
 
                             // link to sign up
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            Wrap(
+                              // mainAxisAlignment: MainAxisAlignment.center,
+                              alignment: WrapAlignment.center,
                               children: [
                                 Text('Gumawa ng bagong account '),
                                 InkWell(
@@ -277,72 +278,6 @@ class _LoginViewState extends State<LoginView> {
                             ),
 
                             SizedBox(height: 10.0),
-
-                            // // DIVIDER
-                            // Column(children: <Widget>[
-                            //   Row(children: <Widget>[
-                            //     Expanded(
-                            //       child: new Container(
-                            //           margin: const EdgeInsets.only(
-                            //               left: 10.0, right: 20.0),
-                            //           child: Divider(
-                            //             color: Colors.black,
-                            //             height: 20,
-                            //           )),
-                            //     ),
-                            //     Text("OR LOG IN WITH",
-                            //         style: TextStyle(
-                            //           color: Colors.black,
-                            //           fontSize: 16.0,
-                            //         )),
-                            //     Expanded(
-                            //       child: new Container(
-                            //           margin: const EdgeInsets.only(
-                            //               left: 20.0, right: 10.0),
-                            //           child: Divider(
-                            //             color: Colors.black,
-                            //             height: 20,
-                            //           )),
-                            //     ),
-                            //   ]),
-                            // ]),
-
-                            // SIGN IN WITH GOOGLE
-                            // // SIGN IN WITH GOOGLE
-                            // Padding(
-                            //   padding: EdgeInsets.symmetric(vertical: 20.0),
-                            //   child: Column(
-                            //     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            //     children: <Widget>[
-                            //       GestureDetector(
-                            //         onTap: () {
-                            //           print("Sign in with Google");
-                            //           model.googleSignIn();
-                            //         },
-                            //         child: Container(
-                            //           height: 40.0,
-                            //           width: 40.0,
-                            //           decoration: BoxDecoration(
-                            //             shape: BoxShape.circle,
-                            //             color: Colors.white,
-                            //             boxShadow: [
-                            //               BoxShadow(
-                            //                 color: Colors.black26,
-                            //                 offset: Offset(0, 2),
-                            //                 blurRadius: 6.0,
-                            //               ),
-                            //             ],
-                            //             image: DecorationImage(
-                            //               image: AssetImage(
-                            //                 'assets/images/google.jpg',
-                            //               ),
-                            //             ),
-                            //           ),
-                            //         ),
-                            //       ),
-                            //     ],
-                            //   ),
-                            // ),
                           ],
                         ),
                       ),

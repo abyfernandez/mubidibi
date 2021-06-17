@@ -51,6 +51,7 @@ class ReviewFormState extends State<ReviewForm> {
   bool isApproved;
   Review userReview;
   bool submitting = false;
+  bool isBusy = true;
 
   String timeAgo(String formattedString) {
     final timestamp = DateTime.parse(formattedString);
@@ -77,6 +78,7 @@ class ReviewFormState extends State<ReviewForm> {
         downvoteCount = userReview?.downvoteCount ?? 0;
         isApproved = userReview?.isApproved ?? false;
         _edit = userReview != null ? false : true;
+        isBusy = false;
       });
     }
   }
@@ -91,6 +93,8 @@ class ReviewFormState extends State<ReviewForm> {
 
   @override
   Widget build(BuildContext context) {
+    if (isBusy == true) return Container(child: CircularProgressIndicator());
+
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
       builder: (context, model, child) => _edit == false && userReview != null
@@ -222,7 +226,7 @@ class ReviewFormState extends State<ReviewForm> {
                                                       backgroundColor:
                                                           Colors.green,
                                                       textColor: Colors.white,
-                                                      fontSize: 16);
+                                                      fontSize: 14);
                                                 } else {
                                                   // widget.sKey.currentState
                                                   //     .showSnackBar(mySnackBar(
@@ -236,7 +240,7 @@ class ReviewFormState extends State<ReviewForm> {
                                                       backgroundColor:
                                                           Colors.red,
                                                       textColor: Colors.white,
-                                                      fontSize: 16);
+                                                      fontSize: 14);
                                                 }
                                               } else {
                                                 var response = await _dialogService
@@ -298,7 +302,7 @@ class ReviewFormState extends State<ReviewForm> {
                                                         backgroundColor:
                                                             Colors.green,
                                                         textColor: Colors.white,
-                                                        fontSize: 16);
+                                                        fontSize: 14);
                                                   }
                                                 }
                                               }
@@ -340,7 +344,7 @@ class ReviewFormState extends State<ReviewForm> {
                                               Text(
                                                 userReview.review,
                                                 style: TextStyle(
-                                                    fontSize: 16,
+                                                    fontSize: 14,
                                                     color: Colors.black),
                                                 textAlign: TextAlign.justify,
                                               ),
@@ -706,6 +710,8 @@ class ReviewFormState extends State<ReviewForm> {
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
                             child: TextFormField(
+                              autovalidateMode:
+                                  AutovalidateMode.onUserInteraction,
                               controller: reviewController,
                               focusNode: reviewFocusNode,
                               style: TextStyle(
@@ -743,77 +749,70 @@ class ReviewFormState extends State<ReviewForm> {
                                 minWidth: 0, //wraps child's width
                                 height: 0,
                                 child: FlatButton(
-                                    color: Colors.lightBlue,
-                                    onPressed: submitting == false
-                                        ? () async {
-                                            reviewFocusNode.unfocus();
-                                            if (_reviewFormKey.currentState
-                                                .validate()) {
-                                              // submit post and save into db
-                                              var model = ReviewViewModel();
-                                              final response =
-                                                  await model.addReview(
-                                                      reviewId: userReview
-                                                              ?.reviewId ??
-                                                          0,
-                                                      movieId: widget
-                                                          .movie.movieId
-                                                          .toString(),
-                                                      userId: widget
-                                                          .currentUser.userId
-                                                          .toString(),
-                                                      rating: rate.toString(),
-                                                      review: reviewController
-                                                          .text);
+                                  color: submitting == true
+                                      ? Colors.black45
+                                      : Colors.lightBlue,
+                                  onPressed: submitting == false
+                                      ? () async {
+                                          submitting = true;
+                                          isBusy = true;
 
-                                              if (response != null) {
-                                                // fetch reviews again
-                                                var newReview =
-                                                    await model.getReview(
-                                                        accountId: widget
-                                                            .currentUser.userId,
-                                                        movieId: widget
-                                                            .movie.movieId);
+                                          reviewFocusNode.unfocus();
+                                          if (_reviewFormKey.currentState
+                                              .validate()) {
+                                            // submit post and save into db
+                                            var model = ReviewViewModel();
+                                            final response = await model
+                                                .addReview(
+                                                    reviewId: userReview
+                                                            ?.reviewId ??
+                                                        0,
+                                                    movieId: widget
+                                                        .movie.movieId
+                                                        .toString(),
+                                                    userId:
+                                                        widget
+                                                            .currentUser.userId
+                                                            .toString(),
+                                                    rating: rate.toString(),
+                                                    review:
+                                                        reviewController.text);
 
-                                                if (newReview != null) {
-                                                  setState(() {
-                                                    userReview = newReview;
-                                                    submitting = false;
-                                                    _edit = false;
-                                                    isApproved = false;
-                                                  });
+                                            if (response != null) {
+                                              // fetch reviews again
+                                              var newReview =
+                                                  await model.getReview(
+                                                      accountId: widget
+                                                          .currentUser.userId,
+                                                      movieId:
+                                                          widget.movie.movieId);
 
-                                                  // show success snackbar
-                                                  // widget.sKey.currentState
-                                                  //     .showSnackBar(mySnackBar(
-                                                  //         context,
-                                                  //         'Your review is pending for approval.',
-                                                  //         Colors.orange));
+                                              if (newReview != null) {
+                                                setState(() {
+                                                  userReview = newReview;
+                                                  submitting = false;
+                                                  isBusy = false;
 
-                                                  Fluttertoast.showToast(
-                                                      msg:
-                                                          'Your review is pending for approval.',
-                                                      backgroundColor:
-                                                          Colors.orange,
-                                                      textColor: Colors.white,
-                                                      fontSize: 16);
-                                                } else {
-                                                  // show error snackbar
-                                                  // widget.sKey.currentState
-                                                  //     .showSnackBar(mySnackBar(
-                                                  //         context,
-                                                  //         'Something went wrong. Please try again later.',
-                                                  //         Colors.red));
+                                                  _edit = false;
+                                                  isApproved = false;
+                                                });
 
-                                                  Fluttertoast.showToast(
-                                                      msg:
-                                                          'Something went wrong. Please try again later.',
-                                                      backgroundColor:
-                                                          Colors.red,
-                                                      textColor: Colors.white,
-                                                      fontSize: 16);
-                                                }
+                                                // show success snackbar
+                                                // widget.sKey.currentState
+                                                //     .showSnackBar(mySnackBar(
+                                                //         context,
+                                                //         'Your review is pending for approval.',
+                                                //         Colors.orange));
+
+                                                Fluttertoast.showToast(
+                                                    msg:
+                                                        'Your review is pending for approval.',
+                                                    backgroundColor:
+                                                        Colors.orange,
+                                                    textColor: Colors.white,
+                                                    fontSize: 14);
                                               } else {
+                                                // show error snackbar
                                                 // widget.sKey.currentState
                                                 //     .showSnackBar(mySnackBar(
                                                 //         context,
@@ -825,17 +824,32 @@ class ReviewFormState extends State<ReviewForm> {
                                                         'Something went wrong. Please try again later.',
                                                     backgroundColor: Colors.red,
                                                     textColor: Colors.white,
-                                                    fontSize: 16);
+                                                    fontSize: 14);
                                               }
-                                              reviewController.clear();
+                                            } else {
+                                              // widget.sKey.currentState
+                                              //     .showSnackBar(mySnackBar(
+                                              //         context,
+                                              //         'Something went wrong. Please try again later.',
+                                              //         Colors.red));
+
+                                              Fluttertoast.showToast(
+                                                  msg:
+                                                      'Something went wrong. Please try again later.',
+                                                  backgroundColor: Colors.red,
+                                                  textColor: Colors.white,
+                                                  fontSize: 14);
                                             }
+                                            reviewController.clear();
                                           }
-                                        : null,
-                                    child: Text(
-                                      "POST",
-                                      style: TextStyle(
-                                          fontSize: 14, color: Colors.white),
-                                    )),
+                                        }
+                                      : null,
+                                  child: Text(
+                                    "POST",
+                                    style: TextStyle(
+                                        fontSize: 14, color: Colors.white),
+                                  ),
+                                ),
                               ),
                             ),
                             _edit == true

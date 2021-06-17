@@ -1,5 +1,6 @@
 // See All Page
 
+import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -61,6 +62,8 @@ class _SeeAllViewState extends State<SeeAllView> {
   FocusNode filterNode;
   List<String> roles = ['Direktor', 'Manunulat', 'Aktor'];
   List filtered = []; // filtered films
+  bool isBusy =
+      true; // to show circular progress indicator while data is loading
 
   _SeeAllViewState(this.movies, this.crew, this.favorites, this.type,
       this.filter, this.showFilter, this.title);
@@ -68,6 +71,7 @@ class _SeeAllViewState extends State<SeeAllView> {
   @override
   void initState() {
     super.initState();
+    filters = [];
     if (filter != null && filter != "") filters.add(filter);
     if (type == "movies")
       fetchMovies();
@@ -78,6 +82,12 @@ class _SeeAllViewState extends State<SeeAllView> {
 
   @override
   Widget build(BuildContext context) {
+    if ((filtered == null || filtered.length == 0) && isBusy == true)
+      return Container(
+          color: Colors.white,
+          height: double.infinity,
+          child: Center(child: Container(child: CircularProgressIndicator())));
+
     return Scaffold(
         // backgroundColor: Colors.white,
         resizeToAvoidBottomInset: false,
@@ -192,6 +202,7 @@ class _SeeAllViewState extends State<SeeAllView> {
     if (mounted) {
       setState(() {
         filtered = filtered;
+        isBusy = false;
       });
     }
   }
@@ -219,7 +230,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                         textCapitalization: TextCapitalization.words,
                         enabled: true,
                         textStyle: const TextStyle(
-                            fontFamily: 'Poppins', fontSize: 16),
+                            fontFamily: 'Poppins', fontSize: 14),
                         decoration: const InputDecoration(
                           labelText: 'Filter by genre',
                           contentPadding: EdgeInsets.only(
@@ -284,8 +295,16 @@ class _SeeAllViewState extends State<SeeAllView> {
                                       alignment: Alignment.center,
                                       margin: const EdgeInsets.symmetric(
                                           horizontal: 8.0),
-                                      height: 200.0,
-                                      width: 120.0,
+                                      // height: 200.0,
+                                      height:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) *
+                                              1.5,
+                                      // width: 120.0,
+                                      width:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) -
+                                              16,
                                       decoration: BoxDecoration(
                                         boxShadow: [
                                           BoxShadow(
@@ -311,7 +330,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 14,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -320,8 +339,16 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     Container(
                                       margin: const EdgeInsets.symmetric(
                                           horizontal: 8.0),
-                                      height: 200.0,
-                                      width: 120.0,
+                                      // height: 200.0,
+                                      height:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) *
+                                              1.5,
+                                      // width: 120.0,
+                                      width:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) -
+                                              16,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(5),
                                         image: DecorationImage(
@@ -352,9 +379,10 @@ class _SeeAllViewState extends State<SeeAllView> {
                       : [
                           Center(
                             child: Text("No content found.",
-                                style: TextStyle(fontSize: 16)),
+                                style: TextStyle(fontSize: 14)),
                           ),
                         ]),
+              SizedBox(height: 10),
             ],
           ),
         );
@@ -379,7 +407,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                         textCapitalization: TextCapitalization.words,
                         enabled: true,
                         textStyle: const TextStyle(
-                            fontFamily: 'Poppins', fontSize: 16),
+                            fontFamily: 'Poppins', fontSize: 14),
                         decoration: const InputDecoration(
                           labelText: 'Filter by genre',
                           contentPadding: EdgeInsets.only(
@@ -444,8 +472,17 @@ class _SeeAllViewState extends State<SeeAllView> {
                                       alignment: Alignment.center,
                                       margin: const EdgeInsets.symmetric(
                                           horizontal: 8.0),
-                                      height: 200.0,
-                                      width: 120.0,
+                                      // height: 200.0,
+                                      // width: 120.0,
+                                      height:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) *
+                                              1.5,
+                                      // width: 120.0,
+                                      width:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) -
+                                              16,
                                       decoration: BoxDecoration(
                                         boxShadow: [
                                           BoxShadow(
@@ -471,7 +508,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 14,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -480,8 +517,17 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     Container(
                                       margin: const EdgeInsets.symmetric(
                                           horizontal: 8.0),
-                                      height: 200.0,
-                                      width: 120.0,
+                                      // height: 200.0,
+                                      // width: 120.0,
+                                      height:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) *
+                                              1.5,
+                                      // width: 120.0,
+                                      width:
+                                          (MediaQuery.of(context).size.width /
+                                                  3) -
+                                              16,
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(5),
                                         image: DecorationImage(
@@ -512,7 +558,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                       : [
                           Center(
                             child: Text("No content found.",
-                                style: TextStyle(fontSize: 16)),
+                                style: TextStyle(fontSize: 14)),
                           ),
                         ]),
             ],
@@ -540,7 +586,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                         textCapitalization: TextCapitalization.words,
                         enabled: true,
                         textStyle: const TextStyle(
-                            fontFamily: 'Poppins', fontSize: 16),
+                            fontFamily: 'Poppins', fontSize: 14),
                         decoration: const InputDecoration(
                           labelText: 'Filter by type',
                           contentPadding: EdgeInsets.only(
@@ -604,8 +650,15 @@ class _SeeAllViewState extends State<SeeAllView> {
                                   Container(
                                     margin: const EdgeInsets.symmetric(
                                         horizontal: 8.0),
-                                    height: 200.0,
-                                    width: 120.0,
+                                    // height: 200.0,
+                                    // width: 120.0,
+                                    height: (MediaQuery.of(context).size.width /
+                                            3) *
+                                        1.5,
+                                    // width: 120.0,
+                                    width: (MediaQuery.of(context).size.width /
+                                            3) -
+                                        16,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(5),
                                       image: DecorationImage(
@@ -654,8 +707,8 @@ class _SeeAllViewState extends State<SeeAllView> {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => CrewView(
-                                        crewId: crew.crewId),
+                                    builder: (_) =>
+                                        CrewView(crewId: crew.crewId),
                                   ));
                             },
                           ),
@@ -664,7 +717,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                     : [
                         Center(
                           child: Text("No content found.",
-                              style: TextStyle(fontSize: 16)),
+                              style: TextStyle(fontSize: 14)),
                         )
                       ],
               ),

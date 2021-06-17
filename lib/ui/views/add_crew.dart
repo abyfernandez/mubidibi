@@ -666,7 +666,8 @@ class _AddCrewState extends State<AddCrew> {
         lastNameController.text = crew?.lastName ?? "";
         suffixController.text = crew?.suffix ?? "";
         _birthday = crew?.birthday != null
-            ? DateTime.parse(crew?.birthday).add(Duration(days: 1))
+            // ? DateTime.parse(crew?.birthday).add(Duration(days: 1))
+            ? DateTime.parse(crew?.birthday)
             : null;
 
         birthdayController.text = crew?.birthday != null
@@ -1609,20 +1610,10 @@ class _AddCrewState extends State<AddCrew> {
               height: 10,
             ),
             Container(
-                width: 140,
                 child: FlatButton(
-                  // focusNode: addActorNode,
-                  color: Color.fromRGBO(240, 240, 240, 1),
-                  onPressed: addMovieActor,
-                  child: Row(
-                    children: [
-                      Icon(Icons.person_add_alt_1_outlined),
-                      Text(" Dagdagan")
-                    ],
-                  ),
-                )
-                // : null,
-                ),
+                    color: Color.fromRGBO(240, 240, 240, 1),
+                    onPressed: addMovieActor,
+                    child: Text(" Dagdagan"))),
             ListView.builder(
                 itemCount: movieActorList.length,
                 shrinkWrap: true,
@@ -1640,9 +1631,9 @@ class _AddCrewState extends State<AddCrew> {
                                     bottom: 0,
                                     right: 0,
                                     child: Container(
-                                      child: OutlineButton(
-                                        padding: EdgeInsets.all(0),
-                                        color: Colors.white,
+                                      child: TextButton(
+                                        // padding: EdgeInsets.all(0),
+                                        // color: Colors.white,
                                         onPressed: () {
                                           FocusScope.of(context).unfocus();
                                           setState(() {
@@ -1710,7 +1701,9 @@ class _AddCrewState extends State<AddCrew> {
                                             movieActorList.removeAt(i);
                                           });
                                         },
-                                        child: Text('Tanggalin'),
+                                        child: Text('TANGGALIN',
+                                            style: TextStyle(
+                                                color: Colors.black45)),
                                       ),
                                       alignment: Alignment.centerRight,
                                     ),
@@ -1921,15 +1914,11 @@ class _AddCrewState extends State<AddCrew> {
                 height: 15,
               ),
               Container(
-                  width: 140,
                   child: FlatButton(
-                    // focusNode: addActorNode,
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: addtoGallery,
-                    child: Row(
-                      children: [Icon(Icons.camera_alt), Text(" Dagdagan")],
-                    ),
-                  )),
+                color: Color.fromRGBO(240, 240, 240, 1),
+                onPressed: addtoGallery,
+                child: Text(" Dagdagan"),
+              )),
               SizedBox(
                 height: 15,
               ),
@@ -1950,9 +1939,9 @@ class _AddCrewState extends State<AddCrew> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
                                             setState(() {
@@ -1994,7 +1983,9 @@ class _AddCrewState extends State<AddCrew> {
                                               galleryList.removeAt(i);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2032,20 +2023,10 @@ class _AddCrewState extends State<AddCrew> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                  width: 140,
                   child: FlatButton(
-                    // focusNode: addActorNode,
-                    color: Color.fromRGBO(240, 240, 240, 1),
-                    onPressed: addAward,
-                    child: Row(
-                      children: [
-                        Icon(Icons.emoji_events_outlined),
-                        Text(" Dagdagan")
-                      ],
-                    ),
-                  )
-                  // : null,
-                  ),
+                      color: Color.fromRGBO(240, 240, 240, 1),
+                      onPressed: addAward,
+                      child: Text(" Dagdagan"))),
               ListView.builder(
                   itemCount: awardList.length,
                   shrinkWrap: true,
@@ -2063,9 +2044,9 @@ class _AddCrewState extends State<AddCrew> {
                                       bottom: 0,
                                       right: 0,
                                       child: Container(
-                                        child: OutlineButton(
-                                          padding: EdgeInsets.all(0),
-                                          color: Colors.white,
+                                        child: TextButton(
+                                          // padding: EdgeInsets.all(0),
+                                          // color: Colors.white,
                                           onPressed: () {
                                             FocusScope.of(context).unfocus();
 
@@ -2115,7 +2096,9 @@ class _AddCrewState extends State<AddCrew> {
                                               awardList.removeAt(i);
                                             });
                                           },
-                                          child: Text('Tanggalin'),
+                                          child: Text('TANGGALIN',
+                                              style: TextStyle(
+                                                  color: Colors.black45)),
                                         ),
                                         alignment: Alignment.centerRight,
                                       ),
@@ -2717,9 +2700,9 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                 : SizedBox(),
             showError == true ? SizedBox(height: 15) : SizedBox(),
             Container(
-              child: OutlineButton(
-                padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                color: Colors.white,
+              child: TextButton(
+                // padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                // color: Colors.white,
                 onPressed: () {
                   FocusScope.of(context).unfocus();
                   if (widget.movieActor.movieId != null &&
@@ -2737,7 +2720,7 @@ class MovieActorWidgetState extends State<MovieActorWidget> {
                     });
                   }
                 },
-                child: Text('Save'),
+                child: Text('SAVE', style: TextStyle(color: Colors.blue)),
               ),
               alignment: Alignment.center,
             )

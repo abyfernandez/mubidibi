@@ -217,7 +217,13 @@ class _MovieViewState extends State<MovieView>
 
   @override
   Widget build(BuildContext context) {
-    if (movie == null) return Center(child: CircularProgressIndicator());
+    if (movie == null) {
+      return Container(
+          color: Colors.white,
+          height: double.infinity,
+          child: Center(child: Container(child: CircularProgressIndicator())));
+    }
+    // return Center(child: CircularProgressIndicator());
 
     return ViewModelProvider<ReviewViewModel>.withConsumer(
       viewModel: ReviewViewModel(),
@@ -242,7 +248,7 @@ class _MovieViewState extends State<MovieView>
                 iconColor: Colors.white,
                 bubbleColor: Colors.lightBlue,
                 icon: Icons.edit_outlined,
-                titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                titleStyle: TextStyle(fontSize: 14, color: Colors.white),
                 onPress: () async {
                   await Navigator.push(
                     context,
@@ -277,7 +283,7 @@ class _MovieViewState extends State<MovieView>
                       iconColor: Colors.white,
                       bubbleColor: Colors.lightBlue,
                       icon: Icons.delete,
-                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      titleStyle: TextStyle(fontSize: 14, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
                         setState(() {
@@ -313,7 +319,7 @@ class _MovieViewState extends State<MovieView>
                                 msg: "Movie deleted successfully.",
                                 backgroundColor: Colors.green,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
 
                             _saving = true;
 
@@ -343,7 +349,7 @@ class _MovieViewState extends State<MovieView>
                                 msg: 'Something went wrong. Try again.',
                                 backgroundColor: Colors.red,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
                           }
                         }
                       },
@@ -353,7 +359,7 @@ class _MovieViewState extends State<MovieView>
                       iconColor: Colors.white,
                       bubbleColor: Colors.lightBlue,
                       icon: Icons.restore_from_trash_outlined,
-                      titleStyle: TextStyle(fontSize: 16, color: Colors.white),
+                      titleStyle: TextStyle(fontSize: 14, color: Colors.white),
                       onPress: () async {
                         _animationController.reverse();
                         setState(() {
@@ -388,7 +394,7 @@ class _MovieViewState extends State<MovieView>
                                 msg: 'This movie is now restored.',
                                 backgroundColor: Colors.green,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
 
                             _saving = true;
 
@@ -419,7 +425,7 @@ class _MovieViewState extends State<MovieView>
                                 msg: 'Something went wrong. Try again.',
                                 backgroundColor: Colors.red,
                                 textColor: Colors.white,
-                                fontSize: 16);
+                                fontSize: 14);
                           }
                         }
                       },
@@ -527,7 +533,7 @@ class _MovieViewState extends State<MovieView>
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
                                                   color: Colors.white,
-                                                  fontSize: 18,
+                                                  fontSize: 16,
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
@@ -566,7 +572,7 @@ class _MovieViewState extends State<MovieView>
                                                   textAlign: TextAlign.center,
                                                   style: TextStyle(
                                                     color: Colors.white,
-                                                    fontSize: 18,
+                                                    fontSize: 16,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
@@ -656,7 +662,7 @@ class _MovieViewState extends State<MovieView>
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               color: Colors.white,
-                                              fontSize: 18,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
@@ -693,7 +699,7 @@ class _MovieViewState extends State<MovieView>
                                               textAlign: TextAlign.center,
                                               style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 18,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -870,7 +876,7 @@ class _MovieViewState extends State<MovieView>
                         child: Text(
                           movie.title.toUpperCase(),
                           style: TextStyle(
-                              fontSize: 25.0,
+                              fontSize: 22.0,
                               fontWeight: FontWeight.bold,
                               color: Colors.black),
                           textAlign: TextAlign.center,
@@ -889,7 +895,7 @@ class _MovieViewState extends State<MovieView>
                                             genre,
                                             style: TextStyle(
                                               color: Colors.white,
-                                              fontSize: 14,
+                                              fontSize: 10,
                                             ),
                                           ),
                                         ),
@@ -923,19 +929,19 @@ class _MovieViewState extends State<MovieView>
                                             : "",
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 20,
+                                          fontSize: 18,
                                           color: Colors.black,
                                         )),
                                     Text("/5",
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 12,
                                           color: Colors.black,
                                         ))
                                   ],
                                 )
                               : Text("No ratings yet",
                                   style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 14,
                                       color: Colors.grey[700],
                                       fontStyle: FontStyle.italic));
                         },
@@ -952,52 +958,68 @@ class _MovieViewState extends State<MovieView>
                         child: new Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: <Widget>[
-                        Column(
-                          children: <Widget>[
-                            Text(
-                              'Petsa ng Paglabas',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            children: <Widget>[
+                              Text(
+                                'Petsa ng Paglabas',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: true,
                               ),
-                            ),
-                            SizedBox(height: 2.0),
-                            Text(
-                              movie.releaseDate != null &&
-                                      movie.releaseDate.trim() != ''
-                                  ? DateFormat("MMM. d, y", "fil").format(
-                                      TZDateTime.from(
-                                          DateTime.parse(movie.releaseDate),
-                                          tz.getLocation('Asia/Manila')))
-                                  // ? DateFormat('MMM. d, y', "fil").format(
-                                  //     DateTime.parse(movie.releaseDate))
-                                  : '-',
-                              style: TextStyle(
-                                fontSize: 16.0,
+                              SizedBox(height: 2.0),
+                              Container(
+                                child: Text(
+                                  movie.releaseDate != null &&
+                                          movie.releaseDate.trim() != ''
+                                      // ? DateFormat("MMM. d, y", "fil").format(
+                                      //     TZDateTime.from(
+                                      //         DateTime.parse(movie.releaseDate),
+                                      //         tz.getLocation('Asia/Manila')))
+                                      ? DateFormat('MMM. d, y', "fil").format(
+                                          DateTime.parse(movie.releaseDate))
+                                      : '-',
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                  ),
+                                  overflow: TextOverflow.fade,
+                                  softWrap: true,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         VerticalDivider(color: Colors.grey[900]),
-                        Column(
-                          children: <Widget>[
-                            Text(
-                              'Runtime',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
+                        Expanded(
+                          flex: 1,
+                          child: Column(
+                            children: <Widget>[
+                              Text(
+                                'Runtime',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 2.0),
-                            Text(
-                              displayRuntime(),
-                              style: TextStyle(
-                                fontSize: 16.0,
+                              SizedBox(height: 2.0),
+                              Container(
+                                child: Text(
+                                  displayRuntime(),
+                                  style: TextStyle(
+                                    fontSize: 16.0,
+                                  ),
+                                  overflow: TextOverflow.fade,
+                                  softWrap: true,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     )),
@@ -1011,7 +1033,7 @@ class _MovieViewState extends State<MovieView>
                     style: TextStyle(
                       color: Colors.black,
                       fontWeight: FontWeight.bold,
-                      fontSize: 18.0,
+                      fontSize: 16.0,
                     ),
                   ),
                 ),
@@ -1022,7 +1044,7 @@ class _MovieViewState extends State<MovieView>
                     textAlign: TextAlign.justify,
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: 16.0,
+                      fontSize: 14.0,
                     ),
                   ),
                 ),
@@ -1089,11 +1111,17 @@ class _MovieViewState extends State<MovieView>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  "Mga Award",
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
+                                Expanded(
+                                  child: Container(
+                                    child: Text(
+                                      "Mga Award",
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.clip,
+                                      softWrap: true,
+                                    ),
+                                  ),
                                 ),
                                 awards.length >= 4
                                     ? GestureDetector(
@@ -1101,7 +1129,7 @@ class _MovieViewState extends State<MovieView>
                                           'Tingnan Lahat',
                                           style: TextStyle(
                                               fontSize: 14, color: Colors.blue),
-                                          overflow: TextOverflow.ellipsis,
+                                          overflow: TextOverflow.clip,
                                           softWrap: true,
                                         ),
                                         onTap: () {
@@ -1129,7 +1157,7 @@ class _MovieViewState extends State<MovieView>
                                               CrossAxisAlignment.start,
                                           children: [
                                             new Icon(Icons.fiber_manual_record,
-                                                size: 16),
+                                                size: 14),
                                             SizedBox(
                                               width: 5,
                                             ),
@@ -1142,7 +1170,7 @@ class _MovieViewState extends State<MovieView>
                                                               ") "
                                                           : ""),
                                                   style:
-                                                      TextStyle(fontSize: 16),
+                                                      TextStyle(fontSize: 14),
                                                   softWrap: true,
                                                   overflow: TextOverflow.clip),
                                             ),
@@ -1161,7 +1189,7 @@ class _MovieViewState extends State<MovieView>
                                                     style: TextStyle(
                                                         fontStyle:
                                                             FontStyle.italic,
-                                                        fontSize: 16),
+                                                        fontSize: 12),
                                                     softWrap: true,
                                                     overflow:
                                                         TextOverflow.clip),
@@ -1175,7 +1203,7 @@ class _MovieViewState extends State<MovieView>
                                 ? Container(
                                     alignment: Alignment.center,
                                     child: Text(' . . . ',
-                                        style: TextStyle(fontSize: 20)))
+                                        style: TextStyle(fontSize: 18)))
                                 : SizedBox(),
                           ],
                         ),
@@ -1195,11 +1223,17 @@ class _MovieViewState extends State<MovieView>
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  "Mga Sumikat na Linya",
-                                  style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold),
+                                Expanded(
+                                  child: Container(
+                                    child: Text(
+                                      "Mga Sumikat na Linya",
+                                      style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.clip,
+                                      softWrap: true,
+                                    ),
+                                  ),
                                 ),
                                 movie.quotes.length >= 4
                                     ? GestureDetector(
@@ -1207,7 +1241,7 @@ class _MovieViewState extends State<MovieView>
                                           'Tingnan Lahat',
                                           style: TextStyle(
                                               fontSize: 14, color: Colors.blue),
-                                          overflow: TextOverflow.ellipsis,
+                                          overflow: TextOverflow.clip,
                                           softWrap: true,
                                         ),
                                         onTap: () {
@@ -1235,7 +1269,7 @@ class _MovieViewState extends State<MovieView>
                                               CrossAxisAlignment.start,
                                           children: [
                                             new Icon(Icons.fiber_manual_record,
-                                                size: 16),
+                                                size: 14),
                                             SizedBox(
                                               width: 5,
                                             ),
@@ -1243,7 +1277,7 @@ class _MovieViewState extends State<MovieView>
                                               child: Text(
                                                   '"' + quote.line + '"',
                                                   style:
-                                                      TextStyle(fontSize: 16),
+                                                      TextStyle(fontSize: 14),
                                                   softWrap: true,
                                                   overflow: TextOverflow.clip),
                                             ),
@@ -1255,7 +1289,7 @@ class _MovieViewState extends State<MovieView>
                                           child: Text(" - " + quote.role,
                                               style: TextStyle(
                                                   fontStyle: FontStyle.italic,
-                                                  fontSize: 16),
+                                                  fontSize: 12),
                                               softWrap: true,
                                               overflow: TextOverflow.clip),
                                         ),
@@ -1267,7 +1301,7 @@ class _MovieViewState extends State<MovieView>
                                 ? Container(
                                     alignment: Alignment.center,
                                     child: Text(' . . . ',
-                                        style: TextStyle(fontSize: 20)))
+                                        style: TextStyle(fontSize: 18)))
                                 : SizedBox(),
                           ],
                         ),
@@ -1280,11 +1314,17 @@ class _MovieViewState extends State<MovieView>
                 movie.trailers != null && movie.trailers.length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text("Trailers",
+                        child: Container(
+                          child: Text(
+                            "Trailers",
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
-                            )),
+                            ),
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
+                          ),
+                        ),
                       )
                     : SizedBox(),
                 movie.trailers != null && movie.trailers.length != 0
@@ -1455,11 +1495,17 @@ class _MovieViewState extends State<MovieView>
                 movie.gallery != null && movie.gallery.length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text("Gallery",
+                        child: Container(
+                          child: Text(
+                            "Gallery",
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
-                            )),
+                            ),
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
+                          ),
+                        ),
                       )
                     : SizedBox(),
                 movie.gallery != null && movie.gallery.length != 0
@@ -1491,7 +1537,7 @@ class _MovieViewState extends State<MovieView>
                                   padding: EdgeInsets.only(left: 20, right: 20),
                                   child: Stack(
                                     children: [
-                                      p.url.contains('/image/upload/')
+                                      p.format == "image"
                                           ? Container(
                                               child: GestureDetector(
                                                 child: Center(
@@ -1560,7 +1606,7 @@ class _MovieViewState extends State<MovieView>
                                                   autoplay: false,
                                                   type: "simple"),
                                             ),
-                                      p.url.contains('/video/upload/')
+                                      p.format == "video"
                                           ? Positioned(
                                               top: 5,
                                               right: 10,
@@ -1692,12 +1738,17 @@ class _MovieViewState extends State<MovieView>
                 movie.audios != null && movie.audios.length != 0
                     ? Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Text("Audios",
+                        child: Container(
+                          child: Text(
+                            "Audios",
                             style: TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
-                            )),
-                      )
+                            ),
+                            overflow: TextOverflow.clip,
+                            softWrap: true,
+                          ),
+                        ))
                     : SizedBox(),
                 movie.audios != null && movie.audios.length != 0
                     ? SizedBox(height: 25)
@@ -1889,11 +1940,17 @@ class _MovieViewState extends State<MovieView>
                     : SizedBox(),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Text("Mga Review",
+                  child: Container(
+                    child: Text(
+                      "Mga Review",
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
-                      )),
+                      ),
+                      overflow: TextOverflow.clip,
+                      softWrap: true,
+                    ),
+                  ),
                 ),
                 (currentUser == null && model.isEmpty == true) ||
                         (currentUser != null &&
@@ -1905,7 +1962,7 @@ class _MovieViewState extends State<MovieView>
                             style: TextStyle(
                                 fontStyle: FontStyle.italic,
                                 color: Colors.grey,
-                                fontSize: 16)),
+                                fontSize: 14)),
                       )
                     : SizedBox(),
 

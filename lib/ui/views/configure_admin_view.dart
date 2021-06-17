@@ -135,37 +135,56 @@ class _ConfigureAdminViewState extends State<ConfigureAdminView> {
                                         child: Column(
                                           children: [
                                             Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Icon(Icons.cake_outlined),
                                                 SizedBox(width: 10),
-                                                Text(
+                                                Expanded(
+                                                  child: Text(
                                                     users[i].birthday != null &&
                                                             users[i]
                                                                     .birthday
                                                                     .trim() !=
                                                                 ''
+                                                        // ? DateFormat(
+                                                        //         "MMM. d, y",
+                                                        //         "fil")
+                                                        //     .format(TZDateTime.from(
+                                                        //         DateTime.parse(
+                                                        //             users[i]
+                                                        //                 .birthday),
+                                                        //         tz.getLocation(
+                                                        //             'Asia/Manila')))
                                                         ? DateFormat(
                                                                 "MMM. d, y",
                                                                 "fil")
-                                                            .format(TZDateTime.from(
-                                                                DateTime.parse(
-                                                                    users[i]
-                                                                        .birthday),
-                                                                tz.getLocation(
-                                                                    'Asia/Manila')))
+                                                            .format(DateTime
+                                                                .parse(users[i]
+                                                                    .birthday))
                                                         : '-',
-                                                    style: TextStyle(
-                                                        fontSize: 16)),
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                    overflow: TextOverflow.clip,
+                                                    softWrap: true,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                             Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Icon(Icons.email_outlined),
                                                 SizedBox(width: 10),
-                                                Text(
-                                                  users[i].email,
-                                                  style:
-                                                      TextStyle(fontSize: 16),
+                                                Expanded(
+                                                  child: Text(
+                                                    users[i].email,
+                                                    style:
+                                                        TextStyle(fontSize: 16),
+                                                    overflow: TextOverflow.clip,
+                                                    softWrap: true,
+                                                  ),
                                                 ),
                                               ],
                                             ),

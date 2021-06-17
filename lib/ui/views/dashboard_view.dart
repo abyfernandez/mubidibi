@@ -116,7 +116,11 @@ class _DashboardViewState extends State<DashboardView>
   @override
   Widget build(BuildContext context) {
     if (movies == null || crew == null || index == null) {
-      return CircularProgressIndicator();
+      // return CircularProgressIndicator();
+      return Container(
+          color: Colors.white,
+          height: double.infinity,
+          child: Center(child: Container(child: CircularProgressIndicator())));
     }
 
     return ViewModelProvider<MovieViewModel>.withConsumer(

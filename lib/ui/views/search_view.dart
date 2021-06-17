@@ -236,7 +236,7 @@ class _SearchViewState extends State<SearchView> {
                                 child: Container(
                                   margin: EdgeInsets.only(right: 5),
                                   child: Text('Cancel',
-                                      style: TextStyle(fontSize: 15)),
+                                      style: TextStyle(fontSize: 12)),
                                 ),
                               )
                             : Container(),
@@ -289,7 +289,7 @@ class _SearchViewState extends State<SearchView> {
                                                     textAlign: TextAlign.center,
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 14,
+                                                      fontSize: 12,
                                                       fontWeight:
                                                           FontWeight.bold,
                                                     ),
@@ -345,7 +345,7 @@ class _SearchViewState extends State<SearchView> {
                                                               : ""),
                                                       style: TextStyle(
                                                         color: Colors.white,
-                                                        fontSize: 14,
+                                                        fontSize: 12,
                                                       ),
                                                       softWrap: true,
                                                       overflow:
@@ -391,15 +391,15 @@ class _SearchViewState extends State<SearchView> {
                                               ? Text('Walang resulta.',
                                                   style: TextStyle(
                                                       color: Colors.grey,
-                                                      fontSize: 18))
+                                                      fontSize: 14))
                                               : Text(
                                                   _searchBy == "Pelikula"
                                                       ? 'Maghanap ng pelikula'
                                                       : 'Maghanap ng personalidad',
                                                   style: TextStyle(
                                                       color: Colors.grey,
-                                                      fontSize: 18))),
-                                      height: (screenSize.height / 3) * 2.5,
+                                                      fontSize: 14))),
+                                      height: (screenSize.height / 2),
                                     )
                                   ]
                             : crewQueryResult.length != 0
@@ -446,7 +446,7 @@ class _SearchViewState extends State<SearchView> {
                                                     c.name,
                                                     style: TextStyle(
                                                       color: Colors.white,
-                                                      fontSize: 14,
+                                                      fontSize: 12,
                                                     ),
                                                     softWrap: true,
                                                     overflow:
@@ -492,15 +492,15 @@ class _SearchViewState extends State<SearchView> {
                                               ? Text('No results found.',
                                                   style: TextStyle(
                                                       color: Colors.grey,
-                                                      fontSize: 18))
+                                                      fontSize: 14))
                                               : Text(
                                                   _searchBy == "Pelikula"
                                                       ? 'Maghanap ng pelikula'
                                                       : 'Maghanap ng personalidad',
                                                   style: TextStyle(
                                                       color: Colors.grey,
-                                                      fontSize: 18))),
-                                      height: (screenSize.height / 3) * 2.5,
+                                                      fontSize: 14))),
+                                      height: (screenSize.height / 2),
                                     )
                                   ]),
                   ],

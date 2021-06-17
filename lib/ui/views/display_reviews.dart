@@ -251,7 +251,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                         backgroundColor:
                                                             Colors.green,
                                                         textColor: Colors.white,
-                                                        fontSize: 16);
+                                                        fontSize: 14);
                                                   } else {
                                                     // widget.sKey.currentState
                                                     //     .showSnackBar(mySnackBar(
@@ -265,7 +265,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                         backgroundColor:
                                                             Colors.red,
                                                         textColor: Colors.white,
-                                                        fontSize: 16);
+                                                        fontSize: 14);
                                                   }
                                                 } else {
                                                   var response = await _dialogService
@@ -323,7 +323,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                                               Colors.green,
                                                           textColor:
                                                               Colors.white,
-                                                          fontSize: 16);
+                                                          fontSize: 14);
                                                     }
                                                   }
                                                 }
@@ -362,7 +362,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
                                           Text(
                                             review.review,
                                             style: TextStyle(
-                                                fontSize: 16,
+                                                fontSize: 14,
                                                 color: Colors.black),
                                             textAlign: TextAlign.justify,
                                           ),

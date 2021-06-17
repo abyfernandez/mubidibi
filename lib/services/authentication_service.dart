@@ -18,6 +18,7 @@ class AuthenticationService {
 
   // Function: POPULATE CURRENT USER -- gets current user's details (basic sync)
   Future _populateCurrentUser(FirebaseUser user) async {
+    print('TEST');
     if (user != null) {
       _currentUser = await getUser(userId: user.uid);
       print('currentUser: $_currentUser');
@@ -63,7 +64,11 @@ class AuthenticationService {
     // send API request
     final response = await http.get(uri);
     if (response.statusCode == 200) {
-      return User.fromJson(jsonDecode(response.body));
+      print(jsonDecode(response.body));
+      if (response.body.isNotEmpty) {
+        return User.fromJson(jsonDecode(response.body));
+      }
+      return null;
     } else {
       throw Exception('Failed to load user');
     }
@@ -82,6 +87,8 @@ class AuthenticationService {
     try {
       var authResult = await _firebaseAuth.createUserWithEmailAndPassword(
           email: email, password: password);
+
+      print(authResult.user.uid);
 
       // after creating user in firebase, create user in postgres db with the data provided.
 
@@ -108,7 +115,12 @@ class AuthenticationService {
         assert(await user.getIdToken() != null);
 
         final FirebaseUser currentUser = await _firebaseAuth.currentUser();
+        print(user.uid);
+        print(currentUser.uid);
         assert(user.uid == currentUser.uid);
+
+        print("FB: $user");
+        print("CURRE: $currentUser");
 
         await _populateCurrentUser(
             currentUser); // populate the user information

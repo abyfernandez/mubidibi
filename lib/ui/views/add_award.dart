@@ -866,7 +866,7 @@ class _AddAwardState extends State<AddAward>
                       borderRadius: BorderRadius.circular(5),
                     ),
                     child: Container(
-                      height: 80,
+                      // height: 80,
                       width: 350,
                       decoration: BoxDecoration(
                           color: Color.fromRGBO(240, 240, 240, 1),

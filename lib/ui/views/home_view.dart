@@ -91,7 +91,13 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    if (genreItems == null) return CircularProgressIndicator();
+    if (genreItems == null) {
+      // return CircularProgressIndicator();
+      return Container(
+          color: Colors.white,
+          height: double.infinity,
+          child: Center(child: Container(child: CircularProgressIndicator())));
+    }
     return Scaffold(
       key: _scaffoldKey,
       drawerEnableOpenDragGesture: false,
@@ -110,11 +116,16 @@ class _HomeViewState extends State<HomeView> {
       ),
       appBar: pageIndex == 0
           ? AppBar(
-              title: Text("mubidibi",
-                  style: TextStyle(
+              title: Container(
+                child: Text("mubidibi",
+                    style: TextStyle(
                       color: Colors.white,
                       letterSpacing: 1.5,
-                      fontWeight: FontWeight.bold)),
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.clip,
+                    softWrap: true),
+              ),
               backgroundColor: Colors.transparent,
               shadowColor: Colors
                   .transparent, // can be changed to transparent but decreases visibility

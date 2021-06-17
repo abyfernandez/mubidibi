@@ -224,9 +224,9 @@ class LineWidgetState extends State<LineWidget> {
                     : SizedBox(),
                 showError == true ? SizedBox(height: 15) : SizedBox(),
                 Container(
-                  child: OutlineButton(
-                    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                    color: Colors.white,
+                  child: TextButton(
+                    // padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                    // color: Colors.white,
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       if (widget.item.role != null &&
@@ -247,7 +247,7 @@ class LineWidgetState extends State<LineWidget> {
                         });
                       }
                     },
-                    child: Text('Save'),
+                    child: Text('SAVE'),
                   ),
                   alignment: Alignment.center,
                 ),

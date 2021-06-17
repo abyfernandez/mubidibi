@@ -367,9 +367,9 @@ class AwardWidgetState extends State<AwardWidget> {
                   height: 15,
                 ),
                 Container(
-                  child: OutlineButton(
-                    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
-                    color: Colors.white,
+                  child: TextButton(
+                    // padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                    // color: Colors.white,
                     onPressed: () {
                       FocusScope.of(context).unfocus();
                       if (_formKey.currentState.validate() &&
@@ -390,7 +390,7 @@ class AwardWidgetState extends State<AwardWidget> {
                         });
                       }
                     },
-                    child: Text('Save'),
+                    child: Text('SAVE', style: TextStyle(color: Colors.blue)),
                   ),
                   alignment: Alignment.center,
                 ),

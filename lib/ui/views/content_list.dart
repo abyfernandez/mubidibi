@@ -41,17 +41,24 @@ class ContentList extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 20.0,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Container(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.clip,
+                      softWrap: true,
+                    ),
                   ),
                 ),
                 type == "movies" || type == "favorites"
                     ? movies.length >= 4
-                        ? GestureDetector(
+                        ? Flexible(
+                            child: GestureDetector(
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -74,17 +81,22 @@ class ContentList extends StatelessWidget {
                                 ),
                               );
                             },
-                            child: Text(
-                              seeAll,
-                              style: const TextStyle(
-                                fontSize: 16.0,
-                                color: Colors.blue,
+                            child: Container(
+                              child: Text(
+                                seeAll,
+                                style: const TextStyle(
+                                  fontSize: 16.0,
+                                  color: Colors.blue,
+                                ),
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
                               ),
                             ),
-                          )
+                          ))
                         : SizedBox()
                     : crew.length >= 4
-                        ? GestureDetector(
+                        ? Flexible(
+                            child: GestureDetector(
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -108,14 +120,18 @@ class ContentList extends StatelessWidget {
                                 ),
                               );
                             },
-                            child: Text(
-                              seeAll,
-                              style: const TextStyle(
-                                fontSize: 16.0,
-                                color: Colors.blue,
+                            child: Container(
+                              child: Text(
+                                seeAll,
+                                style: const TextStyle(
+                                  fontSize: 16.0,
+                                  color: Colors.blue,
+                                ),
+                                overflow: TextOverflow.clip,
+                                softWrap: true,
                               ),
                             ),
-                          )
+                          ))
                         : SizedBox(),
               ],
             ),

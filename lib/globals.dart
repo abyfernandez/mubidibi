@@ -1,8 +1,11 @@
 library mubidibi.globals;
 
 // URLs
-final String api = 'http://10.0.2.2:3000/mubidibi/'; // for mobile applications
-final String apiNoHTTP = '10.0.2.2:3000';
+// final String api = 'http://10.0.2.2:3000/mubidibi/'; // for mobile applications
+final String api =
+    'https://mubidibi-backend.herokuapp.com/mubidibi/'; // for mobile applications
+// final String apiNoHTTP = '10.0.2.2:3000';
+final String apiNoHTTP = 'mubidibi-backend.herokuapp.com';
 final String imgNotFound =
     'https://res.cloudinary.com/mubidibi-sp/image/upload/v1617686167/not_found/undefined_ark3bu.jpg';
 final String userNotFound =

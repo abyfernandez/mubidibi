@@ -41,11 +41,17 @@ class ContentScroll extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
+            Expanded(
+              child: Container(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.clip,
+                  softWrap: true,
+                ),
               ),
             ),
             crew.length >= 4
@@ -62,7 +68,7 @@ class ContentScroll extends StatelessWidget {
                     child: Text(
                       'Tingnan Lahat',
                       style: TextStyle(fontSize: 14, color: Colors.blue),
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.clip,
                       softWrap: true,
                     ),
                   )
@@ -186,7 +192,7 @@ class ContentScroll extends StatelessWidget {
                 children: [
                   Text(
                     "Walang record.",
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 14),
                   ),
                 ],
               ),
