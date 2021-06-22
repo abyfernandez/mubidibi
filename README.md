@@ -1,16 +1,3 @@
-# mubidibi
+# Mubidibi: A Mobile Implementation of an Online Database for Filipino Films
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Mubidibi is a mobile application developed to solve the need of providing information on Filipino films, especially the oldest ones, since the process of actual film restoration is expensive and takes a long time to complete. This application can also help Filipinos become more familiar with these films and their contribution to the Philippine Cinema. The application's usability was tested using the System Usability Scale (SUS) and got a score of 87.5 which is equivalent to a grade of "A" and classifiable as "Best".
