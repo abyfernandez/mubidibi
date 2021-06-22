@@ -83,7 +83,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
         accountId:
             widget.currentUser != null ? widget.currentUser.userId : "0");
 
-    if (mounted) {
+    // if (mounted) {
       // Your state change code goes here
       setState(() {
         userReviews = widget.currentUser != null
@@ -99,7 +99,7 @@ class DisplayReviewsState extends State<DisplayReviews> {
           isApproved.add(userReviews[i]?.isApproved ?? false);
         }
       });
-    }
+    // }
   }
 
   @override

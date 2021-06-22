@@ -30,7 +30,6 @@ class ContentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final NavigationService _navigationService = locator<NavigationService>();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Column(

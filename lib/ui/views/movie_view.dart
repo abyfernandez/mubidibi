@@ -100,12 +100,12 @@ class _MovieViewState extends State<MovieView>
     var temp = await model.getAllCrew(
         mode: "form"); // to be passed as parameter when edit movie is called
 
-    if (mounted) {
-      setState(() {
-        crewEdit = crew;
-        movieCrewList = temp;
-      });
-    }
+    // if (mounted) {
+    setState(() {
+      crewEdit = crew;
+      movieCrewList = temp;
+    });
+    // }
 
     return crew;
   }

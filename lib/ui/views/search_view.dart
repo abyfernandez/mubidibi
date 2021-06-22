@@ -30,15 +30,23 @@ class _SearchViewState extends State<SearchView> {
   List<Crew> crew = [];
   bool noResult = false;
   String _searchBy = 'Pelikula';
+  bool movieIsBusy = true;
+  bool crewIsBusy = true;
 
   void fetchMovies() async {
     var model = MovieViewModel();
     movies = await model.getAllMovies(mode: "list");
+    setState(() {
+      movieIsBusy = false;
+    });
   }
 
   void fetchCrew() async {
     var model = CrewViewModel();
     crew = await model.getAllCrew(mode: "list");
+    setState(() {
+      crewIsBusy = false;
+    });
   }
 
   @override
@@ -57,6 +65,10 @@ class _SearchViewState extends State<SearchView> {
   @override
   Widget build(BuildContext context) {
     final Size screenSize = MediaQuery.of(context).size;
+
+    if (movieIsBusy == true && crewIsBusy == true) {
+      return Center(child: Container(child: CircularProgressIndicator()));
+    }
 
     return ViewModelProvider<MovieViewModel>.withConsumer(
       viewModel: MovieViewModel(),
@@ -250,7 +262,12 @@ class _SearchViewState extends State<SearchView> {
                                     .map(
                                       (movie) => GestureDetector(
                                         child: Container(
-                                          height: 190.0, //210
+                                          // height: 210.0, //210
+                                          height: (MediaQuery.of(context)
+                                                      .size
+                                                      .width /
+                                                  3) *
+                                              1.5,
                                           child: Stack(
                                             children: [
                                               Container(
@@ -258,16 +275,27 @@ class _SearchViewState extends State<SearchView> {
                                                 margin:
                                                     const EdgeInsets.symmetric(
                                                         horizontal: 8.0),
-                                                height: 180.0,
-                                                width: 120.0,
+                                                // height: 180.0,
+                                                // width: 120.0,
+                                                height: (MediaQuery.of(context)
+                                                            .size
+                                                            .width /
+                                                        3) *
+                                                    1.5,
+                                                // width: 120.0,
+                                                width: (MediaQuery.of(context)
+                                                            .size
+                                                            .width /
+                                                        3) -
+                                                    16,
                                                 decoration: BoxDecoration(
-                                                  boxShadow: [
-                                                    BoxShadow(
-                                                      color: Colors.black54,
-                                                      offset: Offset(0.0, 0.0),
-                                                      blurRadius: 0.0,
-                                                    ),
-                                                  ],
+                                                  // boxShadow: [
+                                                  //   BoxShadow(
+                                                  //     color: Colors.black54,
+                                                  //     offset: Offset(0.0, 0.0),
+                                                  //     blurRadius: 0.0,
+                                                  //   ),
+                                                  // ],
                                                   borderRadius:
                                                       BorderRadius.circular(5),
                                                 ),
@@ -299,9 +327,21 @@ class _SearchViewState extends State<SearchView> {
                                               Container(
                                                 margin:
                                                     const EdgeInsets.symmetric(
-                                                        horizontal: 8.0),
-                                                height: 180.0,
-                                                width: 120.0,
+                                                        horizontal: 8.0,
+                                                        vertical: 4),
+                                                // height: 180.0,
+                                                // width: 120.0,
+                                                height: (MediaQuery.of(context)
+                                                            .size
+                                                            .width /
+                                                        3) *
+                                                    1.5,
+                                                // width: 120.0,
+                                                width: (MediaQuery.of(context)
+                                                            .size
+                                                            .width /
+                                                        3) -
+                                                    16,
                                                 decoration: BoxDecoration(
                                                   borderRadius:
                                                       BorderRadius.circular(5),
@@ -320,13 +360,13 @@ class _SearchViewState extends State<SearchView> {
                                                 ),
                                               ),
                                               Positioned(
-                                                bottom: 9,
+                                                bottom: 3,
                                                 left: 9,
                                                 right: 9,
                                                 child: Container(
                                                   padding: EdgeInsets.all(5),
-                                                  alignment:
-                                                      Alignment.bottomLeft,
+                                                  // alignment:
+                                                  //     Alignment.bottomLeft,
                                                   child: Container(
                                                     padding: EdgeInsets.all(5),
                                                     child: Text(
@@ -407,15 +447,32 @@ class _SearchViewState extends State<SearchView> {
                                     .map(
                                       (c) => GestureDetector(
                                         child: Container(
-                                          height: 190.0, //210
+                                          // height: 210.0, //210
+                                          height: (MediaQuery.of(context)
+                                                      .size
+                                                      .width /
+                                                  3) *
+                                              1.5,
                                           child: Stack(
                                             children: [
                                               Container(
                                                 margin:
                                                     const EdgeInsets.symmetric(
-                                                        horizontal: 8.0),
-                                                height: 180.0, //200
-                                                width: 120.0, //120
+                                                        horizontal: 8.0,
+                                                        vertical: 4),
+                                                // height: 180.0, //200
+                                                // width: 120.0, //120
+                                                height: (MediaQuery.of(context)
+                                                            .size
+                                                            .width /
+                                                        3) *
+                                                    1.5,
+                                                // width: 120.0,
+                                                width: (MediaQuery.of(context)
+                                                            .size
+                                                            .width /
+                                                        3) -
+                                                    16,
                                                 decoration: BoxDecoration(
                                                   borderRadius:
                                                       BorderRadius.circular(5),
@@ -435,13 +492,13 @@ class _SearchViewState extends State<SearchView> {
                                                 ),
                                               ),
                                               Positioned(
-                                                bottom: 9,
+                                                bottom: 3,
                                                 left: 9,
                                                 right: 9,
                                                 child: Container(
                                                   padding: EdgeInsets.all(5),
-                                                  alignment:
-                                                      Alignment.bottomLeft,
+                                                  // alignment:
+                                                  //     Alignment.bottomLeft,
                                                   child: Text(
                                                     c.name,
                                                     style: TextStyle(
@@ -489,7 +546,7 @@ class _SearchViewState extends State<SearchView> {
                                     Container(
                                       child: Center(
                                           child: noResult == true
-                                              ? Text('No results found.',
+                                              ? Text('Walang resulta.',
                                                   style: TextStyle(
                                                       color: Colors.grey,
                                                       fontSize: 14))

@@ -68,7 +68,7 @@ class ReviewFormState extends State<ReviewForm> {
         movieId: widget.movie.movieId.toString(),
         accountId: widget.currentUser.userId);
 
-    if (mounted) {
+    // if (mounted) {
       setState(() {
         userReview = model.userReview;
         reviewController.text = userReview?.review ?? '';
@@ -80,7 +80,7 @@ class ReviewFormState extends State<ReviewForm> {
         _edit = userReview != null ? false : true;
         isBusy = false;
       });
-    }
+    // }
   }
 
   @override

@@ -382,7 +382,7 @@ class _CrewViewState extends State<CrewView>
       builder: (context, model, child) => Scaffold(
         key: _scaffoldKey,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           leading: GestureDetector(
             child: Icon(Icons.arrow_back),

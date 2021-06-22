@@ -59,12 +59,12 @@ class _DashboardViewState extends State<DashboardView>
       index = 0;
     }
 
-    if (mounted) {
+    // if (mounted) {
       setState(() {
         movies = movies;
         index = index;
       });
-    }
+    // }
   }
 
   // function for calling viewmodel's getFavorites method

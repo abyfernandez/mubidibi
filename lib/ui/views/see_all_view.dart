@@ -124,20 +124,20 @@ class _SeeAllViewState extends State<SeeAllView> {
             json.decode(response.body).map((x) => x['genre']));
       }
 
-      if (mounted) {
-        setState(() {
-          filtered = films;
-          applyFilter(filters);
-        });
-      }
+      // if (mounted) {
+      setState(() {
+        filtered = films;
+        applyFilter(filters);
+      });
+      // }
     } else {
-      if (mounted) {
-        setState(() {
-          films = movies;
-          filtered = films;
-          applyFilter(filters);
-        });
-      }
+      // if (mounted) {
+      setState(() {
+        films = movies;
+        filtered = films;
+        applyFilter(filters);
+      });
+      // }
     }
   }
 
@@ -199,12 +199,12 @@ class _SeeAllViewState extends State<SeeAllView> {
               item.type != null && item.type.toSet().containsAll(groupBy))
           .toList();
     }
-    if (mounted) {
-      setState(() {
-        filtered = filtered;
-        isBusy = false;
-      });
-    }
+    // if (mounted) {
+    setState(() {
+      filtered = filtered;
+      isBusy = false;
+    });
+    // }
   }
 
   Widget showContent(context) {
@@ -649,7 +649,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                 children: [
                                   Container(
                                     margin: const EdgeInsets.symmetric(
-                                        horizontal: 8.0),
+                                        horizontal: 8.0, vertical: 4),
                                     // height: 200.0,
                                     // width: 120.0,
                                     height: (MediaQuery.of(context).size.width /
@@ -673,7 +673,7 @@ class _SeeAllViewState extends State<SeeAllView> {
                                     ),
                                   ),
                                   Positioned(
-                                    bottom: 9,
+                                    bottom: 3,
                                     left: 9,
                                     right: 9,
                                     child: Container(
